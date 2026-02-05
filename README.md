@@ -1,18 +1,31 @@
-## Getting Started
+# NanoCraft
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+NanoCraft is a 2D RPG game that is inspired by Minecraft and is written entirely in Java. This project was created to transform core concepts such as exploration, resource gathering, combat, and progression into a 2D, top-down format that everyone can enjoy.
 
-## Folder Structure
+# Installation
+- Install Java
+- Clone repo
+- Open VSCode and execute Main.java
+- Enjoy the game
 
-The workspace contains two folders by default, where:
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+## Features
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+- Exploration through different biomes
+- Combat with different monsters/enemies
+- Resource gathering
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+<!-- > If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there. -->
 
-## Dependency Management
+## Team
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+- [Joshua Vlasin](https://github.com/jovlasin)
+
+- [Justin Tavarez](https://github.com/JustinTavarez)
+
+- [Travis Mounsy](https://github.com/travismounsy)
+
+## License
+NanoCraft is licensed under the the terms of the [MIT License](https://choosealicense.com/licenses/mit/). See [LICENSE.md](/LICENSE.md) for more details.
+
+
