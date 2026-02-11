@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import javax.imageio.ImageIO;
-// import main.GameHandler;
+import main.GameHandler;
 
 public class TileHandler {
     private GameHandler gh;
@@ -20,7 +20,7 @@ public class TileHandler {
         tile = new Tile[10];
         tileNum = new int[75][75]; // placeholder values
         getImage();
-        loadMap("/map/mapv0.csv");
+        loadMap("/map/res/map/mapv0.csv");
     }
 
     public void getImage() {
@@ -36,7 +36,7 @@ public class TileHandler {
     private void setup(int index, String name, boolean collision) {
         try {
             tile[index] = new Tile();
-            tile[index].image = ImageIO.read(getClass().getResourceAsStream("/tiles/" + name + ".png"));
+            tile[index].image = ImageIO.read(getClass().getResourceAsStream("/map/res/tile/" + name + ".png"));
             tile[index].image = scaleImage(tile[index].image, 48, 48); // placeholder tilesize values for now
             tile[index].collision = collision;
         } catch (IOException e) {
@@ -92,7 +92,7 @@ public class TileHandler {
             }
             worldCol++;
 
-            if (worldCol == gh.maxWorldCol) {
+            if (worldCol == 75) {
                 worldCol = 0;
                 worldRow++;
             }

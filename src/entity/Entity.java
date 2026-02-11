@@ -3,7 +3,10 @@ package entity;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
+import main.GameHandler;
+
 public class Entity {
+    public GameHandler gh;
     public int worldX, worldY;
     public String direction;
     public int spriteCounter = 0;
