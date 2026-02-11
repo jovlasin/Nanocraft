@@ -1,6 +1,11 @@
 # Compiled class file
 *.class
 
+# IntelliJ / Eclipse / VSCode build folders
+bin/
+out/
+build/
+
 # Log file
 *.log
 
