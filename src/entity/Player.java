@@ -5,8 +5,8 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import main.GameHandler;
-import main.KeyHandler;
+import core.GameHandler;
+import input.KeyHandler;
 
 public class Player extends Entity {
     // private GameHandler gh;

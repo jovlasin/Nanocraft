@@ -1,4 +1,4 @@
-package main;
+package core;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -8,7 +8,8 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
 import entity.Player;
-import map.TileHandler;
+import input.KeyHandler;
+import tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
