@@ -8,18 +8,15 @@ import java.util.ArrayList;
 
 import main.GameHandler;
 import main.KeyHandler;
-import object.Key;
-import object.OldShield;
-import object.Sword;
 
 public class Player extends Entity {
-    public final int screenX = gm.screenWidth / 2 - gm.tileSize / 2;
-    public final int screenY = gm.screenHeight / 2 - gm.tileSize / 2;
+    public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
+    public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
     private KeyHandler kh;
 
-    public Player(GameManager gm, KeyHandler kh) {
-        super(gm);
+    public Player(GameManager gh, KeyHandler kh) {
+        super(gh);
         this.kh = kh;
 
         setStats();
@@ -139,24 +136,23 @@ public class Player extends Entity {
     }
 
     private void getImage() {
-        up1 = scale("/player/playerWalkU1", gm.tileSize, gm.tileSize);
-        up2 = scale("/player/playerWalkU2", gm.tileSize, gm.tileSize);
-        down1 = scale("/player/playerWalkD1", gm.tileSize, gm.tileSize);
-        down2 = scale("/player/playerWalkD2", gm.tileSize, gm.tileSize);
-        left1 = scale("/player/playerWalkL1", gm.tileSize, gm.tileSize);
-        left2 = scale("/player/playerWalkL2", gm.tileSize, gm.tileSize);
-        right1 = scale("/player/playerWalkR1", gm.tileSize, gm.tileSize);
-        right2 = scale("/player/playerWalkR2", gm.tileSize, gm.tileSize);
+        up1 = scale("/player/playerWalkU1", gh.tileSize, gh.tileSize);
+        up2 = scale("/player/playerWalkU2", gh.tileSize, gh.tileSize);
+        down1 = scale("/player/playerWalkD1", gh.tileSize, gh.tileSize);
+        down2 = scale("/player/playerWalkD2", gh.tileSize, gh.tileSize);
+        left1 = scale("/player/playerWalkL1", gh.tileSize, gh.tileSize);
+        left2 = scale("/player/playerWalkL2", gh.tileSize, gh.tileSize);
+        right1 = scale("/player/playerWalkR1", gh.tileSize, gh.tileSize);
+        right2 = scale("/player/playerWalkR2", gh.tileSize, gh.tileSize);
     }
 
     private void setStats() {
         speed = 4;
-        
     }
 
     private void setPos() {
-        worldX = gm.tileSize * 23;
-        worldY = gm.tileSize * 21;
+        worldX = gh.tileSize * 23;
+        worldY = gh.tileSize * 21;
 
         solidArea = new Rectangle();
         solidArea.x = 8;
