@@ -1,21 +1,21 @@
 package entity;
 
-import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import main.GameHandler;
 import main.KeyHandler;
 
 public class Player extends Entity {
+    // private GameHandler gh;
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
     private KeyHandler kh;
 
-    public Player(GameManager gh, KeyHandler kh) {
+    public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
         this.kh = kh;
 
@@ -25,21 +25,21 @@ public class Player extends Entity {
     }
 
     public void update() {
-        if (kh.upPressed == true || kh.downPressed == true || kh.leftPressed == true || kh.rightPressed == true || kh.spacePressed == true) {
+        if (kh.up == true || kh.down == true || kh.left == true || kh.right == true) {
             
-            if (kh.upPressed == true) {
+            if (kh.up == true) {
                 direction = "up";
             }
 
-            else if (kh.downPressed == true) {
+            else if (kh.down == true) {
                 direction = "down";
             }
 
-            else if (kh.leftPressed == true) {
+            else if (kh.left == true) {
                 direction = "left";
             }
 
-            else if (kh.rightPressed == true) {
+            else if (kh.right == true) {
                 direction = "right";
             }
 
@@ -136,14 +136,14 @@ public class Player extends Entity {
     }
 
     private void getImage() {
-        up1 = scale("/player/playerWalkU1", gh.tileSize, gh.tileSize);
-        up2 = scale("/player/playerWalkU2", gh.tileSize, gh.tileSize);
-        down1 = scale("/player/playerWalkD1", gh.tileSize, gh.tileSize);
-        down2 = scale("/player/playerWalkD2", gh.tileSize, gh.tileSize);
-        left1 = scale("/player/playerWalkL1", gh.tileSize, gh.tileSize);
-        left2 = scale("/player/playerWalkL2", gh.tileSize, gh.tileSize);
-        right1 = scale("/player/playerWalkR1", gh.tileSize, gh.tileSize);
-        right2 = scale("/player/playerWalkR2", gh.tileSize, gh.tileSize);
+        up1 = scale("/entity/res/player/playerWalkU1", gh.tileSize, gh.tileSize);
+        up2 = scale("/entity/res/player/playerWalkU2", gh.tileSize, gh.tileSize);
+        down1 = scale("/entity/res/player/playerWalkD1", gh.tileSize, gh.tileSize);
+        down2 = scale("/entity/res/player/playerWalkD2", gh.tileSize, gh.tileSize);
+        left1 = scale("/entity/res/player/playerWalkL1", gh.tileSize, gh.tileSize);
+        left2 = scale("/entity/res/player/playerWalkL2", gh.tileSize, gh.tileSize);
+        right1 = scale("/entity/res/player/playerWalkR1", gh.tileSize, gh.tileSize);
+        right2 = scale("/entity/res/player/playerWalkR2", gh.tileSize, gh.tileSize);
     }
 
     private void setStats() {
@@ -151,8 +151,8 @@ public class Player extends Entity {
     }
 
     private void setPos() {
-        worldX = gh.tileSize * 23;
-        worldY = gh.tileSize * 21;
+        worldX = gh.tileSize * 50;
+        worldY = gh.tileSize * 16;
 
         solidArea = new Rectangle();
         solidArea.x = 8;
@@ -161,6 +161,28 @@ public class Player extends Entity {
         solidArea.height = 32;
         solidAreaDefaultX = solidArea.x;
         solidAreaDefaultY = solidArea.y;
+    }
+
+    public BufferedImage scale(String imgPath, int width, int height ) {
+        BufferedImage image = null;
+
+        try {
+            image = ImageIO.read(getClass().getResourceAsStream(imgPath + ".png"));
+            image = scaleImage(image, width, height);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return image;
+    }
+
+    private BufferedImage scaleImage(BufferedImage original, int width, int height) {
+        BufferedImage scaledImage = new BufferedImage(width, height, original.getType());
+        Graphics2D g2 = scaledImage.createGraphics();
+        g2.drawImage(original, 0, 0, width, height, null);
+        g2.dispose();
+        
+        return scaledImage;
     }
 }
 
