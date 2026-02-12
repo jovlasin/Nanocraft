@@ -9,7 +9,6 @@ import core.GameHandler;
 import input.KeyHandler;
 
 public class Player extends Entity {
-    // private GameHandler gh;
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
