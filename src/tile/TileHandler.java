@@ -37,7 +37,7 @@ public class TileHandler {
         try {
             tile[index] = new Tile();
             tile[index].image = ImageIO.read(getClass().getResourceAsStream("/tile/" + name + ".png"));
-            tile[index].image = scaleImage(tile[index].image, 48, 48); // placeholder tilesize values for now
+            tile[index].image = scaleImage(tile[index].image, gh.tileSize, gh.tileSize); // placeholder tilesize values for now
             tile[index].collision = collision;
         } catch (IOException e) {
             e.printStackTrace();
