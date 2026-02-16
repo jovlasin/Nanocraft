@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "copy-resources",
+      "type": "shell",
+      "command": "mkdir -p bin/player bin/tile bin/map && cp -r res/player/* bin/player/ && cp -r res/tile/* bin/tile/ && cp -r res/map/* bin/map/",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    }
+  ]
+}
