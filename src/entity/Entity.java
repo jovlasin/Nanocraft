@@ -3,7 +3,7 @@ package entity;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
-import main.GameHandler;
+import core.GameHandler;
 
 public class Entity {
     public GameHandler gh;

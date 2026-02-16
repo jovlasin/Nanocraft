@@ -1,4 +1,4 @@
-package map;
+package tile;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import javax.imageio.ImageIO;
-import main.GameHandler;
+import core.GameHandler;
 
 public class TileHandler {
     private GameHandler gh;
@@ -20,7 +20,7 @@ public class TileHandler {
         tile = new Tile[10];
         tileNum = new int[75][75]; // placeholder values
         getImage();
-        loadMap("/map/res/map/mapv0.csv");
+        loadMap("/map/mapv0.csv");
     }
 
     public void getImage() {
@@ -36,8 +36,8 @@ public class TileHandler {
     private void setup(int index, String name, boolean collision) {
         try {
             tile[index] = new Tile();
-            tile[index].image = ImageIO.read(getClass().getResourceAsStream("/map/res/tile/" + name + ".png"));
-            tile[index].image = scaleImage(tile[index].image, 48, 48); // placeholder tilesize values for now
+            tile[index].image = ImageIO.read(getClass().getResourceAsStream("/tile/" + name + ".png"));
+            tile[index].image = scaleImage(tile[index].image, gh.tileSize, gh.tileSize); // placeholder tilesize values for now
             tile[index].collision = collision;
         } catch (IOException e) {
             e.printStackTrace();
