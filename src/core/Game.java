@@ -1,9 +1,9 @@
-package main;
+package core;
 
 import javax.swing.JFrame;
 
-public class Main {
-    public static void main(String[] args) {
+public class Game {
+    public void run() {
         JFrame window = new JFrame();
         GameHandler gh = new GameHandler();
 

@@ -5,11 +5,10 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import main.GameHandler;
-import main.KeyHandler;
+import core.GameHandler;
+import input.KeyHandler;
 
 public class Player extends Entity {
-    // private GameHandler gh;
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
@@ -136,14 +135,14 @@ public class Player extends Entity {
     }
 
     private void getImage() {
-        up1 = scale("/entity/res/player/playerWalkU1", gh.tileSize, gh.tileSize);
-        up2 = scale("/entity/res/player/playerWalkU2", gh.tileSize, gh.tileSize);
-        down1 = scale("/entity/res/player/playerWalkD1", gh.tileSize, gh.tileSize);
-        down2 = scale("/entity/res/player/playerWalkD2", gh.tileSize, gh.tileSize);
-        left1 = scale("/entity/res/player/playerWalkL1", gh.tileSize, gh.tileSize);
-        left2 = scale("/entity/res/player/playerWalkL2", gh.tileSize, gh.tileSize);
-        right1 = scale("/entity/res/player/playerWalkR1", gh.tileSize, gh.tileSize);
-        right2 = scale("/entity/res/player/playerWalkR2", gh.tileSize, gh.tileSize);
+        up1 = scale("/player/playerWalkU1", gh.tileSize, gh.tileSize);
+        up2 = scale("/player/playerWalkU2", gh.tileSize, gh.tileSize);
+        down1 = scale("/player/playerWalkD1", gh.tileSize, gh.tileSize);
+        down2 = scale("/player/playerWalkD2", gh.tileSize, gh.tileSize);
+        left1 = scale("/player/playerWalkL1", gh.tileSize, gh.tileSize);
+        left2 = scale("/player/playerWalkL2", gh.tileSize, gh.tileSize);
+        right1 = scale("/player/playerWalkR1", gh.tileSize, gh.tileSize);
+        right2 = scale("/player/playerWalkR2", gh.tileSize, gh.tileSize);
     }
 
     private void setStats() {
