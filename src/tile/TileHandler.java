@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import core.GameHandler;
 
 public class TileHandler {
-    private static final String DEFAULT_MAP_PATH = "/map/Cave.tmj";
+    private static final String DEFAULT_MAP_PATH = "/map/Mapv0.csv";
 
     private final GameHandler gh;
     private final Map<Integer, Tile> tileRegistry;
