@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import core.GameHandler;
 
 public class TileHandler {
-    private static final String DEFAULT_MAP_PATH = "/map/mapv0.csv";
+    private static final String DEFAULT_MAP_PATH = "/map/Cave.tmj";
 
     private final GameHandler gh;
     private final Map<Integer, Tile> tileRegistry;
@@ -170,11 +170,22 @@ public class TileHandler {
 
         for (int i = 0; i < sortedTilesets.size(); i++) {
             TiledTilesetData tileset = sortedTilesets.get(i);
-            if (tileset == null || tileset.tiles == null) {
-                if (tileset != null && tileset.source != null) {
-                    int nextFirstgid = i + 1 < sortedTilesets.size() ? sortedTilesets.get(i + 1).firstgid : tileset.firstgid + 1;
-                    registerSourceTiles(mapFilePath, tileset, nextFirstgid);
-                }
+            if (tileset == null) {
+                continue;
+            }
+
+            if (tileset.source != null) {
+                int nextFirstgid = i + 1 < sortedTilesets.size() ? sortedTilesets.get(i + 1).firstgid : tileset.firstgid + 1;
+                registerSourceTiles(mapFilePath, tileset, nextFirstgid);
+                continue;
+            }
+
+            if (tileset.image != null) {
+                registerEmbeddedImageTileset(mapFilePath, tileset);
+                continue;
+            }
+
+            if (tileset.tiles == null) {
                 continue;
             }
 
@@ -191,6 +202,67 @@ public class TileHandler {
                 int globalId = tileset.firstgid + tileData.id;
                 tileRegistry.put(globalId, tile);
             }
+        }
+    }
+
+    private void registerEmbeddedImageTileset(String mapFilePath, TiledTilesetData tileset) throws IOException {
+        String imagePath = resolveResourcePath(mapFilePath, tileset.image);
+        if (!resourceExists(imagePath)) {
+            String tileFolderPath = "/tile/" + fileName(tileset.image);
+            if (resourceExists(tileFolderPath)) {
+                imagePath = tileFolderPath;
+            }
+        }
+
+        if (!resourceExists(imagePath)) {
+            return;
+        }
+
+        BufferedImage tilesetImage = ImageIO.read(getRequiredResourceStream(imagePath));
+        if (tilesetImage == null) {
+            return;
+        }
+
+        Map<Integer, Boolean> collisionByTileId = new HashMap<>();
+        if (tileset.tiles != null) {
+            for (TiledTileData tileData : tileset.tiles) {
+                if (tileData == null) {
+                    continue;
+                }
+                collisionByTileId.put(tileData.id, hasCollisionProperty(tileData.properties));
+            }
+        }
+
+        int tileCount = tileset.tilecount > 0 ? tileset.tilecount : 1;
+        int tileWidth = tileset.tilewidth > 0 ? tileset.tilewidth
+            : (tileset.imagewidth > 0 ? tileset.imagewidth : tilesetImage.getWidth());
+        int tileHeight = tileset.tileheight > 0 ? tileset.tileheight
+            : (tileset.imageheight > 0 ? tileset.imageheight : tilesetImage.getHeight());
+        int columns = tileset.columns > 0 ? tileset.columns : 1;
+
+        if (tileCount == 1) {
+            Tile tile = new Tile();
+            tile.image = scaleImage(tilesetImage, gh.tileSize, gh.tileSize);
+            tile.collision = collisionByTileId.getOrDefault(0, false);
+            tileRegistry.put(tileset.firstgid, tile);
+            return;
+        }
+
+        for (int localId = 0; localId < tileCount; localId++) {
+            int col = localId % columns;
+            int row = localId / columns;
+            int sourceX = col * tileWidth;
+            int sourceY = row * tileHeight;
+
+            if (sourceX + tileWidth > tilesetImage.getWidth() || sourceY + tileHeight > tilesetImage.getHeight()) {
+                continue;
+            }
+
+            BufferedImage tileImage = tilesetImage.getSubimage(sourceX, sourceY, tileWidth, tileHeight);
+            Tile tile = new Tile();
+            tile.image = scaleImage(tileImage, gh.tileSize, gh.tileSize);
+            tile.collision = collisionByTileId.getOrDefault(localId, false);
+            tileRegistry.put(tileset.firstgid + localId, tile);
         }
     }
 
@@ -437,6 +509,13 @@ public class TileHandler {
     private static class TiledTilesetData {
         int firstgid;
         String source;
+        String image;
+        int imagewidth;
+        int imageheight;
+        int tilewidth;
+        int tileheight;
+        int tilecount;
+        int columns;
         List<TiledTileData> tiles;
     }
 
