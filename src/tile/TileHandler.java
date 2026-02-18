@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,8 +22,7 @@ import com.google.gson.Gson;
 import core.GameHandler;
 
 public class TileHandler {
-    private static final String DEFAULT_MAP_PATH = "/map/Mapv0.csv";
-
+    private static final String DEFAULT_MAP_PATH = "/res/map/mapv0.csv";
     private final GameHandler gh;
     private final Map<Integer, Tile> tileRegistry;
     private final List<int[][]> layers;
@@ -387,7 +388,7 @@ public class TileHandler {
 
     private void setupLegacyTile(int id, String name, boolean collision) {
         Tile tile = new Tile();
-        tile.image = loadScaledImage("/tile/" + name + ".png");
+        tile.image = loadScaledImage("/res/tile/" + name + ".png");
         tile.collision = collision;
         tileRegistry.put(id, tile);
     }
@@ -465,7 +466,7 @@ public class TileHandler {
     }
 
     private InputStream getRequiredResourceStream(String resourcePath) throws IOException {
-        InputStream stream = getClass().getResourceAsStream(resourcePath);
+        InputStream stream = openResourceStream(resourcePath);
         if (stream == null) {
             throw new IOException("Resource not found: " + resourcePath);
         }
@@ -473,11 +474,60 @@ public class TileHandler {
     }
 
     private boolean resourceExists(String resourcePath) {
-        try (InputStream ignored = getClass().getResourceAsStream(resourcePath)) {
+        try (InputStream ignored = openResourceStream(resourcePath)) {
             return ignored != null;
         } catch (IOException e) {
             return false;
         }
+    }
+
+    private InputStream openResourceStream(String resourcePath) throws IOException {
+        if (resourcePath == null || resourcePath.isBlank()) {
+            return null;
+        }
+
+        String normalized = resourcePath.replace("\\", "/");
+
+        InputStream stream = getClass().getResourceAsStream(normalized);
+        if (stream != null) {
+            return stream;
+        }
+
+        String withoutLeadingSlash = normalized.startsWith("/") ? normalized.substring(1) : normalized;
+        stream = getClass().getClassLoader().getResourceAsStream(withoutLeadingSlash);
+        if (stream != null) {
+            return stream;
+        }
+
+        if (withoutLeadingSlash.startsWith("res/")) {
+            String strippedResPrefix = withoutLeadingSlash.substring("res/".length());
+            stream = getClass().getClassLoader().getResourceAsStream(strippedResPrefix);
+            if (stream != null) {
+                return stream;
+            }
+
+            stream = getClass().getResourceAsStream("/" + strippedResPrefix);
+            if (stream != null) {
+                return stream;
+            }
+        }
+
+        List<Path> candidates = new ArrayList<>();
+        candidates.add(Paths.get(withoutLeadingSlash));
+        if (!withoutLeadingSlash.startsWith("res/")) {
+            candidates.add(Paths.get("res", withoutLeadingSlash));
+        }
+        if (withoutLeadingSlash.startsWith("res/")) {
+            candidates.add(Paths.get(withoutLeadingSlash.substring("res/".length())));
+        }
+
+        for (Path candidate : candidates) {
+            if (Files.isRegularFile(candidate)) {
+                return Files.newInputStream(candidate);
+            }
+        }
+
+        return null;
     }
 
     private String fileName(String resourcePath) {
