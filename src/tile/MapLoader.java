@@ -15,8 +15,8 @@ import javax.imageio.ImageIO;
 
 import com.google.gson.Gson;
 
-final class MapLoader {
-    static final class MapData {
+public final class MapLoader {
+    public static final class MapData {
         final Map<Integer, Tile> tileRegistry;
         final List<int[][]> layers;
         final List<String> layerNames;
@@ -52,7 +52,7 @@ final class MapLoader {
     private int mapHeight;
     private boolean zeroMeansEmpty;
 
-    MapLoader(int tileSize) {
+    public MapLoader(int tileSize) {
         this.tileSize = tileSize;
         this.gson = new Gson();
         this.tileRegistry = new HashMap<>();
@@ -60,7 +60,7 @@ final class MapLoader {
         this.layerNames = new ArrayList<>();
     }
 
-    MapData loadMap(String filePath) {
+    public MapData loadMap(String filePath) {
         clearMapData();
         if (filePath.endsWith(".tmj") || filePath.endsWith(".json")) {
             loadTmjMap(filePath);
