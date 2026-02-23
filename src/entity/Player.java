@@ -43,7 +43,7 @@ public class Player extends Entity {
             }
 
             collisionOn = false;
-            checkTileCollision();
+            gh.ch.checkTile(this);
 
             if (collisionOn == false) {
                 switch (direction) {
@@ -85,41 +85,6 @@ public class Player extends Entity {
                 spriteNum = 1;
                 standCounter = 0;
             }
-        }
-    }
-
-    private void checkTileCollision() {
-        int nextWorldX = worldX;
-        int nextWorldY = worldY;
-
-        switch (direction) {
-            case "up":
-                nextWorldY -= speed;
-            break;
-
-            case "down":
-                nextWorldY += speed;
-            break;
-
-            case "left":
-                nextWorldX -= speed;
-            break;
-
-            case "right":
-                nextWorldX += speed;
-            break;
-        }
-
-        int leftCol = (nextWorldX + solidArea.x) / gh.tileSize;
-        int rightCol = (nextWorldX + solidArea.x + solidArea.width - 1) / gh.tileSize;
-        int topRow = (nextWorldY + solidArea.y) / gh.tileSize;
-        int bottomRow = (nextWorldY + solidArea.y + solidArea.height - 1) / gh.tileSize;
-
-        if (gh.th.isCollisionAt(leftCol, topRow) ||
-            gh.th.isCollisionAt(rightCol, topRow) ||
-            gh.th.isCollisionAt(leftCol, bottomRow) ||
-            gh.th.isCollisionAt(rightCol, bottomRow)) {
-            collisionOn = true;
         }
     }
 
