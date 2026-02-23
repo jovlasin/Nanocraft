@@ -20,6 +20,7 @@ public Thread gameThread;
 public KeyHandler kh = new KeyHandler();
 public Player player = new Player(this, kh);
 public TileHandler th = new TileHandler(this);
+public CollisionHandler ch = new CollisionHandler(this);
 
 public GameHandler() {
 this.setPreferredSize(new Dimension(screenWidth, screenHeight));
