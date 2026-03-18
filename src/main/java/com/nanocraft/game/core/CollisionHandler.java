@@ -1,6 +1,6 @@
-package core;
+package com.nanocraft.game.core;
 
-import entity.Entity;
+import com.nanocraft.game.entity.Entity;
 
 public class CollisionHandler {
     private final GameHandler gh;

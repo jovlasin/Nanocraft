@@ -1,4 +1,4 @@
-package tile;
+package com.nanocraft.game.tile;
 
 import java.util.List;
 

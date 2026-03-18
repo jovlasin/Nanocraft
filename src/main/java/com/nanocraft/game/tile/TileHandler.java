@@ -1,4 +1,4 @@
-package tile;
+package com.nanocraft.game.tile;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -6,7 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import core.GameHandler;
+import javax.imageio.ImageIO;
+import com.nanocraft.game.core.GameHandler;
 
 public class TileHandler {
     private static final String DEFAULT_MAP_PATH = "/res/map/mapv0.csv";
