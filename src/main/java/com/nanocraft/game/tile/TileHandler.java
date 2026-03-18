@@ -1,4 +1,4 @@
-package tile;
+package com.nanocraft.game.tile;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import javax.imageio.ImageIO;
-import core.GameHandler;
+import com.nanocraft.game.core.GameHandler;
 
 public class TileHandler {
     private GameHandler gh;
