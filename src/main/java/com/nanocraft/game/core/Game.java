@@ -1,18 +1,23 @@
-package core;
+package com.nanocraft.game.core;
 
 import javax.swing.JFrame;
 
 public class Game {
-    public void run() {
-        JFrame window = new JFrame();
-        GameHandler gh = new GameHandler();
+    private JFrame window;
+    private GameHandler gh;
+
+    public Game() {
+        window = new JFrame("NanoCraft");
+        gh = new GameHandler();
 
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setResizable(false);
-        window.setTitle("NanoCraft");
         window.add(gh);
         window.pack();
         window.setLocationRelativeTo(null);
+    }
+
+    public void start() {
         window.setVisible(true);
         gh.startGame();
     }
