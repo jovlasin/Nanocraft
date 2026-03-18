@@ -1,12 +1,12 @@
-package com.nanocraft.game.entity;
+package entity;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import com.nanocraft.game.core.GameHandler;
-import com.nanocraft.game.input.KeyHandler;
+import core.GameHandler;
+import input.KeyHandler;
 
 public class Player extends Entity {
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;

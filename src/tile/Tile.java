@@ -1,4 +1,4 @@
-package com.nanocraft.game.tile;
+package tile;
 
 import java.awt.image.BufferedImage;
 

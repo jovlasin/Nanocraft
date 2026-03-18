@@ -1,9 +1,9 @@
-package com.nanocraft.game.entity;
+package entity;
 
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
-import com.nanocraft.game.core.GameHandler;
+import core.GameHandler;
 
 public class Entity {
     public GameHandler gh;
