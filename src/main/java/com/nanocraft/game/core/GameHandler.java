@@ -1,12 +1,15 @@
-package core;
+package com.nanocraft.game.core;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import javax.swing.JPanel;
-import entity.Player;
-import input.KeyHandler;
-import tile.TileHandler;
+
+import com.nanocraft.game.entity.Player;
+import com.nanocraft.game.input.KeyHandler;
+import com.nanocraft.game.tile.TileHandler;
+
 public class GameHandler extends JPanel implements Runnable {
 private final int defaultTileSize = 16; // tiles are 16x16 pngs
 private final int scale = 3;
