@@ -12,9 +12,9 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-final class ResourceLoader {
+public final class ResourceLoader {
 
-    private ResourceLoader() {
+    public ResourceLoader() {
     }
 
     static String resolveResourcePath(String mapFilePath, String relativePath) {
@@ -109,7 +109,7 @@ final class ResourceLoader {
         return lastSlash >= 0 ? resourcePath.substring(lastSlash + 1) : resourcePath;
     }
 
-    static BufferedImage scaleImage(BufferedImage original, int width, int height) {
+    public static BufferedImage scaleImage(BufferedImage original, int width, int height) {
         BufferedImage scaledImage = new BufferedImage(width, height, original.getType());
         Graphics2D g2 = scaledImage.createGraphics();
         g2.drawImage(original, 0, 0, width, height, null);
