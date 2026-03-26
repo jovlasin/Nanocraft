@@ -56,7 +56,53 @@ public class CollisionHandler {
     }
 
     public int checkObject(Entity entity, boolean player) {
-        return 999;
+        int index = 999;
+        int i = 0;
+
+        for (Entity object: gh.objs) {
+            if (object != null) {
+                entity.solidArea.x = entity.worldX + entity.solidArea.x;
+                entity.solidArea.y = entity.worldY + entity.solidArea.y;
+
+                object.solidArea.x = object.worldX + object.solidArea.x;
+                object.solidArea.y = object.worldY + object.solidArea.y;
+
+                switch (entity.direction) {
+                    case "up":
+                        entity.solidArea.y -= entity.speed;
+                    break;
+
+                    case "down":
+                        entity.solidArea.y += entity.speed;
+                    break;
+
+                    case "left":
+                        entity.solidArea.x -= entity.speed;
+                    break;
+
+                    case "right":
+                        entity.solidArea.x += entity.speed;
+                    break;
+                }
+
+                if (entity.solidArea.intersects(object.solidArea)) {
+                    if (object.collision == true) {
+                        entity.collisionOn = true;
+                    }
+
+                    if (player == true) {
+                        index = i;
+                    }
+                }
+
+                entity.solidArea.x = entity.solidAreaDefaultX;
+                entity.solidArea.y = entity.solidAreaDefaultY;
+                object.solidArea.x = object.solidAreaDefaultX;
+                object.solidArea.y = object.solidAreaDefaultY;
+            }
+            i++;
+        }
+        return index;
     }
 
     public int checkEntity(Entity entity, Entity[] targets) {
