@@ -21,9 +21,12 @@ public class GameHandler extends JPanel implements Runnable {
     public final int screenHeight = tileSize * maxScreenRow; // scale screen height to 576 tall
     public double fps = 60; // update the game 60 times per sec
     public Thread gameThread;
+
     public KeyHandler kh = new KeyHandler();
     public Player player = new Player(this, kh);
     public TileHandler th = new TileHandler(this);
+    private Sound music = new Sound();
+    private Sound se = new Sound();
 
     public GameHandler() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -31,6 +34,21 @@ public class GameHandler extends JPanel implements Runnable {
         this.setDoubleBuffered(true);
         this.addKeyListener(kh);
         this.setFocusable(true);
+
+        // TODO: Add sound files for game
+        // music.load(0, "");
+        // se.load(1, "");
+        // se.load(2, "");
+        // se.load(3, "");
+        // se.load(4, "");
+        // se.load(5, "");
+        // se.load(6, "");
+        // se.load(7, "");
+        // se.load(8, "");
+        // se.load(9, "");
+        // se.load(10, "");
+  
+        // playMusic();
     }
 
     public void startGame() {
@@ -82,5 +100,21 @@ public class GameHandler extends JPanel implements Runnable {
         th.draw(g2d);
         player.draw(g2d);
         g2d.dispose();
+    }
+
+    public void playMusic() {
+        music.loop(0);
+    }
+
+    public void playSound(int i) {
+        se.play(i);
+    }
+
+    public void stopSound(int i) {
+        se.stop(i);
+    }
+
+    public void stopMusic() {
+        music.stop(0);
     }
 }
