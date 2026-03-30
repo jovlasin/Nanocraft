@@ -1,102 +1,140 @@
 package com.nanocraft.game.tile;
 
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import com.nanocraft.game.core.GameHandler;
 
 public class TileHandler {
-    private GameHandler gh;
-    public Tile[] tile;
-    public int tileNum[][];
+    private static final String DEFAULT_MAP_PATH = "/res/map/mapv0.csv";
+    private final GameHandler gh;
+    private final Map<Integer, Tile> tileRegistry;
+    private final List<int[][]> layers;
+    private final List<String> layerNames;
+
+    private int mapWidth;
+    private int mapHeight;
+    private int belowPlayerLayerCount;
+    private boolean zeroMeansEmpty;
 
     public TileHandler(GameHandler gh) {
         this.gh = gh;
-        tile = new Tile[10];
-        tileNum = new int[75][75]; // placeholder values
-        getImage();
-        loadMap("/map/mapv0.csv");
+        this.tileRegistry = new HashMap<>();
+        this.layers = new ArrayList<>();
+        this.layerNames = new ArrayList<>();
+
+        MapLoader mapLoader = new MapLoader(gh.tileSize);
+        MapLoader.MapData mapData = mapLoader.loadMap(DEFAULT_MAP_PATH);
+        tileRegistry.putAll(mapData.tileRegistry);
+        layers.addAll(mapData.layers);
+        layerNames.addAll(mapData.layerNames);
+        mapWidth = mapData.mapWidth;
+        mapHeight = mapData.mapHeight;
+        zeroMeansEmpty = mapData.zeroMeansEmpty;
+        updateBelowPlayerLayerCount();
     }
 
-    public void getImage() {
-        setup(0, "000", true);
-        setup(1, "001", false);
-        setup(2, "002", false);
-        setup(3, "003", false);
-        setup(4, "004", false);
-        setup(5, "005", true);
-        setup(6, "006", true);
+    public int getLayerCount() {
+        return layers.size();
     }
 
-    private void setup(int index, String name, boolean collision) {
-        try {
-            tile[index] = new Tile();
-            tile[index].image = ImageIO.read(getClass().getResourceAsStream("/tile/" + name + ".png"));
-            tile[index].image = scaleImage(tile[index].image, gh.tileSize, gh.tileSize); // placeholder tilesize values for now
-            tile[index].collision = collision;
-        } catch (IOException e) {
-            e.printStackTrace();
+    public int getBelowPlayerLayerCount() {
+        return belowPlayerLayerCount;
+    }
+
+    public void drawLayer(Graphics2D g2, int layerIndex) {
+        if (layerIndex < 0 || layerIndex >= layers.size()) {
+            return;
         }
-    }
 
-    private BufferedImage scaleImage(BufferedImage original, int width, int height) {
-        BufferedImage scaledImage = new BufferedImage(width, height, original.getType());
-        Graphics2D g2 = scaledImage.createGraphics();
-        g2.drawImage(original, 0, 0, width, height, null);
-        g2.dispose();
-        
-        return scaledImage;
-    }
-
-    private void loadMap(String filePath) {
-        try {
-            InputStream is = getClass().getResourceAsStream(filePath);
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-            for (int row = 0; row < 75; row++) { // 75 is a placeholder number of rows for now
-                String line = br.readLine();
-                String[] num = line.split(",");
-
-                for (int col = 0; col < 75; col++) { // 75 is a placeholder number of cols for now
-                    tileNum[col][row] = Integer.parseInt(num[col]);
-                }
-            }
-            br.close();
-        } catch (IOException e) {        
-            e.printStackTrace();
-        }
-    }
-
-    public void draw(Graphics2D g2) {
+        int[][] layer = layers.get(layerIndex);
         int worldCol = 0;
         int worldRow = 0;
 
-        while (worldCol < 75 && worldRow < 75) {
-            int num = tileNum[worldCol][worldRow];
-            int worldX = worldCol * 48;
-            int worldY = worldRow * 48;
+        while (worldCol < mapWidth && worldRow < mapHeight) {
+            int num = layer[worldCol][worldRow];
+
+            if (zeroMeansEmpty && num == 0) {
+                worldCol++;
+                if (worldCol == mapWidth) {
+                    worldCol = 0;
+                    worldRow++;
+                }
+                continue;
+            }
+
+            Tile currentTile = getTile(num);
+            if (currentTile == null || currentTile.image == null) {
+                worldCol++;
+                if (worldCol == mapWidth) {
+                    worldCol = 0;
+                    worldRow++;
+                }
+                continue;
+            }
+
+            int worldX = worldCol * gh.tileSize;
+            int worldY = worldRow * gh.tileSize;
             int screenX = worldX - gh.player.worldX + gh.player.screenX;
             int screenY = worldY - gh.player.worldY + gh.player.screenY;
 
-            if (worldX + 48 > gh.player.worldX - gh.player.screenX && 
-                worldX - 48 < gh.player.worldX + gh.player.screenX && 
-                worldY + 48 > gh.player.worldY - gh.player.screenY && 
-                worldY - 48 < gh.player.worldY + gh.player.screenY) {
-
-                g2.drawImage(tile[num].image, screenX, screenY, null);
+            if (worldX + gh.tileSize > gh.player.worldX - gh.player.screenX &&
+                worldX - gh.tileSize < gh.player.worldX + gh.player.screenX &&
+                worldY + gh.tileSize > gh.player.worldY - gh.player.screenY &&
+                worldY - gh.tileSize < gh.player.worldY + gh.player.screenY) {
+                g2.drawImage(currentTile.image, screenX, screenY, null);
             }
-            worldCol++;
 
-            if (worldCol == 75) {
+            worldCol++;
+            if (worldCol == mapWidth) {
                 worldCol = 0;
                 worldRow++;
             }
         }
     }
-    
+
+    public boolean isCollisionAt(int col, int row) {
+        if (col < 0 || row < 0 || col >= mapWidth || row >= mapHeight) {
+            return true;
+        }
+
+        for (int[][] layer : layers) {
+            int tileId = layer[col][row];
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile currentTile = getTile(tileId);
+            if (currentTile != null && currentTile.collision) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Tile getTile(int globalId) {
+        if (zeroMeansEmpty && globalId == 0) {
+            return null;
+        }
+        return tileRegistry.get(globalId);
+    }
+
+    private void updateBelowPlayerLayerCount() {
+        belowPlayerLayerCount = layers.size();
+        for (int i = 0; i < layerNames.size(); i++) {
+            if (isAbovePlayerLayer(layerNames.get(i))) {
+                belowPlayerLayerCount = i;
+                return;
+            }
+        }
+    }
+
+    private boolean isAbovePlayerLayer(String layerName) {
+        String name = layerName == null ? "" : layerName.toLowerCase();
+        return name.contains("above") || name.contains("over") || name.contains("roof") || name.contains("top");
+    }
 }
