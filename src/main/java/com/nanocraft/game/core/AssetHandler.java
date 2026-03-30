@@ -1,0 +1,21 @@
+package com.nanocraft.game.core;
+
+import com.nanocraft.game.object.Key;
+
+public class AssetHandler {
+    private GameHandler gh;
+
+    public AssetHandler(GameHandler gh) {
+        this.gh = gh;
+    }
+
+    public void setObjects() {
+        drawKey(0, 49, 12);
+    }
+
+    private void drawKey(int i, int x, int y) {
+        gh.objs[i] = new Key(gh);
+        gh.objs[i].worldX = gh.tileSize * x;
+        gh.objs[i].worldY = gh.tileSize * y;
+    }
+}
