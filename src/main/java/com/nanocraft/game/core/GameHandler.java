@@ -4,9 +4,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import javax.swing.JPanel;
 
+import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.tile.TileHandler;
@@ -25,8 +28,13 @@ public class GameHandler extends JPanel implements Runnable {
     public KeyHandler kh = new KeyHandler();
     public Player player = new Player(this, kh);
     public TileHandler th = new TileHandler(this);
+
     private Sound music = new Sound();
     private Sound se = new Sound();
+    public CollisionHandler ch = new CollisionHandler(this);
+    public Entity objs[] = new Entity[10];
+    public ArrayList<Entity> entityList = new ArrayList<>();
+    public AssetHandler ah = new AssetHandler(this);
 
     public GameHandler() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -49,6 +57,7 @@ public class GameHandler extends JPanel implements Runnable {
         // se.load(10, "");
   
         // playMusic();
+        ah.setObjects();
     }
 
     public void startGame() {
@@ -63,29 +72,16 @@ public class GameHandler extends JPanel implements Runnable {
         long time = System.nanoTime();
         long currentTime;
 
-        // debug
-        // long timer = 0;
-        // int drawCount = 0;
-
         while (gameThread != null) {
             currentTime = System.nanoTime();
             delta += (currentTime - time) / drawInterval;
-            // timer += (currentTime - time);
             time = currentTime;
 
             while (delta >= 1) {
                 update();
                 repaint();
                 delta--;
-                // drawCount++;
             }
-
-            // // debug
-            // if (timer >= 1000000000) {
-            //     System.out.println("FPS: " + drawCount);
-            //     drawCount = 0;
-            //     timer = 0;
-            // }
         }
     }
 
@@ -96,9 +92,35 @@ public class GameHandler extends JPanel implements Runnable {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
+        entityList.add(player);
 
-        th.draw(g2d);
-        player.draw(g2d);
+        for (int i = 0; i < th.getBelowPlayerLayerCount(); i++) {
+            th.drawLayer(g2d, i);
+        }
+
+        for (int i = th.getBelowPlayerLayerCount(); i < th.getLayerCount(); i++) {
+            th.drawLayer(g2d, i);
+        }
+
+        for (int i = 0; i < objs.length; i++) {
+            if (objs[i] != null) {
+                entityList.add(objs[i]);
+            }
+        }
+
+        Collections.sort(entityList, new Comparator<Entity>() {
+            @Override
+            public int compare(Entity e1, Entity e2) {
+                int result = Integer.compare(e1.worldY, e2.worldY);
+                return result;
+            }
+        });
+
+        for (Entity e: entityList) {
+            e.draw(g2d);
+        }
+
+        entityList.clear();
         g2d.dispose();
     }
 

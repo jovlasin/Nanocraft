@@ -4,6 +4,8 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
+
 import javax.imageio.ImageIO;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.input.KeyHandler;
@@ -13,6 +15,8 @@ public class Player extends Entity {
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
     private KeyHandler kh;
+    public ArrayList<Entity> inventory = new ArrayList<>();
+    public final int inventorySize = 20;
 
     public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
@@ -43,6 +47,10 @@ public class Player extends Entity {
             }
 
             collisionOn = false;
+            gh.ch.checkTile(this);
+
+            int objIndex = gh.ch.checkObject(this, true);
+            acquireObject(objIndex);
 
             if (collisionOn == false) {
                 switch (direction) {
@@ -160,6 +168,28 @@ public class Player extends Entity {
         solidArea.height = 32;
         solidAreaDefaultX = solidArea.x;
         solidAreaDefaultY = solidArea.y;
+    }
+
+    private void acquireObject(int i) {
+        if (i != 999) {
+            String text;
+
+            if (inventory.size() < inventorySize) {
+                inventory.add(gh.objs[i]);
+                // gh.playSound(1);
+                // text = "Got a " + gh.objs[i].name + "!";
+                System.out.println("Got a " + gh.objs[i].name + "!");
+                gh.objs[i] = null;
+            }
+
+            else {
+                // text = "Inventory full!";
+                System.out.println("Inventory full!");
+            }
+            // gh.ui.addMessage(text);
+            
+            
+        }
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
