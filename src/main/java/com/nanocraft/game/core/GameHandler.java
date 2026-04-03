@@ -29,6 +29,7 @@ public class GameHandler extends JPanel implements Runnable {
     public TileHandler th = new TileHandler(this);
     public CollisionHandler ch = new CollisionHandler(this);
     public Entity objs[] = new Entity[10];
+    public Entity npcs[] = new Entity[10];
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
 
@@ -39,6 +40,7 @@ public class GameHandler extends JPanel implements Runnable {
         this.addKeyListener(kh);
         this.setFocusable(true);
         ah.setObjects();
+        ah.setNPCS();
     }
 
     public void startGame() {
@@ -68,6 +70,12 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void update() {
         player.update();
+
+        for (int i = 0; i < npcs.length; i++) {
+            if (npcs[i] != null) {
+                npcs[i].update();
+            }
+        }
     }
 
     public void paintComponent(Graphics g) {
@@ -81,6 +89,12 @@ public class GameHandler extends JPanel implements Runnable {
 
         for (int i = th.getBelowPlayerLayerCount(); i < th.getLayerCount(); i++) {
             th.drawLayer(g2d, i);
+        }
+
+        for (int i = 0; i < npcs.length; i++) {
+            if (npcs[i] != null) {
+                entityList.add(npcs[i]);
+            }
         }
 
         for (int i = 0; i < objs.length; i++) {
