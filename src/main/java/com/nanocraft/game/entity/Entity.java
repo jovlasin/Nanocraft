@@ -15,7 +15,7 @@ public class Entity {
     public GameHandler gh;
     public int worldX, worldY;
     public String direction;
-    public int spriteCounter = 0;
+    public int spriteCounter, actionCounter;
     public int spriteNum;
     public int speed;
     public boolean collisionOn, collision;
@@ -78,6 +78,51 @@ public class Entity {
             }
 
             g2.drawImage(image, screenX, screenY, null);
+        }
+    }
+
+    public void setAction() {}
+
+    public void update() {
+        setAction();
+
+        collisionOn = false;
+        gh.ch.checkTile(this);
+        gh.ch.checkObject(this, false);
+        gh.ch.checkEntity(this, gh.npcs);
+        boolean contact = gh.ch.checkPlayer(this);
+
+        if (collisionOn == false) {
+            switch (direction) {
+                case "up":
+                    worldY -= speed;
+                break;
+            
+                case "down":
+                    worldY += speed;
+                break;
+
+                case "left":
+                    worldX -= speed;
+                break;
+
+                case "right":
+                    worldX += speed;
+                break;
+            }
+        }
+        
+        spriteCounter++;
+
+        if (spriteCounter > 14) {
+            if (spriteNum == 1) {
+                spriteNum = 2;
+            }
+
+            else if (spriteNum == 2) {
+                spriteNum = 1;
+            }
+            spriteCounter = 0;
         }
     }
 }

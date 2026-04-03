@@ -52,6 +52,8 @@ public class Player extends Entity {
             int objIndex = gh.ch.checkObject(this, true);
             acquireObject(objIndex);
 
+            int npcIndex = gh.ch.checkEntity(this, gh.npcs);
+
             if (collisionOn == false) {
                 switch (direction) {
                     case "up":
