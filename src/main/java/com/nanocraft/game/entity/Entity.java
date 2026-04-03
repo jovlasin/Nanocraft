@@ -86,22 +86,30 @@ public class Entity {
     public void update() {
         setAction();
 
-        switch (direction) {
-            case "up":
-                worldY -= speed;
-            break;
-        
-            case "down":
-                worldY += speed;
-            break;
+        collisionOn = false;
+        gh.ch.checkTile(this);
+        gh.ch.checkObject(this, false);
+        gh.ch.checkEntity(this, gh.npcs);
+        boolean contact = gh.ch.checkPlayer(this);
 
-            case "left":
-                worldX -= speed;
-            break;
+        if (collisionOn == false) {
+            switch (direction) {
+                case "up":
+                    worldY -= speed;
+                break;
+            
+                case "down":
+                    worldY += speed;
+                break;
 
-            case "right":
-                worldX += speed;
-            break;
+                case "left":
+                    worldX -= speed;
+                break;
+
+                case "right":
+                    worldX += speed;
+                break;
+            }
         }
         
         spriteCounter++;
