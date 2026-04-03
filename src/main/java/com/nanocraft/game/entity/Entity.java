@@ -15,7 +15,7 @@ public class Entity {
     public GameHandler gh;
     public int worldX, worldY;
     public String direction;
-    public int spriteCounter = 0;
+    public int spriteCounter, actionCounter;
     public int spriteNum;
     public int speed;
     public boolean collisionOn, collision;
@@ -79,5 +79,9 @@ public class Entity {
 
             g2.drawImage(image, screenX, screenY, null);
         }
+    }
+
+    public void update() {
+        
     }
 }
