@@ -81,7 +81,40 @@ public class Entity {
         }
     }
 
+    public void setAction() {}
+
     public void update() {
+        setAction();
+
+        switch (direction) {
+            case "up":
+                worldY -= speed;
+            break;
         
+            case "down":
+                worldY += speed;
+            break;
+
+            case "left":
+                worldX -= speed;
+            break;
+
+            case "right":
+                worldX += speed;
+            break;
+        }
+        
+        spriteCounter++;
+
+        if (spriteCounter > 14) {
+            if (spriteNum == 1) {
+                spriteNum = 2;
+            }
+
+            else if (spriteNum == 2) {
+                spriteNum = 1;
+            }
+            spriteCounter = 0;
+        }
     }
 }
