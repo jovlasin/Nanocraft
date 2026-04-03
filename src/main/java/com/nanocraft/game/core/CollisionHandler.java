@@ -106,10 +106,88 @@ public class CollisionHandler {
     }
 
     public int checkEntity(Entity entity, Entity[] targets) {
-        return 999;
+        int index = 999;
+        int i = 0;
+
+        for (Entity target: targets) {
+            if (target != null) {
+                entity.solidArea.x = entity.worldX + entity.solidArea.x;
+                entity.solidArea.y = entity.worldY + entity.solidArea.y;
+
+                target.solidArea.x = target.worldX + target.solidArea.x;
+                target.solidArea.y = target.worldY + target.solidArea.y;
+
+                switch (entity.direction) {
+                    case "up":
+                        entity.solidArea.y -= entity.speed;
+                    break;
+
+                    case "down":
+                        entity.solidArea.y += entity.speed;
+                    break;
+
+                    case "left":
+                        entity.solidArea.x -= entity.speed;
+                    break;
+
+                    case "right":
+                        entity.solidArea.x += entity.speed;
+                    break;
+                }
+
+                if (entity.solidArea.intersects(target.solidArea)) {
+                    if (target != entity) {
+                        entity.collisionOn = true;
+                        index = i;
+                    }
+                }
+
+                entity.solidArea.x = entity.solidAreaDefaultX;
+                entity.solidArea.y = entity.solidAreaDefaultY;
+                target.solidArea.x = target.solidAreaDefaultX;
+                target.solidArea.y = target.solidAreaDefaultY;
+            }
+            i++;
+        }
+        return index;
     }
 
     public boolean checkPlayer(Entity entity) {
-        return false;
+        boolean contactPlayer = false;
+        entity.solidArea.x = entity.worldX + entity.solidArea.x;
+        entity.solidArea.y = entity.worldY + entity.solidArea.y;
+
+        gh.player.solidArea.x = gh.player.worldX + gh.player.solidArea.x;
+        gh.player.solidArea.y = gh.player.worldY + gh.player.solidArea.y;
+
+        switch (entity.direction) {
+            case "up":
+                entity.solidArea.y -= entity.speed;
+            break;
+
+            case "down":
+                entity.solidArea.y += entity.speed;
+            break;
+
+            case "left":
+                entity.solidArea.x -= entity.speed;
+            break;
+
+            case "right":
+                entity.solidArea.x += entity.speed;
+            break;
+        }
+
+        if (entity.solidArea.intersects(gh.player.solidArea)) {
+            entity.collisionOn = true;
+            contactPlayer = true;
+        }
+
+        entity.solidArea.x = entity.solidAreaDefaultX;
+        entity.solidArea.y = entity.solidAreaDefaultY;
+        gh.player.solidArea.x = gh.player.solidAreaDefaultX;
+        gh.player.solidArea.y = gh.player.solidAreaDefaultY;
+
+        return contactPlayer;
     }
 }
