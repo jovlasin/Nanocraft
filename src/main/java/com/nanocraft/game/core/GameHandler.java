@@ -33,6 +33,13 @@ public class GameHandler extends JPanel implements Runnable {
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
 
+    public final int title = 0;
+    public final int pause = 1;
+    public final int play = 2;
+    public final int dialogue = 2;
+    public final int stats = 4;
+    public int gameState = 999;
+
     public GameHandler() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.BLACK);
@@ -41,6 +48,9 @@ public class GameHandler extends JPanel implements Runnable {
         this.setFocusable(true);
         ah.setObjects();
         ah.setNPCS();
+
+        // gameState = title;
+        gameState = play;
     }
 
     public void startGame() {
@@ -69,53 +79,67 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void update() {
-        player.update();
+        if (gameState == play) {
+            player.update();
 
-        for (int i = 0; i < npcs.length; i++) {
-            if (npcs[i] != null) {
-                npcs[i].update();
+            for (int i = 0; i < npcs.length; i++) {
+                if (npcs[i] != null) {
+                    npcs[i].update();
+                }
             }
+        }
+
+        if (gameState == pause) {
+            // nothing
         }
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        entityList.add(player);
 
-        for (int i = 0; i < th.getBelowPlayerLayerCount(); i++) {
-            th.drawLayer(g2d, i);
+        if (gameState == title) {
+
         }
 
-        for (int i = th.getBelowPlayerLayerCount(); i < th.getLayerCount(); i++) {
-            th.drawLayer(g2d, i);
-        }
+        else {
+            entityList.add(player);
 
-        for (int i = 0; i < npcs.length; i++) {
-            if (npcs[i] != null) {
-                entityList.add(npcs[i]);
+            for (int i = 0; i < th.getBelowPlayerLayerCount(); i++) {
+                th.drawLayer(g2d, i);
             }
-        }
 
-        for (int i = 0; i < objs.length; i++) {
-            if (objs[i] != null) {
-                entityList.add(objs[i]);
+            for (int i = th.getBelowPlayerLayerCount(); i < th.getLayerCount(); i++) {
+                th.drawLayer(g2d, i);
             }
-        }
 
-        Collections.sort(entityList, new Comparator<Entity>() {
-            @Override
-            public int compare(Entity e1, Entity e2) {
-                int result = Integer.compare(e1.worldY, e2.worldY);
-                return result;
+            for (int i = 0; i < npcs.length; i++) {
+                if (npcs[i] != null) {
+                    entityList.add(npcs[i]);
+                }
             }
-        });
 
-        for (Entity e: entityList) {
-            e.draw(g2d);
+            for (int i = 0; i < objs.length; i++) {
+                if (objs[i] != null) {
+                    entityList.add(objs[i]);
+                }
+            }
+
+            Collections.sort(entityList, new Comparator<Entity>() {
+                @Override
+                public int compare(Entity e1, Entity e2) {
+                    int result = Integer.compare(e1.worldY, e2.worldY);
+                    return result;
+                }
+            });
+
+            for (Entity e: entityList) {
+                e.draw(g2d);
+            }
+
+            entityList.clear();
         }
-
-        entityList.clear();
+        
         g2d.dispose();
     }
 }
