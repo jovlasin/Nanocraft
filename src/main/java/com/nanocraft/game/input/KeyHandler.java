@@ -20,9 +20,9 @@ public class KeyHandler implements KeyListener {
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
 
-        // if (gh.gameState == gh.title) {
-        //     titleState(code);
-        // }
+        if (gh.gameState == gh.title) {
+            titleState(code);
+        }
 
         if (gh.gameState == gh.play) {
             playState(code);
@@ -66,9 +66,41 @@ public class KeyHandler implements KeyListener {
         }
     }
 
-    // private void titleState(int code) {
+    private void titleState(int code) {
+        if (gh.ui.titleScreen == 0) {
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+                gh.ui.commandNum--;
 
-    // }
+                if (gh.ui.commandNum < 0) {
+                    gh.ui.commandNum = 2;
+                }
+            }
+
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+                gh.ui.commandNum++;
+
+                if (gh.ui.commandNum > 2) {
+                    gh.ui.commandNum = 0;
+                }
+            }
+
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                if (gh.ui.commandNum == 0) {
+                    gh.ui.titleScreen = 1;
+                    gh.gameState = gh.play;
+                    gh.playMusic();
+                }
+
+                else if (gh.ui.commandNum == 1) {
+                    // TODO
+                }
+
+                else if (gh.ui.commandNum == 2) {
+                    System.exit(0);
+                }
+            }   
+        }
+    }
 
     private void playState(int code) {
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
