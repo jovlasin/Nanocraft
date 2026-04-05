@@ -24,7 +24,7 @@ public class GameHandler extends JPanel implements Runnable {
     public final int screenHeight = tileSize * maxScreenRow; // scale screen height to 576 tall
     public double fps = 60; // update the game 60 times per sec
     public Thread gameThread;
-    public KeyHandler kh = new KeyHandler();
+    public KeyHandler kh = new KeyHandler(this);
     public Player player = new Player(this, kh);
     public TileHandler th = new TileHandler(this);
     public CollisionHandler ch = new CollisionHandler(this);
