@@ -49,20 +49,24 @@ public class KeyHandler implements KeyListener {
     public void keyReleased(KeyEvent e) {
         int code = e.getKeyCode();
 
-        if (code == KeyEvent.VK_UP) {
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
             up = false;
         }
 
-        if (code == KeyEvent.VK_DOWN) {
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
             down = false;
         }
 
-        if (code == KeyEvent.VK_LEFT) {
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
             left = false;
         }
 
-        if (code == KeyEvent.VK_RIGHT) {
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
             right = false;
+        }
+
+        if (code == KeyEvent.VK_SPACE) {
+            space = false;
         }
     }
 
@@ -93,6 +97,7 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_SPACE) {
             space = true;
+            gh.player.requestMine();
         }
 
         if (code == KeyEvent.VK_TAB) {
