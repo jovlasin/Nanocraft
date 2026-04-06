@@ -33,9 +33,7 @@ public class KeyHandler implements KeyListener {
         }
 
         else if (gh.gameState == gh.dialogue) {
-            if (code == KeyEvent.VK_SPACE) {
-                gh.gameState = gh.play;
-            }
+            dialogueState(code);
         }
 
         else if (gh.gameState == gh.stats) { 
@@ -140,9 +138,11 @@ public class KeyHandler implements KeyListener {
         }
     }
 
-    // private void dialogueState(int code) {
-
-    // }
+    private void dialogueState(int code) {
+        if (code == KeyEvent.VK_SPACE) {
+            gh.gameState = gh.play;
+        }
+    }
 
     private void statsState(int code) {
         if (code == KeyEvent.VK_TAB) {
