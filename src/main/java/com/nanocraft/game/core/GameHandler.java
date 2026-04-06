@@ -45,8 +45,9 @@ public class GameHandler extends JPanel implements Runnable {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.BLACK);
         this.setDoubleBuffered(true);
-        this.addKeyListener(kh);
         this.setFocusable(true);
+        this.setFocusTraversalKeysEnabled(false);
+        this.addKeyListener(kh);
         ah.setObjects();
         ah.setNPCS();
 
@@ -148,5 +149,10 @@ public class GameHandler extends JPanel implements Runnable {
     public void playMusic() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
+    }
+
+    public void playSound(int i) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'playSound'");
     }
 }
