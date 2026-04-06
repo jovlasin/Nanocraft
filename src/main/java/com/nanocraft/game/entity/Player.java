@@ -11,9 +11,12 @@ import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.input.KeyHandler;
 
 public class Player extends Entity {
+    private static final int MINE_COOLDOWN_TICKS = 8;
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
+    private int mineCooldownTicks;
+    private boolean mineRequested;
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
@@ -28,6 +31,16 @@ public class Player extends Entity {
     }
 
     public void update() {
+        if (mineCooldownTicks > 0) {
+            mineCooldownTicks--;
+        }
+
+        if (mineRequested && mineCooldownTicks == 0) {
+            attemptMine();
+            mineCooldownTicks = MINE_COOLDOWN_TICKS;
+        }
+        mineRequested = false;
+
         if (kh.up == true || kh.down == true || kh.left == true || kh.right == true) {
             
             if (kh.up == true) {
@@ -52,7 +65,7 @@ public class Player extends Entity {
             int objIndex = gh.ch.checkObject(this, true);
             acquireObject(objIndex);
 
-            int npcIndex = gh.ch.checkEntity(this, gh.npcs);
+            gh.ch.checkEntity(this, gh.npcs);
 
             if (collisionOn == false) {
                 switch (direction) {
@@ -95,6 +108,40 @@ public class Player extends Entity {
                 standCounter = 0;
             }
         }
+    }
+
+    public void requestMine() {
+        mineRequested = true;
+    }
+
+    public void attemptMine() {
+        int centerX = worldX + solidArea.x + (solidArea.width / 2);
+        int centerY = worldY + solidArea.y + (solidArea.height / 2);
+
+        switch (direction) {
+            case "up":
+                centerY -= gh.tileSize;
+            break;
+
+            case "down":
+                centerY += gh.tileSize;
+            break;
+
+            case "left":
+                centerX -= gh.tileSize;
+            break;
+
+            case "right":
+                centerX += gh.tileSize;
+            break;
+
+            default:
+            break;
+        }
+
+        int targetCol = centerX / gh.tileSize;
+        int targetRow = centerY / gh.tileSize;
+        gh.th.damageBreakableTile(targetCol, targetRow, 1);
     }
 
     public void draw(Graphics2D g2) {
@@ -174,8 +221,6 @@ public class Player extends Entity {
 
     private void acquireObject(int i) {
         if (i != 999) {
-            String text;
-
             if (inventory.size() < inventorySize) {
                 inventory.add(gh.objs[i]);
                 // gh.playSound(1);

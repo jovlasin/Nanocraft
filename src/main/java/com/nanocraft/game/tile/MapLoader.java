@@ -139,6 +139,9 @@ public final class MapLoader {
                 String imagePath = ResourceLoader.resolveResourcePath(mapFilePath, tileData.image);
                 tile.image = ResourceLoader.loadScaledImage(imagePath, tileSize);
                 tile.collision = hasCollisionProperty(tileData.properties);
+                tile.maxHealth = getIntProperty(tileData.properties, "oreHealth", 0);
+                tile.replacementTileId = getIntProperty(tileData.properties, "replacementTileId", 0);
+                tile.dropItemType = getStringProperty(tileData.properties, "dropItemType", null);
 
                 int globalId = tileset.firstgid + tileData.id;
                 tileRegistry.put(globalId, tile);
@@ -165,12 +168,18 @@ public final class MapLoader {
         }
 
         Map<Integer, Boolean> collisionByTileId = new HashMap<>();
+        Map<Integer, Integer> healthByTileId = new HashMap<>();
+        Map<Integer, Integer> replacementByTileId = new HashMap<>();
+        Map<Integer, String> dropByTileId = new HashMap<>();
         if (tileset.tiles != null) {
             for (TiledTileData tileData : tileset.tiles) {
                 if (tileData == null) {
                     continue;
                 }
                 collisionByTileId.put(tileData.id, hasCollisionProperty(tileData.properties));
+                healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
+                replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
+                dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
             }
         }
 
@@ -185,6 +194,9 @@ public final class MapLoader {
             Tile tile = new Tile();
             tile.image = ResourceLoader.scaleImage(tilesetImage, tileSize, tileSize);
             tile.collision = collisionByTileId.getOrDefault(0, false);
+            tile.maxHealth = healthByTileId.getOrDefault(0, 0);
+            tile.replacementTileId = replacementByTileId.getOrDefault(0, 0);
+            tile.dropItemType = dropByTileId.get(0);
             tileRegistry.put(tileset.firstgid, tile);
             return;
         }
@@ -203,6 +215,9 @@ public final class MapLoader {
             Tile tile = new Tile();
             tile.image = ResourceLoader.scaleImage(tileImage, tileSize, tileSize);
             tile.collision = collisionByTileId.getOrDefault(localId, false);
+            tile.maxHealth = healthByTileId.getOrDefault(localId, 0);
+            tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
+            tile.dropItemType = dropByTileId.get(localId);
             tileRegistry.put(tileset.firstgid + localId, tile);
         }
     }
@@ -227,12 +242,32 @@ public final class MapLoader {
             return;
         }
 
-        Tile tile = new Tile();
-        tile.image = ResourceLoader.loadScaledImage(imagePath, tileSize);
-        tile.collision = false;
+        BufferedImage sharedImage = ResourceLoader.loadScaledImage(imagePath, tileSize);
+        Map<Integer, Boolean> collisionByTileId = new HashMap<>();
+        Map<Integer, Integer> healthByTileId = new HashMap<>();
+        Map<Integer, Integer> replacementByTileId = new HashMap<>();
+        Map<Integer, String> dropByTileId = new HashMap<>();
+        if (tileset.tiles != null) {
+            for (TiledTileData tileData : tileset.tiles) {
+                if (tileData == null) {
+                    continue;
+                }
+                collisionByTileId.put(tileData.id, hasCollisionProperty(tileData.properties));
+                healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
+                replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
+                dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
+            }
+        }
 
         int rangeEndExclusive = Math.max(tileset.firstgid + 1, nextFirstgid);
         for (int gid = tileset.firstgid; gid < rangeEndExclusive; gid++) {
+            int localId = gid - tileset.firstgid;
+            Tile tile = new Tile();
+            tile.image = sharedImage;
+            tile.collision = collisionByTileId.getOrDefault(localId, false);
+            tile.maxHealth = healthByTileId.getOrDefault(localId, 0);
+            tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
+            tile.dropItemType = dropByTileId.get(localId);
             tileRegistry.put(gid, tile);
         }
     }
@@ -347,6 +382,51 @@ public final class MapLoader {
         return false;
     }
 
+    private int getIntProperty(List<TiledPropertyData> properties, String propertyName, int defaultValue) {
+        if (properties == null || propertyName == null) {
+            return defaultValue;
+        }
+
+        for (TiledPropertyData property : properties) {
+            if (property == null || property.name == null) {
+                continue;
+            }
+
+            if (!propertyName.equalsIgnoreCase(property.name)) {
+                continue;
+            }
+
+            return parseInt(property.value, defaultValue);
+        }
+
+        return defaultValue;
+    }
+
+    private String getStringProperty(List<TiledPropertyData> properties, String propertyName, String defaultValue) {
+        if (properties == null || propertyName == null) {
+            return defaultValue;
+        }
+
+        for (TiledPropertyData property : properties) {
+            if (property == null || property.name == null) {
+                continue;
+            }
+
+            if (!propertyName.equalsIgnoreCase(property.name)) {
+                continue;
+            }
+
+            if (property.value == null) {
+                return defaultValue;
+            }
+
+            String value = String.valueOf(property.value).trim();
+            return value.isEmpty() ? defaultValue : value;
+        }
+
+        return defaultValue;
+    }
+
     private boolean parseBoolean(Object value) {
         if (value instanceof Boolean boolValue) {
             return boolValue;
@@ -358,6 +438,22 @@ public final class MapLoader {
             return Boolean.parseBoolean(stringValue);
         }
         return false;
+    }
+
+    private int parseInt(Object value, int defaultValue) {
+        if (value instanceof Number numberValue) {
+            return numberValue.intValue();
+        }
+
+        if (value instanceof String stringValue) {
+            try {
+                return Integer.parseInt(stringValue.trim());
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+
+        return defaultValue;
     }
 
     private int stripFlipFlags(int gid) {
