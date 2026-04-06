@@ -139,6 +139,7 @@ public class GameHandler extends JPanel implements Runnable {
             }
 
             entityList.clear();
+            ui.draw(g2d);
         }
         
         g2d.dispose();

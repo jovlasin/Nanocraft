@@ -32,6 +32,10 @@ public class Ui {
         if (gh.gameState == gh.title) {
             drawTitleScreen();
         }
+
+        else if (gh.gameState == gh.pause) {
+            drawPauseScreen();
+        }
     }
 
     private void drawTitleScreen() {
@@ -82,5 +86,15 @@ public class Ui {
                 g2d.drawString(">", x - gh.tileSize, y);
             }
         }
+    }
+
+    private void drawPauseScreen() {
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 100f));
+        String text = "PAUSED";
+        
+        int x = u.getXforCenteredText(text, g2d);
+        int y = gh.screenHeight / 2;
+
+        g2d.drawString(text, x, y);
     }
 }

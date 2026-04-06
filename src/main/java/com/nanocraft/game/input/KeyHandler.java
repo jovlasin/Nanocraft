@@ -28,11 +28,9 @@ public class KeyHandler implements KeyListener {
             playState(code);
         }
 
-        // else if (gh.gameState == gh.pause) {
-        //     if (code == KeyEvent.VK_P) {
-        //         gh.gameState = gh.play;
-        //     }
-        // }
+        else if (gh.gameState == gh.pause) {
+            pauseState(code);
+        }
 
         // else if (gh.gameState == gh.dialogue) {
         //     if (code == KeyEvent.VK_SPACE) {
@@ -136,9 +134,11 @@ public class KeyHandler implements KeyListener {
         // }
     }
 
-    // private void pauseState(int code) {
-
-    // }
+    private void pauseState(int code) {
+        if (code == KeyEvent.VK_P) {
+            gh.gameState = gh.play;
+        }
+    }
 
     // private void dialogueState(int code) {
 
