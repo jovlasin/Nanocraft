@@ -32,11 +32,11 @@ public class KeyHandler implements KeyListener {
             pauseState(code);
         }
 
-        // else if (gh.gameState == gh.dialogue) {
-        //     if (code == KeyEvent.VK_SPACE) {
-        //         gh.gameState = gh.play;
-        //     }
-        // }
+        else if (gh.gameState == gh.dialogue) {
+            if (code == KeyEvent.VK_SPACE) {
+                gh.gameState = gh.play;
+            }
+        }
 
         else if (gh.gameState == gh.stats) { 
             statsState(code);
@@ -47,19 +47,19 @@ public class KeyHandler implements KeyListener {
     public void keyReleased(KeyEvent e) {
         int code = e.getKeyCode();
 
-        if (code == KeyEvent.VK_UP) {
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
             up = false;
         }
 
-        if (code == KeyEvent.VK_DOWN) {
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
             down = false;
         }
 
-        if (code == KeyEvent.VK_LEFT) {
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
             left = false;
         }
 
-        if (code == KeyEvent.VK_RIGHT) {
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
             right = false;
         }
     }
