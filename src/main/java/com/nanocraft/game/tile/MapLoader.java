@@ -2,18 +2,28 @@ package com.nanocraft.game.tile;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 import javax.imageio.ImageIO;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 public final class MapLoader {
     public static final class MapData {
@@ -283,11 +293,12 @@ public final class MapLoader {
             }
 
             int[][] grid = new int[mapWidth][mapHeight];
-            int maxEntries = Math.min(layerData.data.length, mapWidth * mapHeight);
+            int[] decodedLayerData = decodeLayerData(layerData);
+            int maxEntries = Math.min(decodedLayerData.length, mapWidth * mapHeight);
             for (int index = 0; index < maxEntries; index++) {
                 int col = index % mapWidth;
                 int row = index / mapWidth;
-                grid[col][row] = stripFlipFlags(layerData.data[index]);
+                grid[col][row] = stripFlipFlags(decodedLayerData[index]);
             }
 
             layers.add(grid);
@@ -459,5 +470,114 @@ public final class MapLoader {
     private int stripFlipFlags(int gid) {
         // Tiled encodes flip/rotation flags in the highest 3 bits.
         return gid & 0x1FFFFFFF;
+    }
+
+    private int[] decodeLayerData(TiledLayerData layerData) {
+        JsonElement dataElement = layerData.data;
+
+        if (dataElement.isJsonArray()) {
+            return decodeJsonArrayLayerData(dataElement.getAsJsonArray());
+        }
+
+        if (!dataElement.isJsonPrimitive()) {
+            throw new IllegalStateException("Unsupported Tiled layer data format for layer: " + layerData.name);
+        }
+
+        JsonPrimitive primitive = dataElement.getAsJsonPrimitive();
+        if (!primitive.isString()) {
+            throw new IllegalStateException("Unsupported Tiled layer primitive data for layer: " + layerData.name);
+        }
+
+        String rawData = primitive.getAsString();
+        String encoding = layerData.encoding == null ? "" : layerData.encoding.trim().toLowerCase();
+        String compression = layerData.compression == null ? "" : layerData.compression.trim().toLowerCase();
+
+        if ("csv".equals(encoding)) {
+            return decodeCsvLayerData(rawData);
+        }
+
+        if ("base64".equals(encoding) || encoding.isEmpty()) {
+            return decodeBase64LayerData(rawData, compression);
+        }
+
+        throw new IllegalStateException(
+            "Unsupported Tiled layer encoding '" + encoding + "' for layer: " + layerData.name
+        );
+    }
+
+    private int[] decodeJsonArrayLayerData(JsonArray arrayData) {
+        int[] decoded = new int[arrayData.size()];
+        for (int i = 0; i < arrayData.size(); i++) {
+            JsonElement value = arrayData.get(i);
+            decoded[i] = value == null || value.isJsonNull() ? 0 : value.getAsInt();
+        }
+        return decoded;
+    }
+
+    private int[] decodeCsvLayerData(String rawData) {
+        if (rawData == null || rawData.isBlank()) {
+            return new int[0];
+        }
+
+        String[] values = rawData.split(",");
+        int[] decoded = new int[values.length];
+        for (int i = 0; i < values.length; i++) {
+            String current = values[i].trim();
+            decoded[i] = current.isEmpty() ? 0 : Integer.parseInt(current);
+        }
+        return decoded;
+    }
+
+    private int[] decodeBase64LayerData(String rawData, String compression) {
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(rawData.replaceAll("\\s+", ""));
+            byte[] uncompressedBytes = decompressLayerBytes(decodedBytes, compression);
+            return bytesToIntArray(uncompressedBytes);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid base64-encoded Tiled layer data", e);
+        }
+    }
+
+    private byte[] decompressLayerBytes(byte[] bytes, String compression) {
+        if (compression == null || compression.isBlank()) {
+            return bytes;
+        }
+
+        try {
+            if ("gzip".equals(compression)) {
+                return readAllBytes(new GZIPInputStream(new ByteArrayInputStream(bytes)));
+            }
+
+            if ("zlib".equals(compression)) {
+                return readAllBytes(new InflaterInputStream(new ByteArrayInputStream(bytes)));
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to decompress Tiled layer data", e);
+        }
+
+        throw new IllegalStateException("Unsupported Tiled layer compression: " + compression);
+    }
+
+    private byte[] readAllBytes(InputStream stream) throws IOException {
+        try (InputStream input = stream; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+            return output.toByteArray();
+        }
+    }
+
+    private int[] bytesToIntArray(byte[] bytes) {
+        int valueCount = bytes.length / 4;
+        int[] decoded = new int[valueCount];
+
+        ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < valueCount; i++) {
+            decoded[i] = buffer.getInt();
+        }
+
+        return decoded;
     }
 }

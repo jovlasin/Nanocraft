@@ -207,7 +207,7 @@ public class Player extends Entity {
     }
 
     private void setPos() {
-        worldX = gh.tileSize * 50;
+        worldX = gh.tileSize * 20;
         worldY = gh.tileSize * 16;
 
         solidArea = new Rectangle();
