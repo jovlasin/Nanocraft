@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.object.Heart;
@@ -16,6 +17,9 @@ public class Ui {
     public Graphics2D g2d;
     public int commandNum, titleScreen, slotCol, slotRow;
     public BufferedImage fullHeart, halfHeart, blankHeart;
+    public ArrayList<String> message = new ArrayList<>();
+    public ArrayList<Integer> counter = new ArrayList<>();
+    public String currentDialogue = "";
     private Utility u;
 
     public Ui(GameHandler gh) {
@@ -46,10 +50,16 @@ public class Ui {
 
         else if (gh.gameState == gh.play) {
             drawPlayerHealth();
+            drawMessage();
         }
 
         else if (gh.gameState == gh.pause) {
             drawPauseScreen();
+        }
+
+        else if (gh.gameState == gh.dialogue) {
+            drawPlayerHealth();
+            drawDialogue();
         }
 
         else if (gh.gameState == gh.stats) {
@@ -293,5 +303,47 @@ public class Ui {
         // textY += gh.tileSize;
 
         // g2d.drawImage(gh.player.currentShield.down1, tailX - gh.tileSize, textY + 4, null);
+    }
+
+    private void drawDialogue() {
+        int x = gh.tileSize * 2;
+        int y = gh.tileSize / 2;
+        int width = gh.screenWidth - (gh.tileSize * 4);
+        int height = gh.tileSize * 4;
+        u.drawSubWindow(x, y, width, height, g2d);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 32f));
+        x += gh.tileSize;
+        y += gh.tileSize;
+
+        for (String line: currentDialogue.split("\n")) {
+            g2d.drawString(line, x, y);
+            y += 40;
+        }
+    }
+
+    private void drawMessage() {
+        int messageX = gh.tileSize;
+        int messageY = gh.tileSize * 4;
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
+
+        for (int i = 0; i < message.size(); i++) {
+            
+            if (message.get(i) != null) {
+                g2d.setColor(Color.black);
+                g2d.drawString(message.get(i), messageX + 2, messageY + 2);
+                g2d.setColor(Color.white);
+                g2d.drawString(message.get(i), messageX, messageY);
+
+                int count = counter.get(i) + 1;
+                counter.set(i, count);
+                messageY += 50;
+
+                if (counter.get(i) > 180) {
+                    message.remove(i);
+                    counter.remove(i);
+                }
+            }    
+        }
     }
 }
