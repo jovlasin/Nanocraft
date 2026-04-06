@@ -4,13 +4,18 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
+
+import com.nanocraft.game.entity.Entity;
+import com.nanocraft.game.object.Heart;
 
 public class Ui {
     private GameHandler gh;
     private Font text;
     public Graphics2D g2d;
     public int commandNum, titleScreen, slotCol, slotRow;
+    public BufferedImage fullHeart, halfHeart, blankHeart;
     private Utility u;
 
     public Ui(GameHandler gh) {
@@ -23,6 +28,11 @@ public class Ui {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        Entity heart = new Heart(gh);
+        fullHeart = heart.image;
+        halfHeart = heart.image2;
+        blankHeart = heart.image3;
     }
 
     public void draw(Graphics2D g2d) {
@@ -32,6 +42,10 @@ public class Ui {
 
         if (gh.gameState == gh.title) {
             drawTitleScreen();
+        }
+
+        else if (gh.gameState == gh.play) {
+            drawPlayerHealth();
         }
 
         else if (gh.gameState == gh.pause) {
@@ -102,6 +116,30 @@ public class Ui {
         int y = gh.screenHeight / 2;
 
         g2d.drawString(text, x, y);
+    }
+
+    private void drawPlayerHealth() {
+        int x = gh.tileSize / 2;
+        int y = gh.tileSize / 2;
+        int max = gh.player.maxLife;
+        int life = gh.player.life;
+
+        // TODO: implement logic for actual player health
+
+        for (int i = 0; i < max / 2; i++) {
+            g2d.drawImage(blankHeart, x, y, null);
+
+            int hearts = life - (i * 2);
+
+            if (hearts >= 2) {
+                g2d.drawImage(fullHeart, x, y, null);
+            }
+
+            else if (hearts == 1) {
+                g2d.drawImage(halfHeart, x, y, null);
+            }
+            x += gh.tileSize;
+        }
     }
 
     private void drawInventory() {
