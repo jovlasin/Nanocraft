@@ -87,6 +87,8 @@ public class Player extends Entity {
                         worldX += speed;
                     break;
                 }
+
+                gh.th.checkMapTransition();
             }
             spriteCounter++;
 
@@ -263,4 +265,3 @@ public class Player extends Entity {
         return scaledImage;
     }
 }
-

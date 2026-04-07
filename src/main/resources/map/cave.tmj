@@ -721,6 +721,31 @@
          "spacing":0,
          "tilecount":1,
          "tileheight":16,
+         "tiles":[
+                {
+                 "id":0,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"right"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"spawn.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":47
+                        }]
+                }],
          "tilewidth":16
         }, 
         {
