@@ -7,6 +7,8 @@ import com.google.gson.JsonElement;
 class TiledMapData {
     int width;
     int height;
+    int tilewidth;
+    int tileheight;
     List<TiledLayerData> layers;
     List<TiledTilesetData> tilesets;
 }
@@ -17,10 +19,12 @@ class TiledLayerData {
     JsonElement data;
     String encoding;
     String compression;
+    List<TiledObjectData> objects;
 }
 
 class TiledTilesetData {
     int firstgid;
+    String name;
     String source;
     String image;
     int imagewidth;
@@ -41,4 +45,15 @@ class TiledTileData {
 class TiledPropertyData {
     String name;
     Object value;
+}
+
+class TiledObjectData {
+    int id;
+    String name;
+    String type;
+    double x;
+    double y;
+    double width;
+    double height;
+    List<TiledPropertyData> properties;
 }
