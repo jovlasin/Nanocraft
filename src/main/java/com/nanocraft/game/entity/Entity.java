@@ -15,9 +15,9 @@ public class Entity {
     public GameHandler gh;
     public int worldX, worldY;
     public String direction;
-    public int spriteCounter, actionCounter;
-    public int spriteNum;
-    public int speed;
+    public int spriteCounter, actionCounter, spriteNum;
+    public int speed, maxLife, maxMana, mana, life, level, strength, dexterity, attack, defense, exp, nextLevelExp, coin;
+    public Entity currentWeapon, currentShield, projectile;
     public boolean collisionOn, collision;
     public String name;
     public String description;
@@ -25,6 +25,7 @@ public class Entity {
     public BufferedImage image, image2, image3;
     public int solidAreaDefaultX, solidAreaDefaultY;
     public Rectangle solidArea;
+    public Rectangle attackArea;
 
     public Entity(GameHandler gh) {
         this.gh = gh;

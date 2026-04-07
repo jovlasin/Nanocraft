@@ -20,8 +20,6 @@ public class Player extends Entity {
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
-    public int maxLife;
-    public int life;
 
     public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
@@ -30,6 +28,17 @@ public class Player extends Entity {
         setStats();
         setPos();
         getImage();
+    }
+
+    public int getAttack() {
+        // attackArea = currentWeapon.attackArea;
+        // return strength * currentWeapon.attackValue;
+        return -999;
+    }
+
+    public int getDefense() {
+        // return dexterity * currentShield.defenseValue;
+        return -999;
     }
 
     public void update() {
@@ -206,6 +215,20 @@ public class Player extends Entity {
 
     private void setStats() {
         speed = 4;
+        maxLife = 6;
+        life = maxLife;
+        level = 1;
+        strength = 1;
+        dexterity = 1;
+        exp = 0;
+        nextLevelExp = 5;
+        coin = 0;
+        currentWeapon = new Sword(gh);
+        currentShield = new OldShield(gm);
+        projectile = new Arrow(gm);
+        attack = getAttack();
+        defense = getDefense();
+
     }
 
     private void setPos() {
