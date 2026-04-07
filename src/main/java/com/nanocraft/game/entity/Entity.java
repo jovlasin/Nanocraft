@@ -28,12 +28,26 @@ public class Entity {
     public Rectangle attackArea;
     public int dialogueIndex;
     public String[] dialogues;
+    public boolean invincible;
+    public boolean dying;
+    public boolean alive;
+
+    public final int player = 0;
+    public final int npc = 1;
+    public final int monster = 2;
+    public final int sword = 3;
+    public final int axe = 4;
+    public final int shield = 5;
+    public final int consumable = 6;
+    public int type;
 
     public Entity(GameHandler gh) {
         this.gh = gh;
         this.solidArea = new Rectangle();
         this.direction = "down";
         this.spriteNum = 1;
+        this.dialogues = new String[20];
+        this.alive = true;
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
@@ -94,7 +108,12 @@ public class Entity {
         gh.ch.checkTile(this);
         gh.ch.checkObject(this, false);
         gh.ch.checkEntity(this, gh.npcs);
+        gh.ch.checkEntity(this, gh.monsters);
         boolean contact = gh.ch.checkPlayer(this);
+
+        if (type == monster && contact == true) {
+            // damage(attack);
+        }
 
         if (collisionOn == false) {
             switch (direction) {

@@ -79,7 +79,8 @@ public class Player extends Entity {
             int npcIndex = gh.ch.checkEntity(this, gh.npcs);
             interactNPC(npcIndex);
 
-            gh.ch.checkEntity(this, gh.npcs);
+            int monsterIndex = gh.ch.checkEntity(this, gh.monsters);
+            interactMonster(monsterIndex);
 
             if (collisionOn == false) {
                 switch (direction) {
@@ -271,6 +272,21 @@ public class Player extends Entity {
                 // cancelAttack = true;
                 gh.gameState = gh.dialogue;
                 gh.npcs[i].speak();
+            }
+        }
+    }
+
+    private void interactMonster(int i) {
+        if (i != 999) {
+            if (invincible == false && gh.monsters[i].dying == false) {
+                gh.playSound(6);
+                int damage = gh.monsters[i].attack - defense;
+
+                if (damage < 0) {
+                    damage = 0;
+                }
+                life -= damage;
+                invincible = true;
             }
         }
     }
