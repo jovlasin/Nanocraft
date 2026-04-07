@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
 import com.nanocraft.game.core.GameHandler;
 
 public class TileHandler {
@@ -14,6 +13,7 @@ public class TileHandler {
     private final GameHandler gh;
     private final Map<Integer, Tile> tileRegistry;
     private final List<int[][]> layers;
+    private final List<int[][]> layerHealth;
     private final List<String> layerNames;
 
     private int mapWidth;
@@ -25,6 +25,7 @@ public class TileHandler {
         this.gh = gh;
         this.tileRegistry = new HashMap<>();
         this.layers = new ArrayList<>();
+        this.layerHealth = new ArrayList<>();
         this.layerNames = new ArrayList<>();
 
         MapLoader mapLoader = new MapLoader(gh.tileSize);
@@ -35,6 +36,7 @@ public class TileHandler {
         mapWidth = mapData.mapWidth;
         mapHeight = mapData.mapHeight;
         zeroMeansEmpty = mapData.zeroMeansEmpty;
+        initializeLayerHealth();
         updateBelowPlayerLayerCount();
     }
 
@@ -116,11 +118,107 @@ public class TileHandler {
         return false;
     }
 
+    public void damageBreakableTile(int col, int row, int damage) {
+        if (!isInsideMap(col, row) || damage <= 0) {
+            return;
+        }
+
+        for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--) {
+            int[][] layer = layers.get(layerIndex);
+            int tileId = layer[col][row];
+
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile tile = getTile(tileId);
+            if (tile == null || tile.maxHealth <= 0) {
+                continue;
+            }
+
+            int currentHealth = getLayerHealth(layerIndex, col, row);
+            if (currentHealth <= 0) {
+                currentHealth = tile.maxHealth;
+            }
+
+            int nextHealth = currentHealth - damage;
+            if (nextHealth > 0) {
+                setLayerHealth(layerIndex, col, row, nextHealth);
+                return;
+            }
+
+            replaceTile(layerIndex, col, row, tile.replacementTileId);
+            if (tile.dropItemType != null && !tile.dropItemType.isBlank()) {
+                int dropWorldX = col * gh.tileSize;
+                int dropWorldY = row * gh.tileSize;
+                gh.spawnDroppedItem(dropWorldX, dropWorldY, tile.dropItemType);
+            }
+            return;
+        }
+    }
+
+    public void replaceTile(int layerIndex, int col, int row, int newTileId) {
+        if (!isInsideMap(col, row) || layerIndex < 0 || layerIndex >= layers.size()) {
+            return;
+        }
+
+        int[][] layer = layers.get(layerIndex);
+        layer[col][row] = newTileId;
+        setLayerHealth(layerIndex, col, row, initialHealthForTile(newTileId));
+    }
+
     private Tile getTile(int globalId) {
         if (zeroMeansEmpty && globalId == 0) {
             return null;
         }
         return tileRegistry.get(globalId);
+    }
+
+    private void initializeLayerHealth() {
+        layerHealth.clear();
+
+        for (int[][] layer : layers) {
+            int[][] healthGrid = new int[mapWidth][mapHeight];
+            for (int col = 0; col < mapWidth; col++) {
+                for (int row = 0; row < mapHeight; row++) {
+                    healthGrid[col][row] = initialHealthForTile(layer[col][row]);
+                }
+            }
+            layerHealth.add(healthGrid);
+        }
+    }
+
+    private int initialHealthForTile(int tileId) {
+        if (zeroMeansEmpty && tileId == 0) {
+            return 0;
+        }
+
+        Tile tile = getTile(tileId);
+        if (tile == null || tile.maxHealth <= 0) {
+            return 0;
+        }
+
+        return tile.maxHealth;
+    }
+
+    private int getLayerHealth(int layerIndex, int col, int row) {
+        if (!isInsideMap(col, row) || layerIndex < 0 || layerIndex >= layerHealth.size()) {
+            return 0;
+        }
+
+        return layerHealth.get(layerIndex)[col][row];
+    }
+
+    private void setLayerHealth(int layerIndex, int col, int row, int health) {
+        if (!isInsideMap(col, row) || layerIndex < 0 || layerIndex >= layerHealth.size()) {
+            return;
+        }
+
+        layerHealth.get(layerIndex)[col][row] = Math.max(0, health);
+    }
+
+    private boolean isInsideMap(int col, int row) {
+        return col >= 0 && row >= 0 && col < mapWidth && row < mapHeight;
     }
 
     private void updateBelowPlayerLayerCount() {

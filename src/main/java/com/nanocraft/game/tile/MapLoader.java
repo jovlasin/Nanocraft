@@ -2,18 +2,28 @@ package com.nanocraft.game.tile;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 import javax.imageio.ImageIO;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 public final class MapLoader {
     public static final class MapData {
@@ -139,6 +149,9 @@ public final class MapLoader {
                 String imagePath = ResourceLoader.resolveResourcePath(mapFilePath, tileData.image);
                 tile.image = ResourceLoader.loadScaledImage(imagePath, tileSize);
                 tile.collision = hasCollisionProperty(tileData.properties);
+                tile.maxHealth = getIntProperty(tileData.properties, "oreHealth", 0);
+                tile.replacementTileId = getIntProperty(tileData.properties, "replacementTileId", 0);
+                tile.dropItemType = getStringProperty(tileData.properties, "dropItemType", null);
 
                 int globalId = tileset.firstgid + tileData.id;
                 tileRegistry.put(globalId, tile);
@@ -165,12 +178,18 @@ public final class MapLoader {
         }
 
         Map<Integer, Boolean> collisionByTileId = new HashMap<>();
+        Map<Integer, Integer> healthByTileId = new HashMap<>();
+        Map<Integer, Integer> replacementByTileId = new HashMap<>();
+        Map<Integer, String> dropByTileId = new HashMap<>();
         if (tileset.tiles != null) {
             for (TiledTileData tileData : tileset.tiles) {
                 if (tileData == null) {
                     continue;
                 }
                 collisionByTileId.put(tileData.id, hasCollisionProperty(tileData.properties));
+                healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
+                replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
+                dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
             }
         }
 
@@ -185,6 +204,9 @@ public final class MapLoader {
             Tile tile = new Tile();
             tile.image = ResourceLoader.scaleImage(tilesetImage, tileSize, tileSize);
             tile.collision = collisionByTileId.getOrDefault(0, false);
+            tile.maxHealth = healthByTileId.getOrDefault(0, 0);
+            tile.replacementTileId = replacementByTileId.getOrDefault(0, 0);
+            tile.dropItemType = dropByTileId.get(0);
             tileRegistry.put(tileset.firstgid, tile);
             return;
         }
@@ -203,6 +225,9 @@ public final class MapLoader {
             Tile tile = new Tile();
             tile.image = ResourceLoader.scaleImage(tileImage, tileSize, tileSize);
             tile.collision = collisionByTileId.getOrDefault(localId, false);
+            tile.maxHealth = healthByTileId.getOrDefault(localId, 0);
+            tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
+            tile.dropItemType = dropByTileId.get(localId);
             tileRegistry.put(tileset.firstgid + localId, tile);
         }
     }
@@ -227,12 +252,32 @@ public final class MapLoader {
             return;
         }
 
-        Tile tile = new Tile();
-        tile.image = ResourceLoader.loadScaledImage(imagePath, tileSize);
-        tile.collision = false;
+        BufferedImage sharedImage = ResourceLoader.loadScaledImage(imagePath, tileSize);
+        Map<Integer, Boolean> collisionByTileId = new HashMap<>();
+        Map<Integer, Integer> healthByTileId = new HashMap<>();
+        Map<Integer, Integer> replacementByTileId = new HashMap<>();
+        Map<Integer, String> dropByTileId = new HashMap<>();
+        if (tileset.tiles != null) {
+            for (TiledTileData tileData : tileset.tiles) {
+                if (tileData == null) {
+                    continue;
+                }
+                collisionByTileId.put(tileData.id, hasCollisionProperty(tileData.properties));
+                healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
+                replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
+                dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
+            }
+        }
 
         int rangeEndExclusive = Math.max(tileset.firstgid + 1, nextFirstgid);
         for (int gid = tileset.firstgid; gid < rangeEndExclusive; gid++) {
+            int localId = gid - tileset.firstgid;
+            Tile tile = new Tile();
+            tile.image = sharedImage;
+            tile.collision = collisionByTileId.getOrDefault(localId, false);
+            tile.maxHealth = healthByTileId.getOrDefault(localId, 0);
+            tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
+            tile.dropItemType = dropByTileId.get(localId);
             tileRegistry.put(gid, tile);
         }
     }
@@ -248,11 +293,12 @@ public final class MapLoader {
             }
 
             int[][] grid = new int[mapWidth][mapHeight];
-            int maxEntries = Math.min(layerData.data.length, mapWidth * mapHeight);
+            int[] decodedLayerData = decodeLayerData(layerData);
+            int maxEntries = Math.min(decodedLayerData.length, mapWidth * mapHeight);
             for (int index = 0; index < maxEntries; index++) {
                 int col = index % mapWidth;
                 int row = index / mapWidth;
-                grid[col][row] = stripFlipFlags(layerData.data[index]);
+                grid[col][row] = stripFlipFlags(decodedLayerData[index]);
             }
 
             layers.add(grid);
@@ -347,6 +393,51 @@ public final class MapLoader {
         return false;
     }
 
+    private int getIntProperty(List<TiledPropertyData> properties, String propertyName, int defaultValue) {
+        if (properties == null || propertyName == null) {
+            return defaultValue;
+        }
+
+        for (TiledPropertyData property : properties) {
+            if (property == null || property.name == null) {
+                continue;
+            }
+
+            if (!propertyName.equalsIgnoreCase(property.name)) {
+                continue;
+            }
+
+            return parseInt(property.value, defaultValue);
+        }
+
+        return defaultValue;
+    }
+
+    private String getStringProperty(List<TiledPropertyData> properties, String propertyName, String defaultValue) {
+        if (properties == null || propertyName == null) {
+            return defaultValue;
+        }
+
+        for (TiledPropertyData property : properties) {
+            if (property == null || property.name == null) {
+                continue;
+            }
+
+            if (!propertyName.equalsIgnoreCase(property.name)) {
+                continue;
+            }
+
+            if (property.value == null) {
+                return defaultValue;
+            }
+
+            String value = String.valueOf(property.value).trim();
+            return value.isEmpty() ? defaultValue : value;
+        }
+
+        return defaultValue;
+    }
+
     private boolean parseBoolean(Object value) {
         if (value instanceof Boolean boolValue) {
             return boolValue;
@@ -360,8 +451,133 @@ public final class MapLoader {
         return false;
     }
 
+    private int parseInt(Object value, int defaultValue) {
+        if (value instanceof Number numberValue) {
+            return numberValue.intValue();
+        }
+
+        if (value instanceof String stringValue) {
+            try {
+                return Integer.parseInt(stringValue.trim());
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+
+        return defaultValue;
+    }
+
     private int stripFlipFlags(int gid) {
         // Tiled encodes flip/rotation flags in the highest 3 bits.
         return gid & 0x1FFFFFFF;
+    }
+
+    private int[] decodeLayerData(TiledLayerData layerData) {
+        JsonElement dataElement = layerData.data;
+
+        if (dataElement.isJsonArray()) {
+            return decodeJsonArrayLayerData(dataElement.getAsJsonArray());
+        }
+
+        if (!dataElement.isJsonPrimitive()) {
+            throw new IllegalStateException("Unsupported Tiled layer data format for layer: " + layerData.name);
+        }
+
+        JsonPrimitive primitive = dataElement.getAsJsonPrimitive();
+        if (!primitive.isString()) {
+            throw new IllegalStateException("Unsupported Tiled layer primitive data for layer: " + layerData.name);
+        }
+
+        String rawData = primitive.getAsString();
+        String encoding = layerData.encoding == null ? "" : layerData.encoding.trim().toLowerCase();
+        String compression = layerData.compression == null ? "" : layerData.compression.trim().toLowerCase();
+
+        if ("csv".equals(encoding)) {
+            return decodeCsvLayerData(rawData);
+        }
+
+        if ("base64".equals(encoding) || encoding.isEmpty()) {
+            return decodeBase64LayerData(rawData, compression);
+        }
+
+        throw new IllegalStateException(
+            "Unsupported Tiled layer encoding '" + encoding + "' for layer: " + layerData.name
+        );
+    }
+
+    private int[] decodeJsonArrayLayerData(JsonArray arrayData) {
+        int[] decoded = new int[arrayData.size()];
+        for (int i = 0; i < arrayData.size(); i++) {
+            JsonElement value = arrayData.get(i);
+            decoded[i] = value == null || value.isJsonNull() ? 0 : value.getAsInt();
+        }
+        return decoded;
+    }
+
+    private int[] decodeCsvLayerData(String rawData) {
+        if (rawData == null || rawData.isBlank()) {
+            return new int[0];
+        }
+
+        String[] values = rawData.split(",");
+        int[] decoded = new int[values.length];
+        for (int i = 0; i < values.length; i++) {
+            String current = values[i].trim();
+            decoded[i] = current.isEmpty() ? 0 : Integer.parseInt(current);
+        }
+        return decoded;
+    }
+
+    private int[] decodeBase64LayerData(String rawData, String compression) {
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(rawData.replaceAll("\\s+", ""));
+            byte[] uncompressedBytes = decompressLayerBytes(decodedBytes, compression);
+            return bytesToIntArray(uncompressedBytes);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid base64-encoded Tiled layer data", e);
+        }
+    }
+
+    private byte[] decompressLayerBytes(byte[] bytes, String compression) {
+        if (compression == null || compression.isBlank()) {
+            return bytes;
+        }
+
+        try {
+            if ("gzip".equals(compression)) {
+                return readAllBytes(new GZIPInputStream(new ByteArrayInputStream(bytes)));
+            }
+
+            if ("zlib".equals(compression)) {
+                return readAllBytes(new InflaterInputStream(new ByteArrayInputStream(bytes)));
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to decompress Tiled layer data", e);
+        }
+
+        throw new IllegalStateException("Unsupported Tiled layer compression: " + compression);
+    }
+
+    private byte[] readAllBytes(InputStream stream) throws IOException {
+        try (InputStream input = stream; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+            return output.toByteArray();
+        }
+    }
+
+    private int[] bytesToIntArray(byte[] bytes) {
+        int valueCount = bytes.length / 4;
+        int[] decoded = new int[valueCount];
+
+        ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < valueCount; i++) {
+            decoded[i] = buffer.getInt();
+        }
+
+        return decoded;
     }
 }
