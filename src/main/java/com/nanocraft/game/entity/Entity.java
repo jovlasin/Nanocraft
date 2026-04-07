@@ -22,6 +22,7 @@ public class Entity {
     public String name;
     public String description;
     public BufferedImage up1, up2, down1, down2, left1, left2, right1, right2;
+    public BufferedImage image, image2, image3;
     public int solidAreaDefaultX, solidAreaDefaultY;
     public Rectangle solidArea;
 

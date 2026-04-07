@@ -17,6 +17,8 @@ public class Player extends Entity {
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
+    public int maxLife;
+    public int life;
 
     public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
