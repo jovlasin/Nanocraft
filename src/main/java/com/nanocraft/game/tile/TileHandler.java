@@ -9,7 +9,7 @@ import java.util.Map;
 import com.nanocraft.game.core.GameHandler;
 
 public class TileHandler {
-    private static final String DEFAULT_MAP_PATH = "/map/spawn.tmj";
+    private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
     private final GameHandler gh;
     private final MapLoader mapLoader;
     private final Map<Integer, Tile> tileRegistry;
