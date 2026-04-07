@@ -2,6 +2,8 @@ package com.nanocraft.game.tile;
 
 import java.util.List;
 
+import com.google.gson.JsonElement;
+
 class TiledMapData {
     int width;
     int height;
@@ -12,7 +14,9 @@ class TiledMapData {
 class TiledLayerData {
     String name;
     String type;
-    int[] data;
+    JsonElement data;
+    String encoding;
+    String compression;
 }
 
 class TiledTilesetData {

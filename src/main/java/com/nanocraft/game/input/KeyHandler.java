@@ -60,6 +60,10 @@ public class KeyHandler implements KeyListener {
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
             right = false;
         }
+
+        if (code == KeyEvent.VK_SPACE) {
+            space = false;
+        }
     }
 
     private void titleState(int code) {
@@ -121,6 +125,7 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_SPACE) {
             space = true;
+            gh.player.requestMine();
         }
 
         if (code == KeyEvent.VK_TAB) {

@@ -12,6 +12,8 @@ import javax.swing.JPanel;
 import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
+import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.OreChunk;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
@@ -93,6 +95,46 @@ public class GameHandler extends JPanel implements Runnable {
 
         if (gameState == pause) {
             // nothing
+        }
+    }
+
+    public void spawnDroppedItem(int worldX, int worldY, String itemType) {
+        for (int i = 0; i < objs.length; i++) {
+            if (objs[i] != null) {
+                continue;
+            }
+
+            Entity droppedItem = createDropEntity(itemType);
+            if (droppedItem == null) {
+                return;
+            }
+
+            droppedItem.worldX = worldX;
+            droppedItem.worldY = worldY;
+            objs[i] = droppedItem;
+            return;
+        }
+
+        System.out.println("No free world object slot for dropped item: " + itemType);
+    }
+
+    private Entity createDropEntity(String itemType) {
+        if (itemType == null || itemType.isBlank()) {
+            return null;
+        }
+
+        String normalized = itemType.trim().toLowerCase();
+        switch (normalized) {
+            case "ore_chunk":
+            case "orechunk":
+            case "ore":
+                return new OreChunk(this);
+
+            case "key":
+                return new Key(this);
+
+            default:
+                return new OreChunk(this);
         }
     }
 
