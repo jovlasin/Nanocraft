@@ -67,6 +67,11 @@ public class Ui {
             drawInventory();
         }
     }
+    
+    public void addMessage(String text) {
+        message.add(text);
+        counter.add(0);
+    }
 
     private void drawTitleScreen() {
         if (titleScreen == 0) {

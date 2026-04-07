@@ -245,22 +245,20 @@ public class Player extends Entity {
     }
 
     private void acquireObject(int i) {
+        String text;
+        
         if (i != 999) {
             if (inventory.size() < inventorySize) {
                 inventory.add(gh.objs[i]);
                 // gh.playSound(1);
-                // text = "Got a " + gh.objs[i].name + "!";
-                System.out.println("Got a " + gh.objs[i].name + "!");
+                text = "Got a " + gh.objs[i].name + "!";
                 gh.objs[i] = null;
             }
 
             else {
-                // text = "Inventory full!";
-                System.out.println("Inventory full!");
+                text = "Inventory full!";
             }
-            // gh.ui.addMessage(text);
-            
-            
+            gh.ui.addMessage(text);
         }
     }
 
