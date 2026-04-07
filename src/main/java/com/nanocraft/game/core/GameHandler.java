@@ -32,6 +32,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Entity npcs[] = new Entity[10];
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
+    public Ui ui = new Ui(this);
 
     public final int title = 0;
     public final int pause = 1;
@@ -44,13 +45,14 @@ public class GameHandler extends JPanel implements Runnable {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.BLACK);
         this.setDoubleBuffered(true);
-        this.addKeyListener(kh);
         this.setFocusable(true);
+        this.setFocusTraversalKeysEnabled(false);
+        this.addKeyListener(kh);
         ah.setObjects();
         ah.setNPCS();
 
-        // gameState = title;
-        gameState = play;
+        gameState = title;
+        // gameState = play;
     }
 
     public void startGame() {
@@ -99,7 +101,7 @@ public class GameHandler extends JPanel implements Runnable {
         Graphics2D g2d = (Graphics2D) g;
 
         if (gameState == title) {
-
+            ui.draw(g2d);
         }
 
         else {
@@ -138,8 +140,19 @@ public class GameHandler extends JPanel implements Runnable {
             }
 
             entityList.clear();
+            ui.draw(g2d);
         }
         
         g2d.dispose();
+    }
+
+    public void playMusic() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
+    }
+
+    public void playSound(int i) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'playSound'");
     }
 }
