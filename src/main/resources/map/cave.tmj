@@ -738,7 +738,7 @@
                         {
                          "name":"targetMap",
                          "type":"string",
-                         "value":"spawn.tmj"
+                         "value":"village.tmj"
                         }, 
                         {
                          "name":"targetRow",
