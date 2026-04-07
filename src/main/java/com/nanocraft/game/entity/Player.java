@@ -76,6 +76,9 @@ public class Player extends Entity {
             int objIndex = gh.ch.checkObject(this, true);
             acquireObject(objIndex);
 
+            int npcIndex = gh.ch.checkEntity(this, gh.npcs);
+            interactNPC(npcIndex);
+
             gh.ch.checkEntity(this, gh.npcs);
 
             if (collisionOn == false) {
@@ -246,7 +249,7 @@ public class Player extends Entity {
 
     private void acquireObject(int i) {
         String text;
-        
+
         if (i != 999) {
             if (inventory.size() < inventorySize) {
                 inventory.add(gh.objs[i]);
@@ -259,6 +262,16 @@ public class Player extends Entity {
                 text = "Inventory full!";
             }
             gh.ui.addMessage(text);
+        }
+    }
+
+    private void interactNPC(int i) {
+        if (gh.kh.space == true) {
+            if (i != 999) {
+                // cancelAttack = true;
+                gh.gameState = gh.dialogue;
+                gh.npcs[i].speak();
+            }
         }
     }
 

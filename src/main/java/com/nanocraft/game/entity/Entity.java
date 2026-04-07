@@ -26,6 +26,8 @@ public class Entity {
     public int solidAreaDefaultX, solidAreaDefaultY;
     public Rectangle solidArea;
     public Rectangle attackArea;
+    public int dialogueIndex;
+    public String[] dialogues;
 
     public Entity(GameHandler gh) {
         this.gh = gh;
@@ -125,6 +127,33 @@ public class Entity {
                 spriteNum = 1;
             }
             spriteCounter = 0;
+        }
+    }
+
+    public void speak() {
+        if (dialogues[dialogueIndex] == null) {
+            dialogueIndex = 0;
+        }
+
+        gh.ui.currentDialogue = dialogues[dialogueIndex];
+        dialogueIndex++;
+
+        switch (gh.player.direction) {
+            case "up":
+                direction = "down";    
+            break;
+
+            case "down":
+                direction = "up";    
+            break;
+
+            case "left":
+                direction = "right";    
+            break;
+
+            case "right":
+                direction = "left";    
+            break;
         }
     }
 }
