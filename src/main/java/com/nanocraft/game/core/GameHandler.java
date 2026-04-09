@@ -32,6 +32,7 @@ public class GameHandler extends JPanel implements Runnable {
     public CollisionHandler ch = new CollisionHandler(this);
     public Entity objs[] = new Entity[10];
     public Entity npcs[] = new Entity[10];
+    public Entity monsters[] = new Entity[20];
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
