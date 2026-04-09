@@ -20,8 +20,6 @@ public class Player extends Entity {
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
-    public int maxLife;
-    public int life;
 
     public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
@@ -30,6 +28,17 @@ public class Player extends Entity {
         setStats();
         setPos();
         getImage();
+    }
+
+    public int getAttack() {
+        // attackArea = currentWeapon.attackArea;
+        // return strength * currentWeapon.attackValue;
+        return -999;
+    }
+
+    public int getDefense() {
+        // return dexterity * currentShield.defenseValue;
+        return -999;
     }
 
     public void update() {
@@ -67,7 +76,11 @@ public class Player extends Entity {
             int objIndex = gh.ch.checkObject(this, true);
             acquireObject(objIndex);
 
-            gh.ch.checkEntity(this, gh.npcs);
+            int npcIndex = gh.ch.checkEntity(this, gh.npcs);
+            interactNPC(npcIndex);
+
+            int monsterIndex = gh.ch.checkEntity(this, gh.monsters);
+            interactMonster(monsterIndex);
 
             if (collisionOn == false) {
                 switch (direction) {
@@ -206,6 +219,20 @@ public class Player extends Entity {
 
     private void setStats() {
         speed = 4;
+        maxLife = 6;
+        life = maxLife;
+        level = 1;
+        strength = 1;
+        dexterity = 1;
+        exp = 0;
+        nextLevelExp = 5;
+        coin = 0;
+        currentWeapon = new Sword(gh);
+        currentShield = new OldShield(gm);
+        projectile = new Arrow(gm);
+        attack = getAttack();
+        defense = getDefense();
+
     }
 
     private void setPos() {
@@ -222,22 +249,45 @@ public class Player extends Entity {
     }
 
     private void acquireObject(int i) {
+        String text;
+
         if (i != 999) {
             if (inventory.size() < inventorySize) {
                 inventory.add(gh.objs[i]);
                 // gh.playSound(1);
-                // text = "Got a " + gh.objs[i].name + "!";
-                System.out.println("Got a " + gh.objs[i].name + "!");
+                text = "Got a " + gh.objs[i].name + "!";
                 gh.objs[i] = null;
             }
 
             else {
-                // text = "Inventory full!";
-                System.out.println("Inventory full!");
+                text = "Inventory full!";
             }
-            // gh.ui.addMessage(text);
-            
-            
+            gh.ui.addMessage(text);
+        }
+    }
+
+    private void interactNPC(int i) {
+        if (gh.kh.space == true) {
+            if (i != 999) {
+                // cancelAttack = true;
+                gh.gameState = gh.dialogue;
+                gh.npcs[i].speak();
+            }
+        }
+    }
+
+    private void interactMonster(int i) {
+        if (i != 999) {
+            if (invincible == false && gh.monsters[i].dying == false) {
+                gh.playSound(6);
+                int damage = gh.monsters[i].attack - defense;
+
+                if (damage < 0) {
+                    damage = 0;
+                }
+                life -= damage;
+                invincible = true;
+            }
         }
     }
 

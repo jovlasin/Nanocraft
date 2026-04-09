@@ -8,6 +8,7 @@ public class Elder extends Entity {
         super(gh);
         speed = 1;
         getImage();
+        setDialogue();
 
         solidArea.x = 0;
         solidArea.y = 16;
@@ -52,5 +53,16 @@ public class Elder extends Entity {
             }
             actionCounter = 0;
         }
+    }
+
+    private void setDialogue() {
+        dialogues[0] = "Hello, lad.";
+        dialogues[1] = "So you've come to this island to find \nthe end?";
+        dialogues[2] = "I used to be a great wizard but now... \nI'm just an old man too old to adventure.";
+        dialogues[3] = "Well, good luck to you!";
+    }
+
+    public void speak() {
+        super.speak();
     }
 }
