@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
+
+import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.input.KeyHandler;
 
@@ -37,26 +39,16 @@ public class Player extends Entity {
             mineCooldownTicks--;
         }
 
-        handleInteraction();
+        boolean moving = kh.up == true || kh.down == true || kh.left == true || kh.right == true;
+        if (moving) {
+            updateDirectionFromInput();
+        }
 
-        if (kh.up == true || kh.down == true || kh.left == true || kh.right == true) {
-            
-            if (kh.up == true) {
-                direction = "up";
-            }
+        if (handleInteraction()) {
+            return;
+        }
 
-            else if (kh.down == true) {
-                direction = "down";
-            }
-
-            else if (kh.left == true) {
-                direction = "left";
-            }
-
-            else if (kh.right == true) {
-                direction = "right";
-            }
-
+        if (moving) {
             collisionOn = false;
             gh.ch.checkTile(this);
 
@@ -114,33 +106,31 @@ public class Player extends Entity {
         interactRequested = true;
     }
 
-    public void attemptMine() {
-        int centerX = worldX + solidArea.x + (solidArea.width / 2);
-        int centerY = worldY + solidArea.y + (solidArea.height / 2);
-
-        switch (direction) {
-            case "up":
-                centerY -= gh.tileSize;
-            break;
-
-            case "down":
-                centerY += gh.tileSize;
-            break;
-
-            case "left":
-                centerX -= gh.tileSize;
-            break;
-
-            case "right":
-                centerX += gh.tileSize;
-            break;
-
-            default:
-            break;
+    public boolean addToInventory(Entity item) {
+        if (item == null || isInventoryFull()) {
+            return false;
         }
 
-        int targetCol = centerX / gh.tileSize;
-        int targetRow = centerY / gh.tileSize;
+        inventory.add(item);
+        return true;
+    }
+
+    public Entity removeFromInventory(int index) {
+        if (index < 0 || index >= inventory.size()) {
+            return null;
+        }
+
+        return inventory.remove(index);
+    }
+
+    public boolean isInventoryFull() {
+        return inventory.size() >= inventorySize;
+    }
+
+    public void attemptMine() {
+        int[] targetTile = getPrimaryInteractionTile();
+        int targetCol = targetTile[0];
+        int targetRow = targetTile[1];
         gh.th.damageBreakableTile(targetCol, targetRow, 1);
     }
 
@@ -221,8 +211,7 @@ public class Player extends Entity {
 
     private void acquireObject(int i) {
         if (i != 999) {
-            if (inventory.size() < inventorySize) {
-                inventory.add(gh.objs[i]);
+            if (addToInventory(gh.objs[i])) {
                 // gh.playSound(1);
                 // text = "Got a " + gh.objs[i].name + "!";
                 System.out.println("Got a " + gh.objs[i].name + "!");
@@ -261,51 +250,123 @@ public class Player extends Entity {
         return scaledImage;
     }
 
-    private void handleInteraction() {
-        if (!interactRequested) {
-            return;
-        }
-
-        interactRequested = false;
-
-        int[] targetTile = getFacingTile();
-        String interactionType = gh.th.getInteractionTypeAt(targetTile[0], targetTile[1]);
-        if ("sleep".equals(interactionType)) {
-            gh.onPlayerSleep();
-            return;
-        }
-
-        if (mineCooldownTicks == 0) {
-            attemptMine();
-            mineCooldownTicks = MINE_COOLDOWN_TICKS;
-        }
+    public int[][] getInteractionTiles() {
+        return resolveInteractionTiles(worldX, worldY, solidArea, gh.tileSize, direction);
     }
 
-    private int[] getFacingTile() {
-        int centerX = worldX + solidArea.x + (solidArea.width / 2);
-        int centerY = worldY + solidArea.y + (solidArea.height / 2);
+    public int[] getPrimaryInteractionTile() {
+        int[][] targetTiles = getInteractionTiles();
+        if (targetTiles.length == 0) {
+            return new int[] { worldX / gh.tileSize, worldY / gh.tileSize };
+        }
 
+        return targetTiles[0];
+    }
+
+    public static int[][] resolveInteractionTiles(int worldX, int worldY, Rectangle solidArea, int tileSize, String direction) {
+        if (solidArea == null || tileSize <= 0) {
+            return new int[0][];
+        }
+
+        int leftWorldX = worldX + solidArea.x;
+        int rightWorldX = worldX + solidArea.x + solidArea.width - 1;
+        int topWorldY = worldY + solidArea.y;
+        int bottomWorldY = worldY + solidArea.y + solidArea.height - 1;
+        int centerWorldX = worldX + solidArea.x + (solidArea.width / 2);
+        int centerWorldY = worldY + solidArea.y + (solidArea.height / 2);
+
+        ArrayList<int[]> targetTiles = new ArrayList<>();
         switch (direction) {
             case "up":
-                centerY -= gh.tileSize;
+                appendUniqueTile(targetTiles, toTileIndex(centerWorldX, tileSize), toTileIndex(topWorldY - 1, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(leftWorldX, tileSize), toTileIndex(topWorldY - 1, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(rightWorldX, tileSize), toTileIndex(topWorldY - 1, tileSize));
             break;
 
             case "down":
-                centerY += gh.tileSize;
+                appendUniqueTile(targetTiles, toTileIndex(centerWorldX, tileSize), toTileIndex(bottomWorldY + 1, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(leftWorldX, tileSize), toTileIndex(bottomWorldY + 1, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(rightWorldX, tileSize), toTileIndex(bottomWorldY + 1, tileSize));
             break;
 
             case "left":
-                centerX -= gh.tileSize;
+                appendUniqueTile(targetTiles, toTileIndex(leftWorldX - 1, tileSize), toTileIndex(centerWorldY, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(leftWorldX - 1, tileSize), toTileIndex(topWorldY, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(leftWorldX - 1, tileSize), toTileIndex(bottomWorldY, tileSize));
             break;
 
             case "right":
-                centerX += gh.tileSize;
+                appendUniqueTile(targetTiles, toTileIndex(rightWorldX + 1, tileSize), toTileIndex(centerWorldY, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(rightWorldX + 1, tileSize), toTileIndex(topWorldY, tileSize));
+                appendUniqueTile(targetTiles, toTileIndex(rightWorldX + 1, tileSize), toTileIndex(bottomWorldY, tileSize));
             break;
 
             default:
             break;
         }
 
-        return new int[] { centerX / gh.tileSize, centerY / gh.tileSize };
+        return targetTiles.toArray(new int[targetTiles.size()][]);
+    }
+
+    private boolean handleInteraction() {
+        if (!interactRequested) {
+            return false;
+        }
+
+        interactRequested = false;
+
+        int[][] targetTiles = getInteractionTiles();
+        ChestState chest = gh.th.findChestAt(targetTiles);
+        if (chest != null) {
+            gh.openChest(chest);
+            return true;
+        }
+
+        for (int[] targetTile : targetTiles) {
+            String interactionType = gh.th.getInteractionTypeAt(targetTile[0], targetTile[1]);
+            if ("sleep".equals(interactionType)) {
+                gh.onPlayerSleep();
+                return true;
+            }
+        }
+
+        if (mineCooldownTicks == 0) {
+            attemptMine();
+            mineCooldownTicks = MINE_COOLDOWN_TICKS;
+        }
+
+        return false;
+    }
+
+    private void updateDirectionFromInput() {
+        if (kh.up == true) {
+            direction = "up";
+        }
+
+        else if (kh.down == true) {
+            direction = "down";
+        }
+
+        else if (kh.left == true) {
+            direction = "left";
+        }
+
+        else if (kh.right == true) {
+            direction = "right";
+        }
+    }
+
+    private static void appendUniqueTile(ArrayList<int[]> targetTiles, int col, int row) {
+        for (int[] targetTile : targetTiles) {
+            if (targetTile[0] == col && targetTile[1] == row) {
+                return;
+            }
+        }
+
+        targetTiles.add(new int[] { col, row });
+    }
+
+    private static int toTileIndex(int worldCoordinate, int tileSize) {
+        return Math.floorDiv(worldCoordinate, tileSize);
     }
 }

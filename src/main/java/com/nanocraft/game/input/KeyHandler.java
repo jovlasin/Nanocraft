@@ -39,6 +39,10 @@ public class KeyHandler implements KeyListener {
         else if (gh.gameState == gh.stats) { 
             statsState(code);
         }
+
+        else if (gh.gameState == gh.chest) {
+            chestState(code);
+        }
     }
 
     @Override
@@ -185,5 +189,38 @@ public class KeyHandler implements KeyListener {
         // if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
         //     gh.player.selectItem();
         // }
+    }
+
+    private void chestState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.closeChest();
+            return;
+        }
+
+        if (code == KeyEvent.VK_TAB) {
+            gh.ui.toggleChestPanel();
+            return;
+        }
+
+        if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
+            gh.transferActiveChestSelection();
+            return;
+        }
+
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.moveChestCursor(0, -1);
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.moveChestCursor(0, 1);
+        }
+
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            gh.ui.moveChestCursor(-1, 0);
+        }
+
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            gh.ui.moveChestCursor(1, 0);
+        }
     }
 }

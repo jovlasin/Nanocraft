@@ -51,6 +51,7 @@ class TiledObjectData {
     int id;
     String name;
     String type;
+    Integer gid;
     double x;
     double y;
     double width;

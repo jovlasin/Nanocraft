@@ -35,12 +35,14 @@ public class GameHandler extends JPanel implements Runnable {
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
+    public ChestState activeChest;
 
     public final int title = 0;
     public final int pause = 1;
     public final int play = 2;
-    public final int dialogue = 2;
+    public final int dialogue = 3;
     public final int stats = 4;
+    public final int chest = 5;
     public int gameState = 999;
 
     public GameHandler() {
@@ -98,14 +100,46 @@ public class GameHandler extends JPanel implements Runnable {
         }
     }
 
+    public void openChest(ChestState chestState) {
+        if (chestState == null) {
+            return;
+        }
+
+        activeChest = chestState;
+        activeChest.opened = true;
+        ui.resetChestUi();
+        ui.addMessage("Opened chest.");
+        gameState = chest;
+    }
+
+    public void closeChest() {
+        activeChest = null;
+        ui.resetChestUi();
+        gameState = play;
+    }
+
+    public void transferActiveChestSelection() {
+        if (activeChest == null) {
+            return;
+        }
+
+        if (ui.isChestPanelActive()) {
+            transferChestItemToPlayer();
+            return;
+        }
+
+        transferPlayerItemToChest();
+    }
+
     public void spawnDroppedItem(int worldX, int worldY, String itemType) {
         for (int i = 0; i < objs.length; i++) {
             if (objs[i] != null) {
                 continue;
             }
 
-            Entity droppedItem = createDropEntity(itemType);
+            Entity droppedItem = createItemEntity(itemType);
             if (droppedItem == null) {
+                System.out.println("Unknown dropped item type: " + itemType);
                 return;
             }
 
@@ -133,7 +167,7 @@ public class GameHandler extends JPanel implements Runnable {
         System.out.println("You slept. The world has reset.");
     }
 
-    private Entity createDropEntity(String itemType) {
+    public Entity createItemEntity(String itemType) {
         if (itemType == null || itemType.isBlank()) {
             return null;
         }
@@ -149,7 +183,7 @@ public class GameHandler extends JPanel implements Runnable {
                 return new Key(this);
 
             default:
-                return new OreChunk(this);
+                return null;
         }
     }
 
@@ -211,5 +245,63 @@ public class GameHandler extends JPanel implements Runnable {
     public void playSound(int i) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+    }
+
+    private void transferChestItemToPlayer() {
+        if (activeChest == null) {
+            return;
+        }
+
+        int itemIndex = ui.getSelectedChestSlotIndex();
+        if (itemIndex < 0 || itemIndex >= activeChest.items.size()) {
+            return;
+        }
+
+        if (player.isInventoryFull()) {
+            ui.addMessage("Inventory full.");
+            return;
+        }
+
+        Entity item = activeChest.removeItem(itemIndex);
+        if (item == null) {
+            return;
+        }
+
+        if (!player.addToInventory(item)) {
+            activeChest.addItem(item);
+            ui.addMessage("Inventory full.");
+            return;
+        }
+
+        ui.addMessage("Moved " + item.name + ".");
+    }
+
+    private void transferPlayerItemToChest() {
+        if (activeChest == null) {
+            return;
+        }
+
+        int itemIndex = ui.getSelectedPlayerChestSlotIndex();
+        if (itemIndex < 0 || itemIndex >= player.inventory.size()) {
+            return;
+        }
+
+        if (activeChest.isFull()) {
+            ui.addMessage("Chest is full.");
+            return;
+        }
+
+        Entity item = player.removeFromInventory(itemIndex);
+        if (item == null) {
+            return;
+        }
+
+        if (!activeChest.addItem(item)) {
+            player.addToInventory(item);
+            ui.addMessage("Chest is full.");
+            return;
+        }
+
+        ui.addMessage("Stored " + item.name + ".");
     }
 }
