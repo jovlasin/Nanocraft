@@ -31,6 +31,7 @@ public final class MapLoader {
         final List<int[][]> layers;
         final List<String> layerNames;
         final List<MapTransition> transitions;
+        final List<ChestDefinition> chestDefinitions;
         final int mapWidth;
         final int mapHeight;
         final boolean zeroMeansEmpty;
@@ -40,6 +41,7 @@ public final class MapLoader {
             List<int[][]> layers,
             List<String> layerNames,
             List<MapTransition> transitions,
+            List<ChestDefinition> chestDefinitions,
             int mapWidth,
             int mapHeight,
             boolean zeroMeansEmpty
@@ -48,6 +50,7 @@ public final class MapLoader {
             this.layers = layers;
             this.layerNames = layerNames;
             this.transitions = transitions;
+            this.chestDefinitions = chestDefinitions;
             this.mapWidth = mapWidth;
             this.mapHeight = mapHeight;
             this.zeroMeansEmpty = zeroMeansEmpty;
@@ -61,6 +64,7 @@ public final class MapLoader {
     private final List<int[][]> layers;
     private final List<String> layerNames;
     private final List<MapTransition> transitions;
+    private final List<ChestDefinition> chestDefinitions;
 
     private int mapWidth;
     private int mapHeight;
@@ -73,6 +77,7 @@ public final class MapLoader {
         this.layers = new ArrayList<>();
         this.layerNames = new ArrayList<>();
         this.transitions = new ArrayList<>();
+        this.chestDefinitions = new ArrayList<>();
     }
 
     public MapData loadMap(String filePath) {
@@ -88,6 +93,7 @@ public final class MapLoader {
             layers,
             layerNames,
             transitions,
+            chestDefinitions,
             mapWidth,
             mapHeight,
             zeroMeansEmpty
@@ -335,6 +341,7 @@ public final class MapLoader {
 
             if ("objectgroup".equals(layerData.type) && layerData.objects != null) {
                 loadTransitions(mapFilePath, mapData, layerData.objects);
+                loadChests(mapFilePath, mapData, layerData.objects);
             }
         }
     }
@@ -389,8 +396,10 @@ public final class MapLoader {
         layers.clear();
         layerNames.clear();
         transitions.clear();
+        chestDefinitions.clear();
         mapWidth = 0;
         mapHeight = 0;
+        zeroMeansEmpty = false;
     }
 
     private void registerLegacyTiles() {
@@ -463,6 +472,44 @@ public final class MapLoader {
             ));
         }
         
+    }
+
+    private void loadChests(String mapFilePath, TiledMapData mapData, List<TiledObjectData> objects) {
+        int sourceTileWidth = mapData.tilewidth > 0 ? mapData.tilewidth : 1;
+        int sourceTileHeight = mapData.tileheight > 0 ? mapData.tileheight : 1;
+
+        for (TiledObjectData objectData : objects) {
+            if (objectData == null || objectData.type == null) {
+                continue;
+            }
+
+            if (!"chest".equalsIgnoreCase(objectData.type.trim())) {
+                continue;
+            }
+
+            int sourceCol = getObjectTileCol(objectData, sourceTileWidth);
+            int sourceRow = getObjectTileRow(objectData, sourceTileHeight);
+            List<String> lootItemIds = parseLootItemIds(getStringProperty(objectData.properties, "loot", ""));
+
+            chestDefinitions.add(new ChestDefinition(mapFilePath, sourceCol, sourceRow, lootItemIds));
+        }
+    }
+
+    private int getObjectTileCol(TiledObjectData objectData, int tileWidth) {
+        if (objectData == null) {
+            return -1;
+        }
+
+        return (int) Math.floor(objectData.x / tileWidth);
+    }
+
+    private int getObjectTileRow(TiledObjectData objectData, int tileHeight) {
+        if (objectData == null) {
+            return -1;
+        }
+
+        double sourceY = objectData.gid == null ? objectData.y : objectData.y - tileHeight;
+        return (int) Math.floor(sourceY / tileHeight);
     }
 
     private List<TiledPropertyData> findTileProperties(List<TiledTileData> tiles, int localId) {
@@ -622,6 +669,27 @@ public final class MapLoader {
         }
 
         return defaultValue;
+    }
+
+    private List<String> parseLootItemIds(String lootValue) {
+        List<String> lootItemIds = new ArrayList<>();
+        if (lootValue == null || lootValue.isBlank()) {
+            return lootItemIds;
+        }
+
+        String[] rawItems = lootValue.split(",");
+        for (String rawItem : rawItems) {
+            if (rawItem == null) {
+                continue;
+            }
+
+            String itemId = rawItem.trim().toLowerCase();
+            if (!itemId.isEmpty()) {
+                lootItemIds.add(itemId);
+            }
+        }
+
+        return lootItemIds;
     }
 
     private int stripFlipFlags(int gid) {

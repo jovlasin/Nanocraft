@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
     private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
@@ -16,6 +18,7 @@ public class TileHandler {
     private final List<int[][]> layers;
     private final List<int[][]> layerHealth;
     private final List<String> layerNames;
+    private final Map<String, ChestState> chestRegistry;
 
     private int mapWidth;
     private int mapHeight;
@@ -31,6 +34,7 @@ public class TileHandler {
         this.layers = new ArrayList<>();
         this.layerHealth = new ArrayList<>();
         this.layerNames = new ArrayList<>();
+        this.chestRegistry = new HashMap<>();
         this.transitions = new ArrayList<>();
         loadMap(DEFAULT_MAP_PATH);
     }
@@ -128,8 +132,36 @@ public class TileHandler {
         mapHeight = mapData.mapHeight;
         zeroMeansEmpty = mapData.zeroMeansEmpty;
         currentMapPath = mapPath;
+        registerChestDefinitions(mapData.chestDefinitions);
         initializeLayerHealth();
         updateBelowPlayerLayerCount();
+    }
+
+    public ChestState getChestAt(int col, int row) {
+        if (!isInsideMap(col, row) || currentMapPath == null || currentMapPath.isBlank()) {
+            return null;
+        }
+
+        return chestRegistry.get(ChestState.buildKey(currentMapPath, col, row));
+    }
+
+    public ChestState findChestAt(int[][] targetTiles) {
+        if (targetTiles == null) {
+            return null;
+        }
+
+        for (int[] targetTile : targetTiles) {
+            if (targetTile == null || targetTile.length < 2) {
+                continue;
+            }
+
+            ChestState chest = getChestAt(targetTile[0], targetTile[1]);
+            if (chest != null) {
+                return chest;
+            }
+        }
+
+        return null;
     }
 
     public boolean hasTileTypeAt(int col, int row, String tileType) {
@@ -355,5 +387,44 @@ public class TileHandler {
     private boolean isAbovePlayerLayer(String layerName) {
         String name = layerName == null ? "" : layerName.toLowerCase();
         return name.contains("above") || name.contains("over") || name.contains("roof") || name.contains("top");
+    }
+
+    private void registerChestDefinitions(List<ChestDefinition> definitions) {
+        if (definitions == null) {
+            return;
+        }
+
+        for (ChestDefinition definition : definitions) {
+            if (definition == null) {
+                continue;
+            }
+
+            if (!hasTileTypeAt(definition.col, definition.row, "035")) {
+                System.out.println("Chest marker at " + definition.getKey() + " is not placed on top of tile 035.");
+            }
+
+            chestRegistry.computeIfAbsent(definition.getKey(), ignored -> createChestState(definition));
+        }
+    }
+
+    private ChestState createChestState(ChestDefinition definition) {
+        ChestState chestState = new ChestState(definition.mapPath, definition.col, definition.row);
+
+        for (String itemId : definition.lootItemIds) {
+            if (chestState.isFull()) {
+                System.out.println("Chest at " + definition.getKey() + " exceeded capacity. Extra items were ignored.");
+                break;
+            }
+
+            Entity item = gh.createItemEntity(itemId);
+            if (item == null) {
+                System.out.println("Unknown chest item type '" + itemId + "' at " + definition.getKey() + ".");
+                continue;
+            }
+
+            chestState.addItem(item);
+        }
+
+        return chestState;
     }
 }

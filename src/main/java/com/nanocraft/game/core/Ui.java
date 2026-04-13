@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.object.Heart;
@@ -20,6 +21,11 @@ public class Ui {
     public ArrayList<String> message = new ArrayList<>();
     public ArrayList<Integer> counter = new ArrayList<>();
     public String currentDialogue = "";
+    private int chestSlotCol;
+    private int chestSlotRow;
+    private int playerChestSlotCol;
+    private int playerChestSlotRow;
+    private boolean chestPanelActive = true;
     private Utility u;
 
     public Ui(GameHandler gh) {
@@ -66,11 +72,52 @@ public class Ui {
             drawStats();
             drawInventory();
         }
+
+        else if (gh.gameState == gh.chest) {
+            drawPlayerHealth();
+            drawChestScreen();
+            drawMessage();
+        }
     }
 
     public void addMessage(String text) {
         message.add(text);
         counter.add(0);
+    }
+
+    public void resetChestUi() {
+        chestSlotCol = 0;
+        chestSlotRow = 0;
+        playerChestSlotCol = 0;
+        playerChestSlotRow = 0;
+        chestPanelActive = true;
+    }
+
+    public void toggleChestPanel() {
+        chestPanelActive = !chestPanelActive;
+    }
+
+    public void moveChestCursor(int deltaCol, int deltaRow) {
+        if (chestPanelActive) {
+            chestSlotCol = clamp(chestSlotCol + deltaCol, 0, 4);
+            chestSlotRow = clamp(chestSlotRow + deltaRow, 0, 3);
+            return;
+        }
+
+        playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, 4);
+        playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, 3);
+    }
+
+    public boolean isChestPanelActive() {
+        return chestPanelActive;
+    }
+
+    public int getSelectedChestSlotIndex() {
+        return u.getItemIndexOnSlot(chestSlotCol, chestSlotRow);
+    }
+
+    public int getSelectedPlayerChestSlotIndex() {
+        return u.getItemIndexOnSlot(playerChestSlotCol, playerChestSlotRow);
     }
 
     private void drawTitleScreen() {
@@ -170,21 +217,19 @@ public class Ui {
         int slotY = slotYstart;
         int slotSize = gh.tileSize + 3;
 
-        // TODO implement backend logic player inventory 
+        for (int i = 0; i < gh.player.inventory.size(); i++) {
+            Entity item = gh.player.inventory.get(i);
+            if (item != null && item.down1 != null) {
+                g2d.drawImage(item.down1, slotX, slotY, null);
+            }
 
-        // for (int i = 0; i < gh.player.inventory.size(); i++) {
-        //     if (gh.player.inventory.get(i) == gh.player.currentWeapon || gh.player.inventory.get(i) == gh.player.currentShield) {
-        //         g2d.setColor(new Color(240, 190, 90));
-        //         g2d.fillRoundRect(slotX, slotY, gh.tileSize, gh.tileSize, 10, 10);
-        //     }
-        //     g2d.drawImage(gh.player.inventory.get(i).down1, slotX, slotY, null);
-        //     slotX += slotSize;
+            slotX += slotSize;
 
-        //     if (i == 4 || i == 9 || i == 14) {
-        //         slotX = slotXstart;
-        //         slotY += slotSize;
-        //     }
-        // }
+            if (i == 4 || i == 9 || i == 14) {
+                slotX = slotXstart;
+                slotY += slotSize;
+            }
+        }
 
         int cursorX = slotXstart + (slotSize * slotCol);
         int cursorY = slotYstart + (slotSize * slotRow);
@@ -350,5 +395,99 @@ public class Ui {
                 }
             }    
         }
+    }
+
+    private void drawChestScreen() {
+        int panelY = gh.tileSize / 2;
+        int panelWidth = gh.tileSize * 6;
+        int panelHeight = gh.tileSize * 6;
+        int leftPanelX = gh.tileSize / 2;
+        int rightPanelX = gh.screenWidth - panelWidth - (gh.tileSize / 2);
+        int infoY = panelY + panelHeight + (gh.tileSize / 4);
+
+        drawGridPanel(leftPanelX, panelY, panelWidth, panelHeight, "Chest", gh.activeChest == null ? List.of() : gh.activeChest.items,
+            chestSlotCol, chestSlotRow, chestPanelActive);
+        drawGridPanel(rightPanelX, panelY, panelWidth, panelHeight, "Inventory", gh.player.inventory,
+            playerChestSlotCol, playerChestSlotRow, !chestPanelActive);
+
+        int infoWidth = gh.screenWidth - gh.tileSize;
+        int infoHeight = gh.tileSize * 3;
+        int infoX = gh.tileSize / 2;
+        u.drawSubWindow(infoX, infoY, infoWidth, infoHeight, g2d);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
+        int textX = infoX + 20;
+        int textY = infoY + 36;
+        g2d.drawString("TAB: switch panel   SPACE/ENTER: transfer   ESC: close", textX, textY);
+        textY += 36;
+
+        Entity selectedItem = getSelectedChestScreenItem();
+        if (selectedItem != null) {
+            for (String line : selectedItem.description.split("\n")) {
+                g2d.drawString(line, textX, textY);
+                textY += 28;
+            }
+            return;
+        }
+
+        g2d.drawString("Select an item to move it between the chest and your inventory.", textX, textY);
+    }
+
+    private void drawGridPanel(int frameX, int frameY, int frameWidth, int frameHeight, String title, List<Entity> items,
+        int cursorCol, int cursorRow, boolean active) {
+        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
+        g2d.drawString(title, frameX + 20, frameY + 34);
+
+        int slotXstart = frameX + 20;
+        int slotYstart = frameY + 52;
+        int slotX = slotXstart;
+        int slotY = slotYstart;
+        int slotSize = gh.tileSize + 3;
+
+        for (int i = 0; i < items.size(); i++) {
+            Entity item = items.get(i);
+            if (item != null && item.down1 != null) {
+                g2d.drawImage(item.down1, slotX, slotY, null);
+            }
+
+            slotX += slotSize;
+            if (i == 4 || i == 9 || i == 14) {
+                slotX = slotXstart;
+                slotY += slotSize;
+            }
+        }
+
+        int cursorX = slotXstart + (slotSize * cursorCol);
+        int cursorY = slotYstart + (slotSize * cursorRow);
+        g2d.setColor(active ? new Color(240, 190, 90) : Color.white);
+        g2d.setStroke(new BasicStroke(3));
+        g2d.drawRoundRect(cursorX, cursorY, gh.tileSize, gh.tileSize, 10, 10);
+        g2d.setColor(Color.white);
+    }
+
+    private Entity getSelectedChestScreenItem() {
+        if (chestPanelActive) {
+            if (gh.activeChest == null) {
+                return null;
+            }
+
+            int itemIndex = getSelectedChestSlotIndex();
+            if (itemIndex < gh.activeChest.items.size()) {
+                return gh.activeChest.items.get(itemIndex);
+            }
+            return null;
+        }
+
+        int itemIndex = getSelectedPlayerChestSlotIndex();
+        if (itemIndex < gh.player.inventory.size()) {
+            return gh.player.inventory.get(itemIndex);
+        }
+
+        return null;
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 }
