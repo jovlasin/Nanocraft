@@ -159,6 +159,7 @@ public final class MapLoader {
                 tile.replacementTileId = getIntProperty(tileData.properties, "replacementTileId", 0);
                 tile.dropItemType = getStringProperty(tileData.properties, "dropItemType", null);
                 tile.type = resolveTileType(tileset.name, tileData.image);
+                tile.interactionType = getInteractionType(tileData.properties);
                 applyTransitionProperties(tile, mapFilePath, tileData.properties);
 
                 int globalId = tileset.firstgid + tileData.id;
@@ -189,6 +190,7 @@ public final class MapLoader {
         Map<Integer, Integer> healthByTileId = new HashMap<>();
         Map<Integer, Integer> replacementByTileId = new HashMap<>();
         Map<Integer, String> dropByTileId = new HashMap<>();
+        Map<Integer, String> interactionByTileId = new HashMap<>();
         if (tileset.tiles != null) {
             for (TiledTileData tileData : tileset.tiles) {
                 if (tileData == null) {
@@ -198,6 +200,7 @@ public final class MapLoader {
                 healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
                 replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
                 dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
+                interactionByTileId.put(tileData.id, getInteractionType(tileData.properties));
             }
         }
 
@@ -216,6 +219,7 @@ public final class MapLoader {
             tile.replacementTileId = replacementByTileId.getOrDefault(0, 0);
             tile.dropItemType = dropByTileId.get(0);
             tile.type = resolveTileType(tileset.name, tileset.image);
+            tile.interactionType = interactionByTileId.get(0);
             applyTransitionProperties(tile, mapFilePath, tileset.tiles == null ? null : tileset.tiles.stream()
                 .filter(tileData -> tileData != null && tileData.id == 0)
                 .findFirst()
@@ -243,6 +247,7 @@ public final class MapLoader {
             tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
             tile.dropItemType = dropByTileId.get(localId);
             tile.type = resolveTileType(tileset.name, tileset.image);
+            tile.interactionType = interactionByTileId.get(localId);
             applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(tileset.firstgid + localId, tile);
         }
@@ -273,6 +278,7 @@ public final class MapLoader {
         Map<Integer, Integer> healthByTileId = new HashMap<>();
         Map<Integer, Integer> replacementByTileId = new HashMap<>();
         Map<Integer, String> dropByTileId = new HashMap<>();
+        Map<Integer, String> interactionByTileId = new HashMap<>();
         if (tileset.tiles != null) {
             for (TiledTileData tileData : tileset.tiles) {
                 if (tileData == null) {
@@ -282,6 +288,7 @@ public final class MapLoader {
                 healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
                 replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
                 dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
+                interactionByTileId.put(tileData.id, getInteractionType(tileData.properties));
             }
         }
 
@@ -295,6 +302,7 @@ public final class MapLoader {
             tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
             tile.dropItemType = dropByTileId.get(localId);
             tile.type = resolveTileType(tileset.name, imagePath);
+            tile.interactionType = interactionByTileId.get(localId);
             applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(gid, tile);
         }
@@ -546,6 +554,42 @@ public final class MapLoader {
 
             String value = String.valueOf(property.value).trim();
             return value.isEmpty() ? defaultValue : value;
+        }
+
+        return defaultValue;
+    }
+
+    private String getInteractionType(List<TiledPropertyData> properties) {
+        String interactionType = getStringProperty(properties, "interactionType", null);
+        if (interactionType != null) {
+            return interactionType.trim().toLowerCase();
+        }
+
+        interactionType = getStringProperty(properties, "interaction", null);
+        if (interactionType != null) {
+            return interactionType.trim().toLowerCase();
+        }
+
+        if (getBooleanProperty(properties, "sleep", false)) {
+            return "sleep";
+        }
+
+        return null;
+    }
+
+    private boolean getBooleanProperty(List<TiledPropertyData> properties, String propertyName, boolean defaultValue) {
+        if (properties == null || propertyName == null) {
+            return defaultValue;
+        }
+
+        for (TiledPropertyData property : properties) {
+            if (property == null || property.name == null) {
+                continue;
+            }
+
+            if (propertyName.equalsIgnoreCase(property.name)) {
+                return parseBoolean(property.value);
+            }
         }
 
         return defaultValue;

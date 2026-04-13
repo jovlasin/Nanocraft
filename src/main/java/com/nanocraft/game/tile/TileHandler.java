@@ -156,6 +156,26 @@ public class TileHandler {
         return false;
     }
 
+    public String getInteractionTypeAt(int col, int row) {
+        if (!isInsideMap(col, row)) {
+            return null;
+        }
+
+        for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--) {
+            int tileId = layers.get(layerIndex)[col][row];
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile currentTile = getTile(tileId);
+            if (currentTile != null && currentTile.interactionType != null && !currentTile.interactionType.isBlank()) {
+                return currentTile.interactionType;
+            }
+        }
+
+        return null;
+    }
+
     public String getCurrentMapPath() {
         return currentMapPath;
     }

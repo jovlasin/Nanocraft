@@ -16,7 +16,7 @@ public class Player extends Entity {
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
     private int mineCooldownTicks;
-    private boolean mineRequested;
+    private boolean interactRequested;
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
@@ -37,11 +37,7 @@ public class Player extends Entity {
             mineCooldownTicks--;
         }
 
-        if (mineRequested && mineCooldownTicks == 0) {
-            attemptMine();
-            mineCooldownTicks = MINE_COOLDOWN_TICKS;
-        }
-        mineRequested = false;
+        handleInteraction();
 
         if (kh.up == true || kh.down == true || kh.left == true || kh.right == true) {
             
@@ -114,8 +110,8 @@ public class Player extends Entity {
         }
     }
 
-    public void requestMine() {
-        mineRequested = true;
+    public void requestInteract() {
+        interactRequested = true;
     }
 
     public void attemptMine() {
@@ -263,5 +259,53 @@ public class Player extends Entity {
         g2.dispose();
         
         return scaledImage;
+    }
+
+    private void handleInteraction() {
+        if (!interactRequested) {
+            return;
+        }
+
+        interactRequested = false;
+
+        int[] targetTile = getFacingTile();
+        String interactionType = gh.th.getInteractionTypeAt(targetTile[0], targetTile[1]);
+        if ("sleep".equals(interactionType)) {
+            gh.onPlayerSleep();
+            return;
+        }
+
+        if (mineCooldownTicks == 0) {
+            attemptMine();
+            mineCooldownTicks = MINE_COOLDOWN_TICKS;
+        }
+    }
+
+    private int[] getFacingTile() {
+        int centerX = worldX + solidArea.x + (solidArea.width / 2);
+        int centerY = worldY + solidArea.y + (solidArea.height / 2);
+
+        switch (direction) {
+            case "up":
+                centerY -= gh.tileSize;
+            break;
+
+            case "down":
+                centerY += gh.tileSize;
+            break;
+
+            case "left":
+                centerX -= gh.tileSize;
+            break;
+
+            case "right":
+                centerX += gh.tileSize;
+            break;
+
+            default:
+            break;
+        }
+
+        return new int[] { centerX / gh.tileSize, centerY / gh.tileSize };
     }
 }

@@ -68,6 +68,11 @@ public class Ui {
         }
     }
 
+    public void addMessage(String text) {
+        message.add(text);
+        counter.add(0);
+    }
+
     private void drawTitleScreen() {
         if (titleScreen == 0) {
             g2d.setColor(new Color(0, 0, 0));

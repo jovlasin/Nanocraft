@@ -125,7 +125,7 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_SPACE) {
             space = true;
-            gh.player.requestMine();
+            gh.player.requestInteract();
         }
 
         if (code == KeyEvent.VK_TAB) {
