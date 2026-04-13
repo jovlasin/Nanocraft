@@ -234,7 +234,7 @@
         {
          "columns":1,
          "firstgid":1,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/0x72_DungeonTilesetII_v1.7\/frames\/floor_1.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/0x72_DungeonTilesetII_v1.7\/frames\/floor_1.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -247,7 +247,7 @@
         {
          "columns":1,
          "firstgid":2,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/floor_1.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/floor_1.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -266,7 +266,7 @@
         {
          "columns":1,
          "firstgid":3,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/New version (with numbers)\/000.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/New version (with numbers)\/000.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -289,7 +289,7 @@
         {
          "columns":1,
          "firstgid":4,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/wall_edge_right.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/wall_edge_right.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -312,7 +312,7 @@
         {
          "columns":1,
          "firstgid":5,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/wall_edge_down.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/wall_edge_down.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -331,7 +331,7 @@
         {
          "columns":1,
          "firstgid":6,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/wall_edge_top.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/wall_edge_top.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -354,7 +354,7 @@
         {
          "columns":1,
          "firstgid":7,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/wall_mid.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/wall_mid.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -377,7 +377,7 @@
         {
          "columns":1,
          "firstgid":8,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/wall_edge_left.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/wall_edge_left.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -400,7 +400,7 @@
         {
          "columns":1,
          "firstgid":9,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/floor_2.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/floor_2.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -413,7 +413,7 @@
         {
          "columns":1,
          "firstgid":10,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/hole.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/hole.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -452,7 +452,7 @@
         {
          "columns":1,
          "firstgid":11,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Lava.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Lava.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -476,7 +476,7 @@
         {
          "columns":1,
          "firstgid":12,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/034.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/034.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -489,7 +489,7 @@
         {
          "columns":1,
          "firstgid":13,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Rails.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Rails.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -502,7 +502,7 @@
         {
          "columns":1,
          "firstgid":14,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Red_Rails.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Red_Rails.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -515,7 +515,7 @@
         {
          "columns":1,
          "firstgid":15,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Diamond_Ore.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Diamond_Ore.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -543,7 +543,7 @@
         {
          "columns":1,
          "firstgid":16,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Red_Orea.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Red_Orea.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -571,7 +571,7 @@
         {
          "columns":1,
          "firstgid":17,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Green_Ore.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Green_Ore.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -599,7 +599,7 @@
         {
          "columns":1,
          "firstgid":18,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Active_Trial_Spawner.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Active_Trial_Spawner.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -612,7 +612,7 @@
         {
          "columns":1,
          "firstgid":19,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/web.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/web.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -640,7 +640,7 @@
         {
          "columns":2,
          "firstgid":20,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/doors_leaf_closed.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/doors_leaf_closed.png",
          "imageheight":32,
          "imagewidth":32,
          "margin":0,
@@ -668,7 +668,7 @@
         {
          "columns":1,
          "firstgid":24,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/wall_hole_1.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/wall_hole_1.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -687,7 +687,7 @@
         {
          "columns":1,
          "firstgid":25,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/035.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/035.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -700,7 +700,7 @@
         {
          "columns":1,
          "firstgid":26,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/New version (with numbers)\/001.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/New version (with numbers)\/001.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -713,7 +713,7 @@
         {
          "columns":1,
          "firstgid":27,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/0x72_DungeonTilesetII_v1.7\/frames\/floor_ladder.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/0x72_DungeonTilesetII_v1.7\/frames\/floor_ladder.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -751,7 +751,7 @@
         {
          "columns":1,
          "firstgid":28,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/New version (with numbers)\/032.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/New version (with numbers)\/032.png",
          "imageheight":16,
          "imagewidth":16,
          "margin":0,
@@ -764,7 +764,7 @@
         {
          "columns":1,
          "firstgid":29,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Nether_Portal.png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Nether_Portal.png",
          "imageheight":25,
          "imagewidth":20,
          "margin":0,
@@ -777,7 +777,7 @@
         {
          "columns":6,
          "firstgid":30,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/NanoCraft_Images\/Nether_Portal .png",
+         "image":"..\/..\/..\/..\/..\/..\/Downloads\/nano\/NanoCraft_Images\/Nether_Portal .png",
          "imageheight":125,
          "imagewidth":100,
          "margin":0,
@@ -785,6 +785,199 @@
          "spacing":0,
          "tilecount":42,
          "tileheight":16,
+         "tiles":[
+                {
+                 "id":14,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":15,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":20,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":21,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":26,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":27,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":32,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }, 
+                {
+                 "id":33,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"nether.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":42
+                        }]
+                }],
          "tilewidth":16
         }],
  "tilewidth":16,
