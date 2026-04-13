@@ -118,6 +118,21 @@ public class GameHandler extends JPanel implements Runnable {
         System.out.println("No free world object slot for dropped item: " + itemType);
     }
 
+    public void onPlayerSleep() {
+        String currentMapPath = th.getCurrentMapPath();
+        int playerWorldX = player.worldX;
+        int playerWorldY = player.worldY;
+        String playerDirection = player.direction;
+
+        th.loadMap(currentMapPath);
+        player.worldX = playerWorldX;
+        player.worldY = playerWorldY;
+        player.direction = playerDirection;
+        ah.setObjects();
+        ah.setNPCS();
+        System.out.println("You slept. The world has reset.");
+    }
+
     private Entity createDropEntity(String itemType) {
         if (itemType == null || itemType.isBlank()) {
             return null;
