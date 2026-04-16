@@ -1627,7 +1627,27 @@
                         {
                          "name":"collision",
                          "type":"bool",
-                         "value":true
+                         "value":false
+                        }, 
+                        {
+                         "name":"direction",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"hall.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":34
                         }]
                 }, 
                 {
@@ -1636,7 +1656,27 @@
                         {
                          "name":"collision",
                          "type":"bool",
-                         "value":true
+                         "value":false
+                        }, 
+                        {
+                         "name":"direction",
+                         "type":"string",
+                         "value":"up"
+                        }, 
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        }, 
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"hall.tmj"
+                        }, 
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":34
                         }]
                 }, 
                 {
