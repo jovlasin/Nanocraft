@@ -88,7 +88,7 @@ public class KeyHandler implements KeyListener {
                 if (gh.ui.commandNum == 0) {
                     gh.ui.titleScreen = 1;
                     gh.gameState = gh.play;
-                    gh.playMusic();
+                    // gh.playMusic();
                 }
 
                 else if (gh.ui.commandNum == 1) {
