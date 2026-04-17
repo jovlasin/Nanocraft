@@ -9,8 +9,9 @@ import java.util.Map;
 import com.nanocraft.game.core.GameHandler;
 
 public class TileHandler {
-    private static final String DEFAULT_MAP_PATH = "/res/map/mapv0.csv";
+    private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
     private final GameHandler gh;
+    private final MapLoader mapLoader;
     private final Map<Integer, Tile> tileRegistry;
     private final List<int[][]> layers;
     private final List<int[][]> layerHealth;
@@ -20,24 +21,18 @@ public class TileHandler {
     private int mapHeight;
     private int belowPlayerLayerCount;
     private boolean zeroMeansEmpty;
+    private String currentMapPath;
+    private final List<MapTransition> transitions;
 
     public TileHandler(GameHandler gh) {
         this.gh = gh;
+        this.mapLoader = new MapLoader(gh.tileSize);
         this.tileRegistry = new HashMap<>();
         this.layers = new ArrayList<>();
         this.layerHealth = new ArrayList<>();
         this.layerNames = new ArrayList<>();
-
-        MapLoader mapLoader = new MapLoader(gh.tileSize);
-        MapLoader.MapData mapData = mapLoader.loadMap(DEFAULT_MAP_PATH);
-        tileRegistry.putAll(mapData.tileRegistry);
-        layers.addAll(mapData.layers);
-        layerNames.addAll(mapData.layerNames);
-        mapWidth = mapData.mapWidth;
-        mapHeight = mapData.mapHeight;
-        zeroMeansEmpty = mapData.zeroMeansEmpty;
-        initializeLayerHealth();
-        updateBelowPlayerLayerCount();
+        this.transitions = new ArrayList<>();
+        loadMap(DEFAULT_MAP_PATH);
     }
 
     public int getLayerCount() {
@@ -116,6 +111,112 @@ public class TileHandler {
             }
         }
         return false;
+    }
+
+    public void loadMap(String mapPath) {
+        MapLoader.MapData mapData = mapLoader.loadMap(mapPath);
+        tileRegistry.clear();
+        layers.clear();
+        layerNames.clear();
+
+        tileRegistry.putAll(mapData.tileRegistry);
+        layers.addAll(mapData.layers);
+        layerNames.addAll(mapData.layerNames);
+        transitions.clear();
+        transitions.addAll(mapData.transitions);
+        mapWidth = mapData.mapWidth;
+        mapHeight = mapData.mapHeight;
+        zeroMeansEmpty = mapData.zeroMeansEmpty;
+        currentMapPath = mapPath;
+        initializeLayerHealth();
+        updateBelowPlayerLayerCount();
+    }
+
+    public boolean hasTileTypeAt(int col, int row, String tileType) {
+        if (!isInsideMap(col, row) || tileType == null || tileType.isBlank()) {
+            return false;
+        }
+
+        for (int[][] layer : layers) {
+            int tileId = layer[col][row];
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile currentTile = getTile(tileId);
+            if (currentTile == null || currentTile.type == null) {
+                continue;
+            }
+
+            if (tileType.equalsIgnoreCase(currentTile.type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public String getCurrentMapPath() {
+        return currentMapPath;
+    }
+
+    public MapTransition getTransitionAt(int col, int row) {
+        for (MapTransition transition : transitions) {
+            if (transition != null && transition.contains(col, row)) {
+                return transition;
+            }
+        }
+
+        if (!isInsideMap(col, row)) {
+            return null;
+        }
+
+        for (int[][] layer : layers) {
+            int tileId = layer[col][row];
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile tile = getTile(tileId);
+            if (tile == null || tile.targetMapPath == null || tile.targetMapPath.isBlank()) {
+                continue;
+            }
+
+            if (tile.targetCol < 0 || tile.targetRow < 0) {
+                continue;
+            }
+
+            return new MapTransition(
+                col,
+                row,
+                1,
+                1,
+                tile.targetMapPath,
+                tile.targetCol,
+                tile.targetRow,
+                tile.targetDirection == null ? "down" : tile.targetDirection
+            );
+        }
+
+        return null;
+    }
+
+    public void checkMapTransition() {
+        int playerCol = (gh.player.worldX + gh.player.solidArea.x + (gh.player.solidArea.width / 2)) / gh.tileSize;
+        int playerRow = (gh.player.worldY + gh.player.solidArea.y + (gh.player.solidArea.height / 2)) / gh.tileSize;
+        MapTransition transition = getTransitionAt(playerCol, playerRow);
+        if (transition != null) {
+            swapMap(transition.targetMapPath, transition.targetCol, transition.targetRow, transition.targetDirection);
+        }
+    }
+
+    public void swapMap(String mapPath, int playerCol, int playerRow, String direction) {
+        loadMap(mapPath);
+        gh.player.worldX = playerCol * gh.tileSize;
+        gh.player.worldY = playerRow * gh.tileSize;
+        gh.player.direction = direction;
+        gh.ah.setObjects();
+        gh.ah.setNPCS();
     }
 
     public void damageBreakableTile(int col, int row, int damage) {

@@ -100,6 +100,8 @@ public class Player extends Entity {
                         worldX += speed;
                     break;
                 }
+
+                gh.th.checkMapTransition();
             }
             spriteCounter++;
 
@@ -236,8 +238,8 @@ public class Player extends Entity {
     }
 
     private void setPos() {
-        worldX = gh.tileSize * 20;
-        worldY = gh.tileSize * 16;
+        worldX = gh.tileSize * 25;
+        worldY = gh.tileSize * 6;
 
         solidArea = new Rectangle();
         solidArea.x = 8;
@@ -313,4 +315,3 @@ public class Player extends Entity {
         return scaledImage;
     }
 }
-

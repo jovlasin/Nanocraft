@@ -30,6 +30,7 @@ public final class MapLoader {
         final Map<Integer, Tile> tileRegistry;
         final List<int[][]> layers;
         final List<String> layerNames;
+        final List<MapTransition> transitions;
         final int mapWidth;
         final int mapHeight;
         final boolean zeroMeansEmpty;
@@ -38,6 +39,7 @@ public final class MapLoader {
             Map<Integer, Tile> tileRegistry,
             List<int[][]> layers,
             List<String> layerNames,
+            List<MapTransition> transitions,
             int mapWidth,
             int mapHeight,
             boolean zeroMeansEmpty
@@ -45,6 +47,7 @@ public final class MapLoader {
             this.tileRegistry = tileRegistry;
             this.layers = layers;
             this.layerNames = layerNames;
+            this.transitions = transitions;
             this.mapWidth = mapWidth;
             this.mapHeight = mapHeight;
             this.zeroMeansEmpty = zeroMeansEmpty;
@@ -57,6 +60,7 @@ public final class MapLoader {
     private final Map<Integer, Tile> tileRegistry;
     private final List<int[][]> layers;
     private final List<String> layerNames;
+    private final List<MapTransition> transitions;
 
     private int mapWidth;
     private int mapHeight;
@@ -68,6 +72,7 @@ public final class MapLoader {
         this.tileRegistry = new HashMap<>();
         this.layers = new ArrayList<>();
         this.layerNames = new ArrayList<>();
+        this.transitions = new ArrayList<>();
     }
 
     public MapData loadMap(String filePath) {
@@ -82,6 +87,7 @@ public final class MapLoader {
             tileRegistry,
             layers,
             layerNames,
+            transitions,
             mapWidth,
             mapHeight,
             zeroMeansEmpty
@@ -105,7 +111,7 @@ public final class MapLoader {
             }
 
             registerTmjTiles(filePath, mapData.tilesets);
-            loadTmjLayers(mapData.layers);
+            loadTmjLayers(filePath, mapData);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load TMJ map: " + filePath, e);
         }
@@ -152,6 +158,8 @@ public final class MapLoader {
                 tile.maxHealth = getIntProperty(tileData.properties, "oreHealth", 0);
                 tile.replacementTileId = getIntProperty(tileData.properties, "replacementTileId", 0);
                 tile.dropItemType = getStringProperty(tileData.properties, "dropItemType", null);
+                tile.type = resolveTileType(tileset.name, tileData.image);
+                applyTransitionProperties(tile, mapFilePath, tileData.properties);
 
                 int globalId = tileset.firstgid + tileData.id;
                 tileRegistry.put(globalId, tile);
@@ -207,6 +215,12 @@ public final class MapLoader {
             tile.maxHealth = healthByTileId.getOrDefault(0, 0);
             tile.replacementTileId = replacementByTileId.getOrDefault(0, 0);
             tile.dropItemType = dropByTileId.get(0);
+            tile.type = resolveTileType(tileset.name, tileset.image);
+            applyTransitionProperties(tile, mapFilePath, tileset.tiles == null ? null : tileset.tiles.stream()
+                .filter(tileData -> tileData != null && tileData.id == 0)
+                .findFirst()
+                .map(tileData -> tileData.properties)
+                .orElse(null));
             tileRegistry.put(tileset.firstgid, tile);
             return;
         }
@@ -228,6 +242,8 @@ public final class MapLoader {
             tile.maxHealth = healthByTileId.getOrDefault(localId, 0);
             tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
             tile.dropItemType = dropByTileId.get(localId);
+            tile.type = resolveTileType(tileset.name, tileset.image);
+            applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(tileset.firstgid + localId, tile);
         }
     }
@@ -278,31 +294,40 @@ public final class MapLoader {
             tile.maxHealth = healthByTileId.getOrDefault(localId, 0);
             tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
             tile.dropItemType = dropByTileId.get(localId);
+            tile.type = resolveTileType(tileset.name, imagePath);
+            applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(gid, tile);
         }
     }
 
-    private void loadTmjLayers(List<TiledLayerData> mapLayers) {
-        if (mapLayers == null) {
+    private void loadTmjLayers(String mapFilePath, TiledMapData mapData) {
+        if (mapData == null || mapData.layers == null) {
             return;
         }
 
-        for (TiledLayerData layerData : mapLayers) {
-            if (layerData == null || !"tilelayer".equals(layerData.type) || layerData.data == null) {
+        for (TiledLayerData layerData : mapData.layers) {
+            if (layerData == null) {
                 continue;
             }
 
-            int[][] grid = new int[mapWidth][mapHeight];
-            int[] decodedLayerData = decodeLayerData(layerData);
-            int maxEntries = Math.min(decodedLayerData.length, mapWidth * mapHeight);
-            for (int index = 0; index < maxEntries; index++) {
-                int col = index % mapWidth;
-                int row = index / mapWidth;
-                grid[col][row] = stripFlipFlags(decodedLayerData[index]);
+            if ("tilelayer".equals(layerData.type) && layerData.data != null) {
+                int[][] grid = new int[mapWidth][mapHeight];
+                int[] decodedLayerData = decodeLayerData(layerData);
+                int maxEntries = Math.min(decodedLayerData.length, mapWidth * mapHeight);
+                for (int index = 0; index < maxEntries; index++) {
+                    int col = index % mapWidth;
+                    int row = index / mapWidth;
+                    grid[col][row] = stripFlipFlags(decodedLayerData[index]);
+                }
+
+                layers.add(grid);
+                layerNames.add(layerData.name == null ? "Layer" + layers.size() : layerData.name);
+                continue;
             }
 
-            layers.add(grid);
-            layerNames.add(layerData.name == null ? "Layer" + layers.size() : layerData.name);
+            if ("objectgroup".equals(layerData.type) && layerData.objects != null) {
+                loadTransitions(mapFilePath, mapData, layerData.objects);
+            }
         }
     }
 
@@ -355,6 +380,7 @@ public final class MapLoader {
         tileRegistry.clear();
         layers.clear();
         layerNames.clear();
+        transitions.clear();
         mapWidth = 0;
         mapHeight = 0;
     }
@@ -373,7 +399,94 @@ public final class MapLoader {
         Tile tile = new Tile();
         tile.image = ResourceLoader.loadScaledImage("/res/tile/" + name + ".png", tileSize);
         tile.collision = collision;
+        tile.type = name;
         tileRegistry.put(id, tile);
+    }
+
+    private String resolveTileType(String tilesetName, String imagePath) {
+        if (tilesetName != null && !tilesetName.isBlank()) {
+            return tilesetName;
+        }
+
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+
+        String fileName = ResourceLoader.fileName(imagePath);
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex > 0) {
+            return fileName.substring(0, dotIndex);
+        }
+
+        return fileName;
+    }
+
+    private void loadTransitions(String mapFilePath, TiledMapData mapData, List<TiledObjectData> objects) {
+        int sourceTileWidth = mapData.tilewidth > 0 ? mapData.tilewidth : 1;
+        int sourceTileHeight = mapData.tileheight > 0 ? mapData.tileheight : 1;
+
+        for (TiledObjectData objectData : objects) {
+            if (objectData == null) {
+                continue;
+            }
+
+            String targetMap = getStringProperty(objectData.properties, "targetMap", null);
+            int targetCol = getIntProperty(objectData.properties, "targetCol", -1);
+            int targetRow = getIntProperty(objectData.properties, "targetRow", -1);
+            if (targetMap == null || targetMap.isBlank() || targetCol < 0 || targetRow < 0) {
+                continue;
+            }
+
+            int sourceCol = (int) Math.floor(objectData.x / sourceTileWidth);
+            int sourceRow = (int) Math.floor(objectData.y / sourceTileHeight);
+            int widthInTiles = Math.max(1, (int) Math.ceil(objectData.width / sourceTileWidth));
+            int heightInTiles = Math.max(1, (int) Math.ceil(objectData.height / sourceTileHeight));
+            String targetDirection = getStringProperty(objectData.properties, "targetDirection", "down");
+
+            transitions.add(new MapTransition(
+                sourceCol,
+                sourceRow,
+                widthInTiles,
+                heightInTiles,
+                ResourceLoader.resolveResourcePath(mapFilePath, targetMap),
+                targetCol,
+                targetRow,
+                targetDirection
+            ));
+        }
+        
+    }
+
+    private List<TiledPropertyData> findTileProperties(List<TiledTileData> tiles, int localId) {
+        if (tiles == null) {
+            return null;
+        }
+
+        for (TiledTileData tileData : tiles) {
+            if (tileData != null && tileData.id == localId) {
+                return tileData.properties;
+            }
+        }
+
+        return null;
+    }
+
+    private void applyTransitionProperties(Tile tile, String mapFilePath, List<TiledPropertyData> properties) {
+        if (tile == null || properties == null) {
+            return;
+        }
+
+        String targetMap = getStringProperty(properties, "targetMap", null);
+        int targetCol = getIntProperty(properties, "targetCol", -1);
+        int targetRow = getIntProperty(properties, "targetRow", -1);
+        if (targetMap == null || targetMap.isBlank() || targetCol < 0 || targetRow < 0) {
+            return;
+        }
+
+        tile.targetMapPath = ResourceLoader.resolveResourcePath(mapFilePath, targetMap);
+        tile.targetCol = targetCol;
+        tile.targetRow = targetRow;
+        tile.targetDirection = getStringProperty(properties, "targetDirection", "down");
     }
 
     private boolean hasCollisionProperty(List<TiledPropertyData> properties) {
