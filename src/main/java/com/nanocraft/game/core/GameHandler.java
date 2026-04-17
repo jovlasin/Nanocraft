@@ -36,6 +36,7 @@ public class GameHandler extends JPanel implements Runnable {
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
+    public ArrayList<Entity> projectileList = new ArrayList<>();
 
     public final int title = 0;
     public final int pause = 1;
@@ -90,6 +91,18 @@ public class GameHandler extends JPanel implements Runnable {
             for (int i = 0; i < npcs.length; i++) {
                 if (npcs[i] != null) {
                     npcs[i].update();
+                }
+            }
+
+            for (int i = 0; i < projectileList.size(); i++) {
+                if (projectileList.get(i) != null) {
+                    if (projectileList.get(i).alive == true) {
+                        projectileList.get(i).update();
+                    }
+
+                    if (projectileList.get(i).alive == false) {
+                        projectileList.remove(i);
+                    }
                 }
             }
         }
@@ -167,6 +180,12 @@ public class GameHandler extends JPanel implements Runnable {
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null) {
                     entityList.add(objs[i]);
+                }
+            }
+
+            for (int i = 0; i < projectileList.size(); i++) {
+                if (projectileList.get(i) != null) {
+                    entityList.add(projectileList.get(i));
                 }
             }
 
