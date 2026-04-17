@@ -6,7 +6,7 @@ import java.awt.event.KeyListener;
 import com.nanocraft.game.core.GameHandler;
 
 public class KeyHandler implements KeyListener {
-    public boolean up, down, left, right, space;
+    public boolean up, down, left, right, space, shoot;
     private GameHandler gh;
 
     public KeyHandler(GameHandler gh) {
@@ -63,6 +63,10 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_SPACE) {
             space = false;
+        }
+
+        if (code == KeyEvent.VK_F) {
+            shoot = false;
         }
     }
 
@@ -132,9 +136,9 @@ public class KeyHandler implements KeyListener {
             gh.gameState = gh.stats;
         }
 
-        // if (code == KeyEvent.VK_F) {
-        //     shootPressed = true;
-        // }
+        if (code == KeyEvent.VK_F) {
+            shoot = true;
+        }
     }
 
     private void pauseState(int code) {
