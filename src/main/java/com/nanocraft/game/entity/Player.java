@@ -35,14 +35,12 @@ public class Player extends Entity {
     }
 
     public int getAttack() {
-        // attackArea = currentWeapon.attackArea;
-        // return strength * currentWeapon.attackValue;
-        return -999;
+        attackArea = currentWeapon.attackArea;
+        return strength * currentWeapon.attackValue;
     }
 
     public int getDefense() {
-        // return dexterity * currentShield.defenseValue;
-        return -999;
+        return dexterity * 3;
     }
 
     public void update() {
@@ -294,11 +292,9 @@ public class Player extends Entity {
         nextLevelExp = 5;
         coin = 0;
         currentWeapon = new Sword(gh);
-        // currentShield = new OldShield(gh);
         projectile = new Arrow(gh);
         attack = getAttack();
         defense = getDefense();
-
     }
 
     private void setPos() {
