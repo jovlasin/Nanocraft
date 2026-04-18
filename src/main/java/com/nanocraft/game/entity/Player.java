@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
+import com.nanocraft.game.object.Key;
 import com.nanocraft.game.object.Sword;
 
 public class Player extends Entity {
@@ -31,6 +32,7 @@ public class Player extends Entity {
 
         setStats();
         setPos();
+        setItems();
         getImage();
     }
 
@@ -445,6 +447,29 @@ public class Player extends Entity {
             gh.gameState = gh.dialogue;
             gh.ui.currentDialogue = "You are level " + level + " now!\nYou feel stronger!";
         }
+    }
+
+    public void selectItem() {
+        int itemIndex = gh.ui.getItemIndexOnSlot();
+
+        if (itemIndex < inventory.size()) {
+            Entity item = inventory.get(itemIndex);
+
+            if (item.type == sword) {
+                currentWeapon = item;
+                attack = getAttack();
+            }
+
+            else if (item.type == consumable) {
+                // item.use(this);
+                inventory.remove(itemIndex);
+            }
+        }
+    }
+
+    private void setItems() {
+        inventory.add(currentWeapon);
+        inventory.add(new Key(gh));
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
