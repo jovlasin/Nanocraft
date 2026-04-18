@@ -37,6 +37,7 @@ public class GameHandler extends JPanel implements Runnable {
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
     public ArrayList<Entity> projectileList = new ArrayList<>();
+    public Utility u = new Utility(this);
 
     public final int title = 0;
     public final int pause = 1;

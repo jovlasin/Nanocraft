@@ -186,8 +186,8 @@ public class KeyHandler implements KeyListener {
             }
         }
 
-        // if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
-        //     gh.player.selectItem();
-        // }
+        if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
+            gh.player.selectItem();
+        }
     }
 }
