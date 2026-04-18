@@ -40,8 +40,6 @@ public class Entity {
     public final int npc = 1;
     public final int monster = 2;
     public final int sword = 3;
-    public final int axe = 4;
-    public final int shield = 5;
     public final int consumable = 6;
     public int type;
 
