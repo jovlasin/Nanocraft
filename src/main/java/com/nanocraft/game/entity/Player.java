@@ -1,5 +1,6 @@
 package com.nanocraft.game.entity;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -9,6 +10,9 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.input.KeyHandler;
+import com.nanocraft.game.object.Arrow;
+import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.Sword;
 
 public class Player extends Entity {
     private static final int MINE_COOLDOWN_TICKS = 8;
@@ -20,6 +24,7 @@ public class Player extends Entity {
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
+    public boolean cancelAttack;
 
     public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
@@ -27,18 +32,17 @@ public class Player extends Entity {
 
         setStats();
         setPos();
+        setItems();
         getImage();
     }
 
     public int getAttack() {
-        // attackArea = currentWeapon.attackArea;
-        // return strength * currentWeapon.attackValue;
-        return -999;
+        attackArea = currentWeapon.attackArea;
+        return strength * currentWeapon.attackValue;
     }
 
     public int getDefense() {
-        // return dexterity * currentShield.defenseValue;
-        return -999;
+        return dexterity * 3;
     }
 
     public void update() {
@@ -52,7 +56,11 @@ public class Player extends Entity {
         }
         mineRequested = false;
 
-        if (kh.up == true || kh.down == true || kh.left == true || kh.right == true) {
+        if (attacking == true) {
+            attack();
+        }
+
+        else if (kh.up == true || kh.down == true || kh.left == true || kh.right == true || kh.space == true) {
             
             if (kh.up == true) {
                 direction = "up";
@@ -82,7 +90,7 @@ public class Player extends Entity {
             int monsterIndex = gh.ch.checkEntity(this, gh.monsters);
             interactMonster(monsterIndex);
 
-            if (collisionOn == false) {
+            if (collisionOn == false && kh.space == false) {
                 switch (direction) {
                     case "up":
                         worldY -= speed;
@@ -103,6 +111,15 @@ public class Player extends Entity {
 
                 gh.th.checkMapTransition();
             }
+
+            if (kh.space == true && cancelAttack == false) {
+                // gh.playSound(7);
+                attacking = true;
+                spriteCounter = 0;
+            }
+
+            cancelAttack = false;
+            gh.kh.space = false;
             spriteCounter++;
 
             if (spriteCounter > 14) {
@@ -124,6 +141,26 @@ public class Player extends Entity {
                 spriteNum = 1;
                 standCounter = 0;
             }
+        }
+
+        if (gh.kh.shoot == true && projectile.alive == false && shotCounter == 30) {
+            projectile.set(worldX, worldY, direction, true, this);
+            gh.projectileList.add(projectile);
+            shotCounter = 0;
+            // gh.playSound(10);
+        }
+
+        if (invincible == true) {
+            invincibleCounter++;
+
+            if (invincibleCounter > 60) {
+                invincible = false;
+                invincibleCounter = 0;
+            }
+        }
+
+        if (shotCounter < 30) {
+            shotCounter++;
         }
     }
 
@@ -163,49 +200,67 @@ public class Player extends Entity {
 
     public void draw(Graphics2D g2) {
         BufferedImage image = null;
+        int tempX = screenX;
+        int tempY = screenY;
 
         switch (direction) {
             case "up":
-                if (spriteNum == 1) {
-                    image = up1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = up1;}
+                    else if (spriteNum == 2) {image = up2;}
                 }
 
-                else if (spriteNum == 2) {
-                    image = up2;
+                else if (attacking == true) {
+                    tempY = screenY - gh.tileSize;
+                    if (spriteNum == 1) {image = attackUp1;}
+                    else if (spriteNum == 2) {image = attackUp2;}
                 }
             break;
 
             case "down":
-                if (spriteNum == 1) {
-                    image = down1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = down1;}
+                    else if (spriteNum == 2) {image = down2;}
                 }
-                
-                else if (spriteNum == 2) {
-                    image = down2;
+
+                else if (attacking == true) {
+                    if (spriteNum == 1) {image = attackDown1;}
+                    else if (spriteNum == 2) {image = attackDown2;}
                 }
             break;
 
             case "left":
-                if (spriteNum == 1) {
-                    image = left1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = left1;}
+                    else if (spriteNum == 2) {image = left2;}
                 }
-                
-                else if (spriteNum == 2) {
-                    image = left2;
+
+                else if (attacking == true) {
+                    tempX = screenX - gh.tileSize;
+                    if (spriteNum == 1) {image = attackLeft1;}
+                    else if (spriteNum == 2) {image = attackLeft2;}
                 }
             break;
 
             case "right":
-                if (spriteNum == 1) {
-                    image = right1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = right1;}
+                    else if (spriteNum == 2) {image = right2;}
                 }
 
-                else if (spriteNum == 2) {
-                    image = right2;
+                else if (attacking == true) {
+                    if (spriteNum == 1) {image = attackRight1;}
+                    else if (spriteNum == 2) {image = attackRight2;}
                 }
             break;
         }
-        g2.drawImage(image, screenX, screenY, null);
+        
+        if (invincible == true) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+        }
+
+        g2.drawImage(image, tempX, tempY, null);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
     }
 
     private void getImage() {
@@ -217,6 +272,15 @@ public class Player extends Entity {
         left2 = scale("/player/playerWalkL2", gh.tileSize, gh.tileSize);
         right1 = scale("/player/playerWalkR1", gh.tileSize, gh.tileSize);
         right2 = scale("/player/playerWalkR2", gh.tileSize, gh.tileSize);
+
+        attackUp1 = scale("/player/playerSwordU1", gh.tileSize, gh.tileSize * 2);
+        attackUp2 = scale("/player/playerSwordU2", gh.tileSize, gh.tileSize * 2);
+        attackDown1 = scale("/player/playerSwordD1", gh.tileSize, gh.tileSize * 2);
+        attackDown2 = scale("/player/playerSwordD2", gh.tileSize, gh.tileSize * 2);
+        attackLeft1 = scale("/player/playerSwordL1", gh.tileSize * 2, gh.tileSize);
+        attackLeft2 = scale("/player/playerSwordL2", gh.tileSize * 2, gh.tileSize);
+        attackRight1 = scale("/player/playerSwordR1", gh.tileSize * 2, gh.tileSize);
+        attackRight2 = scale("/player/playerSwordR2", gh.tileSize * 2, gh.tileSize);
     }
 
     private void setStats() {
@@ -230,11 +294,9 @@ public class Player extends Entity {
         nextLevelExp = 5;
         coin = 0;
         currentWeapon = new Sword(gh);
-        currentShield = new OldShield(gm);
-        projectile = new Arrow(gm);
+        projectile = new Arrow(gh);
         attack = getAttack();
         defense = getDefense();
-
     }
 
     private void setPos() {
@@ -281,7 +343,7 @@ public class Player extends Entity {
     private void interactMonster(int i) {
         if (i != 999) {
             if (invincible == false && gh.monsters[i].dying == false) {
-                gh.playSound(6);
+                // gh.playSound(6);
                 int damage = gh.monsters[i].attack - defense;
 
                 if (damage < 0) {
@@ -291,6 +353,123 @@ public class Player extends Entity {
                 invincible = true;
             }
         }
+    }
+
+    private void attack() {
+        spriteCounter++;
+
+        if (spriteCounter <= 5) {
+            spriteNum = 1;
+        }
+
+        else if (spriteCounter > 5 && spriteCounter <= 25) {
+            spriteNum = 2;
+
+            int x = worldX;
+            int y = worldY;
+            int width = solidArea.width;
+            int height = solidArea.height;
+
+            switch (direction) {
+                case "up":
+                    worldY -= attackArea.height;
+                break;
+                
+                case "down":
+                    worldY += attackArea.height;
+                break;
+
+                case "left":
+                    worldX -= attackArea.width;
+                break;
+
+                case "right":
+                    worldX += attackArea.width;
+                break;
+            }
+
+            solidArea.width = attackArea.width;
+            solidArea.height = attackArea.height;
+
+            int monsterIndex = gh.ch.checkEntity(this, gh.monsters);
+            damage(monsterIndex, attack);
+
+            worldX = x;
+            worldY = y;
+            solidArea.width = width;
+            solidArea.height = height;
+        }
+
+        else if (spriteCounter > 25) {
+            spriteNum = 1;
+            spriteCounter = 0;
+            attacking = false;
+        }
+    }
+
+    public void damage(int i, int attack) {
+        if (i != 999) {
+            if (gh.monsters[i].invincible == false) {
+                // gh.playSound(5);
+                int damage = attack - gh.monsters[i].defense;
+
+                if (damage < 0) {
+                    damage = 0;
+                }
+
+                gh.monsters[i].life -= damage;
+                gh.ui.addMessage(damage + " damage!");
+                gh.monsters[i].invincible = true;
+                // gh.monsters[i].aggro();
+
+                if (gh.monsters[i].life <= 0) {
+                    gh.monsters[i].dying = true;
+                    gh.ui.addMessage("You killed a " + gh.monsters[i].name + "!");
+                    gh.ui.addMessage("Exp + " + gh.monsters[i].exp);
+                    exp += gh.monsters[i].exp;
+                    checkLevelUp();
+                }
+            }
+        }
+    }
+
+    private void checkLevelUp() {
+        if (exp >= nextLevelExp) {
+            level++;
+            nextLevelExp = nextLevelExp * 2;
+            maxLife += 2;
+            life = maxLife;
+            strength++;
+            dexterity++;
+            attack = getAttack();
+            defense = getDefense();
+            // gh.playSound(8);
+            gh.gameState = gh.dialogue;
+            gh.ui.currentDialogue = "You are level " + level + " now!\nYou feel stronger!";
+        }
+    }
+
+    public void selectItem() {
+        int itemIndex = gh.ui.getItemIndexOnSlot();
+
+        if (itemIndex < inventory.size()) {
+            Entity item = inventory.get(itemIndex);
+
+            if (item.type == sword) {
+                currentWeapon = item;
+                attack = getAttack();
+            }
+
+            else if (item.type == consumable) {
+                // item.use(this);
+                inventory.remove(itemIndex);
+            }
+        }
+    }
+
+    private void setItems() {
+        inventory.add(currentWeapon);
+        inventory.add(new Key(gh));
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
