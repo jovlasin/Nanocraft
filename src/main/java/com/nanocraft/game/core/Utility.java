@@ -33,8 +33,4 @@ public class Utility {
         g2d.setStroke(new BasicStroke(5));
         g2d.drawRoundRect(x + 5, y + 5, width - 10, height - 10, 25, 25);
     }
-
-    public int getItemIndexOnSlot(int slotCol, int slotRow) {
-        return slotCol + (slotRow * 5);
-    }
 }

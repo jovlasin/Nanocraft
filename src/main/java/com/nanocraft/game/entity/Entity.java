@@ -15,22 +15,42 @@ public class Entity {
     public GameHandler gh;
     public int worldX, worldY;
     public String direction;
-    public int spriteCounter, actionCounter;
-    public int spriteNum;
-    public int speed;
+    public int spriteCounter, actionCounter, spriteNum, invincibleCounter, shotCounter;
+    public int speed, maxLife, maxMana, mana, life, level, strength, dexterity, attack, defense, exp, nextLevelExp, coin;
+    public Entity currentWeapon, currentShield;
+    public Projectile projectile;
     public boolean collisionOn, collision;
     public String name;
     public String description;
     public BufferedImage up1, up2, down1, down2, left1, left2, right1, right2;
+    public BufferedImage attackUp1, attackUp2, attackDown1, attackDown2, attackLeft1, attackLeft2, attackRight1, attackRight2;
     public BufferedImage image, image2, image3;
     public int solidAreaDefaultX, solidAreaDefaultY;
     public Rectangle solidArea;
+    public Rectangle attackArea;
+    public int dialogueIndex;
+    public String[] dialogues;
+    public boolean invincible;
+    public boolean dying;
+    public boolean alive;
+    public boolean attacking;
+    public int attackValue;
+
+    public final int player = 0;
+    public final int npc = 1;
+    public final int monster = 2;
+    public final int sword = 3;
+    public final int consumable = 6;
+    public int type;
 
     public Entity(GameHandler gh) {
         this.gh = gh;
         this.solidArea = new Rectangle();
+        this.attackArea = new Rectangle(0, 0, 0, 0);
         this.direction = "down";
         this.spriteNum = 1;
+        this.dialogues = new String[20];
+        this.alive = true;
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
@@ -91,7 +111,12 @@ public class Entity {
         gh.ch.checkTile(this);
         gh.ch.checkObject(this, false);
         gh.ch.checkEntity(this, gh.npcs);
+        gh.ch.checkEntity(this, gh.monsters);
         boolean contact = gh.ch.checkPlayer(this);
+
+        if (type == monster && contact == true) {
+            // damage(attack);
+        }
 
         if (collisionOn == false) {
             switch (direction) {
@@ -124,6 +149,33 @@ public class Entity {
                 spriteNum = 1;
             }
             spriteCounter = 0;
+        }
+    }
+
+    public void speak() {
+        if (dialogues[dialogueIndex] == null) {
+            dialogueIndex = 0;
+        }
+
+        gh.ui.currentDialogue = dialogues[dialogueIndex];
+        dialogueIndex++;
+
+        switch (gh.player.direction) {
+            case "up":
+                direction = "down";    
+            break;
+
+            case "down":
+                direction = "up";    
+            break;
+
+            case "left":
+                direction = "right";    
+            break;
+
+            case "right":
+                direction = "left";    
+            break;
         }
     }
 }
