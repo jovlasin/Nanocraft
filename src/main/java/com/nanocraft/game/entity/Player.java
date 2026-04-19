@@ -1,5 +1,6 @@
 package com.nanocraft.game.entity;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -11,6 +12,9 @@ import javax.imageio.ImageIO;
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.input.KeyHandler;
+import com.nanocraft.game.object.Arrow;
+import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.Sword;
 
 public class Player extends Entity {
     private static final int MINE_COOLDOWN_TICKS = 8;
@@ -22,8 +26,7 @@ public class Player extends Entity {
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
-    public int maxLife;
-    public int life;
+    public boolean cancelAttack;
 
     public Player(GameHandler gh, KeyHandler kh) {
         super(gh);
@@ -31,7 +34,17 @@ public class Player extends Entity {
 
         setStats();
         setPos();
+        setItems();
         getImage();
+    }
+
+    public int getAttack() {
+        attackArea = currentWeapon.attackArea;
+        return strength * currentWeapon.attackValue;
+    }
+
+    public int getDefense() {
+        return dexterity * 3;
     }
 
     public void update() {
@@ -44,51 +57,69 @@ public class Player extends Entity {
             updateDirectionFromInput();
         }
 
-        if (handleInteraction()) {
-            return;
+        if (attacking == true) {
+            attack();
         }
 
-        if (moving) {
+        else if (moving || kh.space == true || interactRequested == true) {
             collisionOn = false;
             gh.ch.checkTile(this);
 
             int objIndex = gh.ch.checkObject(this, true);
             acquireObject(objIndex);
 
-            gh.ch.checkEntity(this, gh.npcs);
+            int npcIndex = gh.ch.checkEntity(this, gh.npcs);
+            int monsterIndex = gh.ch.checkEntity(this, gh.monsters);
+            interactMonster(monsterIndex);
 
-            if (collisionOn == false) {
-                switch (direction) {
-                    case "up":
-                        worldY -= speed;
-                    break;
+            boolean interactionConsumed = handleInteraction(npcIndex);
+            if (!interactionConsumed) {
+                if (collisionOn == false && kh.space == false) {
+                    switch (direction) {
+                        case "up":
+                            worldY -= speed;
+                        break;
 
-                    case "down":
-                        worldY += speed;
-                    break;
+                        case "down":
+                            worldY += speed;
+                        break;
 
-                    case "left":
-                        worldX -= speed;
-                    break;
+                        case "left":
+                            worldX -= speed;
+                        break;
 
-                    case "right":
-                        worldX += speed;
-                    break;
+                        case "right":
+                            worldX += speed;
+                        break;
+                    }
+
+                    gh.th.checkMapTransition();
                 }
 
-                gh.th.checkMapTransition();
+                if (kh.space == true && cancelAttack == false) {
+                    attacking = true;
+                    spriteCounter = 0;
+                }
+
+                cancelAttack = false;
+                gh.kh.space = false;
+                spriteCounter++;
+
+                if (spriteCounter > 14) {
+                    if (spriteNum == 1) {
+                        spriteNum = 2;
+                    }
+
+                    else if (spriteNum == 2) {
+                        spriteNum = 1;
+                    }
+                    spriteCounter = 0;
+                }
             }
-            spriteCounter++;
 
-            if (spriteCounter > 14) {
-                if (spriteNum == 1) {
-                    spriteNum = 2;
-                }
-
-                else if (spriteNum == 2) {
-                    spriteNum = 1;
-                }
-                spriteCounter = 0;
+            else {
+                cancelAttack = false;
+                gh.kh.space = false;
             }
         }
 
@@ -99,6 +130,26 @@ public class Player extends Entity {
                 spriteNum = 1;
                 standCounter = 0;
             }
+        }
+
+        if (gh.kh.shoot == true && projectile.alive == false && shotCounter == 30) {
+            projectile.set(worldX, worldY, direction, true, this);
+            gh.projectileList.add(projectile);
+            shotCounter = 0;
+            // gh.playSound(10);
+        }
+
+        if (invincible == true) {
+            invincibleCounter++;
+
+            if (invincibleCounter > 60) {
+                invincible = false;
+                invincibleCounter = 0;
+            }
+        }
+
+        if (shotCounter < 30) {
+            shotCounter++;
         }
     }
 
@@ -129,56 +180,72 @@ public class Player extends Entity {
 
     public void attemptMine() {
         int[] targetTile = getPrimaryInteractionTile();
-        int targetCol = targetTile[0];
-        int targetRow = targetTile[1];
-        gh.th.damageBreakableTile(targetCol, targetRow, 1);
+        gh.th.damageBreakableTile(targetTile[0], targetTile[1], 1);
     }
 
     public void draw(Graphics2D g2) {
         BufferedImage image = null;
+        int tempX = screenX;
+        int tempY = screenY;
 
         switch (direction) {
             case "up":
-                if (spriteNum == 1) {
-                    image = up1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = up1;}
+                    else if (spriteNum == 2) {image = up2;}
                 }
 
-                else if (spriteNum == 2) {
-                    image = up2;
+                else if (attacking == true) {
+                    tempY = screenY - gh.tileSize;
+                    if (spriteNum == 1) {image = attackUp1;}
+                    else if (spriteNum == 2) {image = attackUp2;}
                 }
             break;
 
             case "down":
-                if (spriteNum == 1) {
-                    image = down1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = down1;}
+                    else if (spriteNum == 2) {image = down2;}
                 }
-                
-                else if (spriteNum == 2) {
-                    image = down2;
+
+                else if (attacking == true) {
+                    if (spriteNum == 1) {image = attackDown1;}
+                    else if (spriteNum == 2) {image = attackDown2;}
                 }
             break;
 
             case "left":
-                if (spriteNum == 1) {
-                    image = left1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = left1;}
+                    else if (spriteNum == 2) {image = left2;}
                 }
-                
-                else if (spriteNum == 2) {
-                    image = left2;
+
+                else if (attacking == true) {
+                    tempX = screenX - gh.tileSize;
+                    if (spriteNum == 1) {image = attackLeft1;}
+                    else if (spriteNum == 2) {image = attackLeft2;}
                 }
             break;
 
             case "right":
-                if (spriteNum == 1) {
-                    image = right1;
+                if (attacking == false) {
+                    if (spriteNum == 1) {image = right1;}
+                    else if (spriteNum == 2) {image = right2;}
                 }
 
-                else if (spriteNum == 2) {
-                    image = right2;
+                else if (attacking == true) {
+                    if (spriteNum == 1) {image = attackRight1;}
+                    else if (spriteNum == 2) {image = attackRight2;}
                 }
             break;
         }
-        g2.drawImage(image, screenX, screenY, null);
+
+        if (invincible == true) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+        }
+
+        g2.drawImage(image, tempX, tempY, null);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
     }
 
     private void getImage() {
@@ -190,10 +257,31 @@ public class Player extends Entity {
         left2 = scale("/player/playerWalkL2", gh.tileSize, gh.tileSize);
         right1 = scale("/player/playerWalkR1", gh.tileSize, gh.tileSize);
         right2 = scale("/player/playerWalkR2", gh.tileSize, gh.tileSize);
+
+        attackUp1 = scale("/player/playerSwordU1", gh.tileSize, gh.tileSize * 2);
+        attackUp2 = scale("/player/playerSwordU2", gh.tileSize, gh.tileSize * 2);
+        attackDown1 = scale("/player/playerSwordD1", gh.tileSize, gh.tileSize * 2);
+        attackDown2 = scale("/player/playerSwordD2", gh.tileSize, gh.tileSize * 2);
+        attackLeft1 = scale("/player/playerSwordL1", gh.tileSize * 2, gh.tileSize);
+        attackLeft2 = scale("/player/playerSwordL2", gh.tileSize * 2, gh.tileSize);
+        attackRight1 = scale("/player/playerSwordR1", gh.tileSize * 2, gh.tileSize);
+        attackRight2 = scale("/player/playerSwordR2", gh.tileSize * 2, gh.tileSize);
     }
 
     private void setStats() {
         speed = 4;
+        maxLife = 6;
+        life = maxLife;
+        level = 1;
+        strength = 1;
+        dexterity = 1;
+        exp = 0;
+        nextLevelExp = 5;
+        coin = 0;
+        currentWeapon = new Sword(gh);
+        projectile = new Arrow(gh);
+        attack = getAttack();
+        defense = getDefense();
     }
 
     private void setPos() {
@@ -210,22 +298,158 @@ public class Player extends Entity {
     }
 
     private void acquireObject(int i) {
+        String text;
+
         if (i != 999) {
             if (addToInventory(gh.objs[i])) {
-                // gh.playSound(1);
-                // text = "Got a " + gh.objs[i].name + "!";
-                System.out.println("Got a " + gh.objs[i].name + "!");
+                text = "Got a " + gh.objs[i].name + "!";
                 gh.objs[i] = null;
             }
 
             else {
-                // text = "Inventory full!";
-                System.out.println("Inventory full!");
+                text = "Inventory full!";
             }
-            // gh.ui.addMessage(text);
-            
-            
+            gh.ui.addMessage(text);
         }
+    }
+
+    private boolean interactNPC(int i) {
+        if (gh.kh.space == true && i != 999) {
+            cancelAttack = true;
+            gh.gameState = gh.dialogue;
+            gh.npcs[i].speak();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void interactMonster(int i) {
+        if (i != 999) {
+            if (invincible == false && gh.monsters[i].dying == false) {
+                // gh.playSound(6);
+                int damage = gh.monsters[i].attack - defense;
+
+                if (damage < 0) {
+                    damage = 0;
+                }
+                life -= damage;
+                invincible = true;
+            }
+        }
+    }
+
+    private void attack() {
+        spriteCounter++;
+
+        if (spriteCounter <= 5) {
+            spriteNum = 1;
+        }
+
+        else if (spriteCounter > 5 && spriteCounter <= 25) {
+            spriteNum = 2;
+
+            int x = worldX;
+            int y = worldY;
+            int width = solidArea.width;
+            int height = solidArea.height;
+
+            switch (direction) {
+                case "up":
+                    worldY -= attackArea.height;
+                break;
+
+                case "down":
+                    worldY += attackArea.height;
+                break;
+
+                case "left":
+                    worldX -= attackArea.width;
+                break;
+
+                case "right":
+                    worldX += attackArea.width;
+                break;
+            }
+
+            solidArea.width = attackArea.width;
+            solidArea.height = attackArea.height;
+
+            int monsterIndex = gh.ch.checkEntity(this, gh.monsters);
+            damage(monsterIndex, attack);
+
+            worldX = x;
+            worldY = y;
+            solidArea.width = width;
+            solidArea.height = height;
+        }
+
+        else if (spriteCounter > 25) {
+            spriteNum = 1;
+            spriteCounter = 0;
+            attacking = false;
+        }
+    }
+
+    public void damage(int i, int attack) {
+        if (i != 999) {
+            if (gh.monsters[i].invincible == false) {
+                int damage = attack - gh.monsters[i].defense;
+
+                if (damage < 0) {
+                    damage = 0;
+                }
+
+                gh.monsters[i].life -= damage;
+                gh.ui.addMessage(damage + " damage!");
+                gh.monsters[i].invincible = true;
+
+                if (gh.monsters[i].life <= 0) {
+                    gh.monsters[i].dying = true;
+                    gh.ui.addMessage("You killed a " + gh.monsters[i].name + "!");
+                    gh.ui.addMessage("Exp + " + gh.monsters[i].exp);
+                    exp += gh.monsters[i].exp;
+                    checkLevelUp();
+                }
+            }
+        }
+    }
+
+    private void checkLevelUp() {
+        if (exp >= nextLevelExp) {
+            level++;
+            nextLevelExp = nextLevelExp * 2;
+            maxLife += 2;
+            life = maxLife;
+            strength++;
+            dexterity++;
+            attack = getAttack();
+            defense = getDefense();
+            gh.gameState = gh.dialogue;
+            gh.ui.currentDialogue = "You are level " + level + " now!\nYou feel stronger!";
+        }
+    }
+
+    public void selectItem() {
+        int itemIndex = gh.ui.getItemIndexOnSlot();
+
+        if (itemIndex < inventory.size()) {
+            Entity item = inventory.get(itemIndex);
+
+            if (item.type == sword) {
+                currentWeapon = item;
+                attack = getAttack();
+            }
+
+            else if (item.type == consumable) {
+                inventory.remove(itemIndex);
+            }
+        }
+    }
+
+    private void setItems() {
+        inventory.add(currentWeapon);
+        inventory.add(new Key(gh));
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
@@ -308,8 +532,8 @@ public class Player extends Entity {
         return targetTiles.toArray(new int[targetTiles.size()][]);
     }
 
-    private boolean handleInteraction() {
-        if (!interactRequested) {
+    private boolean handleInteraction(int npcIndex) {
+        if (!interactRequested && gh.kh.space == false) {
             return false;
         }
 
@@ -330,12 +554,7 @@ public class Player extends Entity {
             }
         }
 
-        if (mineCooldownTicks == 0) {
-            attemptMine();
-            mineCooldownTicks = MINE_COOLDOWN_TICKS;
-        }
-
-        return false;
+        return interactNPC(npcIndex);
     }
 
     private void updateDirectionFromInput() {

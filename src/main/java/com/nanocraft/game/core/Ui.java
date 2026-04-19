@@ -113,11 +113,11 @@ public class Ui {
     }
 
     public int getSelectedChestSlotIndex() {
-        return u.getItemIndexOnSlot(chestSlotCol, chestSlotRow);
+        return getItemIndexOnSlot(chestSlotCol, chestSlotRow);
     }
 
     public int getSelectedPlayerChestSlotIndex() {
-        return u.getItemIndexOnSlot(playerChestSlotCol, playerChestSlotRow);
+        return getItemIndexOnSlot(playerChestSlotCol, playerChestSlotRow);
     }
 
     private void drawTitleScreen() {
@@ -186,8 +186,6 @@ public class Ui {
         int max = gh.player.maxLife;
         int life = gh.player.life;
 
-        // TODO: implement logic for actual player health
-
         for (int i = 0; i < max / 2; i++) {
             g2d.drawImage(blankHeart, x, y, null);
 
@@ -219,12 +217,15 @@ public class Ui {
 
         for (int i = 0; i < gh.player.inventory.size(); i++) {
             Entity item = gh.player.inventory.get(i);
+            if (item == gh.player.currentWeapon) {
+                g2d.setColor(new Color(240, 190, 90));
+                g2d.fillRoundRect(slotX, slotY, gh.tileSize, gh.tileSize, 10, 10);
+            }
             if (item != null && item.down1 != null) {
                 g2d.drawImage(item.down1, slotX, slotY, null);
             }
 
             slotX += slotSize;
-
             if (i == 4 || i == 9 || i == 14) {
                 slotX = slotXstart;
                 slotY += slotSize;
@@ -249,11 +250,11 @@ public class Ui {
         int textY = dframeY + gh.tileSize;
         g2d.setFont(g2d.getFont().deriveFont(28F));
 
-        int itemIndex = u.getItemIndexOnSlot(slotCol, slotRow);
-        
+        int itemIndex = getItemIndexOnSlot();
+
         if (itemIndex < gh.player.inventory.size()) {
             u.drawSubWindow(dframeX, dframeY, dframeWidth, dframeHeight, g2d);
-            
+
             for (String line: gh.player.inventory.get(itemIndex).description.split("\n")) {
                 g2d.drawString(line, textX, textY);
                 textY += 32;
@@ -265,7 +266,7 @@ public class Ui {
         final int frameX = gh.tileSize;
         final int frameY = gh.tileSize;
         final int frameWidth = gh.tileSize * 5;
-        final int frameHeight = gh.tileSize * 10;
+        final int frameHeight = gh.tileSize * 9;
         u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
 
         g2d.setColor(Color.white);
@@ -294,65 +295,58 @@ public class Ui {
         g2d.drawString("Coin", textX, textY);
         textY += lineHeight + 35;
         g2d.drawString("Weapon", textX, textY);
-        textY += lineHeight + 15;
-        g2d.drawString("Shield", textX, textY);
-        textY += lineHeight;
 
         int tailX = (frameX + frameWidth) - 30;
         textY = frameY + gh.tileSize;
         String value;
 
-        // TODO: Implement player stats
+        value = String.valueOf(gh.player.level);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.level);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.life + "/" + gh.player.maxLife);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.life + "/" + gh.player.maxLife);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.strength);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.strength);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.dexterity);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.dexterity);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.attack);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.attack);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.defense);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.defense);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.exp);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.exp);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.nextLevelExp);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.nextLevelExp);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
+        value = String.valueOf(gh.player.coin);
+        textX = u.getXforRightText(value, tailX, g2d);
+        g2d.drawString(value, textX, textY);
+        textY += lineHeight;
 
-        // value = String.valueOf(gh.player.coin);
-        // textX = u.getXforRightText(value, tailX, g2d);
-        // g2d.drawString(value, textX, textY);
-        // textY += lineHeight;
-
-        // g2d.drawImage(gh.player.currentWeapon.down1, tailX - gh.tileSize, textY , null);
-        // textY += gh.tileSize;
-
-        // g2d.drawImage(gh.player.currentShield.down1, tailX - gh.tileSize, textY + 4, null);
+        g2d.drawImage(gh.player.currentWeapon.down1, tailX - gh.tileSize, textY , null);
+        textY += gh.tileSize;
     }
 
     private void drawDialogue() {
@@ -485,6 +479,14 @@ public class Ui {
         }
 
         return null;
+    }
+
+    public int getItemIndexOnSlot() {
+        return getItemIndexOnSlot(slotCol, slotRow);
+    }
+
+    private int getItemIndexOnSlot(int slotCol, int slotRow) {
+        return slotCol + (slotRow * 5);
     }
 
     private int clamp(int value, int min, int max) {
