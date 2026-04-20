@@ -3,13 +3,14 @@ package com.nanocraft.game.object;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.entity.Entity;
 
-public class OreChunk extends Entity {
-    public OreChunk(GameHandler gh) {
+public class Emerald extends Entity {
+    public Emerald(GameHandler gh) {
         super(gh);
-        itemId = "ore_chunk";
-        name = "Ore Chunk";
-        description = "[" + name + "]\nA chunk of mined ore.";
-        down1 = scale("/object/key", gh.tileSize, gh.tileSize);
+
+        itemId = "emerald";
+        name = "Emerald";
+        description = "[" + name + "]\nA polished green gem.";
+        down1 = scaleOrFallback("/object/Emerald", "/tile/Green_Ore", gh.tileSize, gh.tileSize);
         collision = false;
 
         solidArea.x = 8;
