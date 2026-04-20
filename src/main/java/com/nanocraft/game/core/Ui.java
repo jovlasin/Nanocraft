@@ -345,8 +345,10 @@ public class Ui {
         g2d.drawString(value, textX, textY);
         textY += lineHeight;
 
-        g2d.drawImage(gh.player.currentWeapon.down1, tailX - gh.tileSize, textY , null);
-        textY += gh.tileSize;
+        if (gh.player.currentWeapon != null && gh.player.currentWeapon.down1 != null) {
+            g2d.drawImage(gh.player.currentWeapon.down1, tailX - gh.tileSize, textY , null);
+            textY += gh.tileSize;
+        }
     }
 
     private void drawDialogue() {

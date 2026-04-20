@@ -323,6 +323,7 @@ public class GameHandler extends JPanel implements Runnable {
             return;
         }
 
+        player.handleRemovedInventoryItem(item);
         ui.addMessage("Stored " + item.name + ".");
     }
 }
