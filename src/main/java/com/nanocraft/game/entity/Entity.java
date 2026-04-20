@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
@@ -21,6 +22,7 @@ public class Entity {
     public Projectile projectile;
     public boolean collisionOn, collision;
     public String name;
+    public String itemId;
     public String description;
     public BufferedImage up1, up2, down1, down2, left1, left2, right1, right2;
     public BufferedImage attackUp1, attackUp2, attackDown1, attackDown2, attackLeft1, attackLeft2, attackRight1, attackRight2;
@@ -40,6 +42,7 @@ public class Entity {
     public final int npc = 1;
     public final int monster = 2;
     public final int sword = 3;
+    public final int tool = 4;
     public final int consumable = 6;
     public int type;
 
@@ -54,16 +57,48 @@ public class Entity {
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
-        BufferedImage image = null;
-
-        try {
-            image = ImageIO.read(getClass().getResourceAsStream(imgPath + ".png"));
-            image = ResourceLoader.scaleImage(image, width, height);
-            
-        } catch (IOException e) {
-            e.printStackTrace();
+        BufferedImage image = loadScaledImageIfPresent(imgPath, width, height);
+        if (image == null) {
+            throw new IllegalStateException("Failed to load image resource: " + imgPath + ".png");
         }
         return image;
+    }
+
+    protected BufferedImage scaleOrFallback(String primaryImgPath, String fallbackImgPath, int width, int height) {
+        BufferedImage image = loadScaledImageIfPresent(primaryImgPath, width, height);
+        if (image != null) {
+            return image;
+        }
+
+        image = loadScaledImageIfPresent(fallbackImgPath, width, height);
+        if (image != null) {
+            return image;
+        }
+
+        throw new IllegalStateException(
+            "Failed to load image resource: " + primaryImgPath + ".png and fallback " + fallbackImgPath + ".png"
+        );
+    }
+
+    private BufferedImage loadScaledImageIfPresent(String imgPath, int width, int height) {
+        if (imgPath == null || imgPath.isBlank()) {
+            return null;
+        }
+
+        try (InputStream stream = getClass().getResourceAsStream(imgPath + ".png")) {
+            if (stream == null) {
+                return null;
+            }
+
+            BufferedImage image = ImageIO.read(stream);
+            if (image == null) {
+                return null;
+            }
+
+            return ResourceLoader.scaleImage(image, width, height);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     public void draw(Graphics2D g2) {

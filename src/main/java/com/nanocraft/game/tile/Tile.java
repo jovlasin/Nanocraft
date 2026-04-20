@@ -8,6 +8,7 @@ public class Tile {
     public int maxHealth;
     public int replacementTileId;
     public String dropItemType;
+    public String requiredItemType;
     public String type;
     public String targetMapPath;
     public int targetCol = -1;

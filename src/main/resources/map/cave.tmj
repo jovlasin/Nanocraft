@@ -533,9 +533,24 @@
                          "value":true
                         }, 
                         {
+                         "name":"dropItemType",
+                         "type":"string",
+                         "value":"diamond"
+                        }, 
+                        {
                          "name":"oreHealth",
                          "type":"int",
                          "value":5
+                        }, 
+                        {
+                         "name":"replacementTileId",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"requiredItemType",
+                         "type":"string",
+                         "value":"diamond_pickaxe"
                         }]
                 }],
          "tilewidth":16
@@ -561,9 +576,24 @@
                          "value":true
                         }, 
                         {
+                         "name":"dropItemType",
+                         "type":"string",
+                         "value":"redstone"
+                        }, 
+                        {
                          "name":"oreHealth",
                          "type":"int",
                          "value":4
+                        }, 
+                        {
+                         "name":"replacementTileId",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"requiredItemType",
+                         "type":"string",
+                         "value":"diamond_pickaxe"
                         }]
                 }],
          "tilewidth":16
@@ -589,9 +619,24 @@
                          "value":true
                         }, 
                         {
+                         "name":"dropItemType",
+                         "type":"string",
+                         "value":"emerald"
+                        }, 
+                        {
                          "name":"oreHealth",
                          "type":"int",
                          "value":4
+                        }, 
+                        {
+                         "name":"replacementTileId",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"requiredItemType",
+                         "type":"string",
+                         "value":"diamond_pickaxe"
                         }]
                 }],
          "tilewidth":16

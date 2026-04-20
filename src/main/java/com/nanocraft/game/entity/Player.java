@@ -13,6 +13,7 @@ import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.object.Sword;
+import com.nanocraft.game.tile.Tile;
 
 public class Player extends Entity {
     private static final int MINE_COOLDOWN_TICKS = 8;
@@ -195,7 +196,36 @@ public class Player extends Entity {
 
         int targetCol = centerX / gh.tileSize;
         int targetRow = centerY / gh.tileSize;
-        gh.th.damageBreakableTile(targetCol, targetRow, 1);
+        Tile targetTile = gh.th.getTopBreakableTileAt(targetCol, targetRow);
+        if (targetTile == null) {
+            return;
+        }
+
+        MiningRules.Result miningResult = MiningRules.evaluate(
+            targetTile,
+            hasItem(targetTile.requiredItemType),
+            hasInventorySpace()
+        );
+
+        if (miningResult == MiningRules.Result.MISSING_REQUIRED_ITEM) {
+            gh.ui.addMessage("Need " + MiningRules.toDisplayName(targetTile.requiredItemType) + "!");
+            return;
+        }
+
+        if (miningResult == MiningRules.Result.INVENTORY_FULL) {
+            gh.ui.addMessage("Inventory full!");
+            return;
+        }
+
+        String dropItemType = gh.th.damageBreakableTile(targetCol, targetRow, 1);
+        if (dropItemType == null || dropItemType.isBlank()) {
+            return;
+        }
+
+        Entity minedItem = gh.createDropEntity(dropItemType);
+        if (minedItem != null) {
+            addItemToInventory(minedItem);
+        }
     }
 
     public void draw(Graphics2D g2) {
@@ -313,20 +343,11 @@ public class Player extends Entity {
     }
 
     private void acquireObject(int i) {
-        String text;
-
         if (i != 999) {
-            if (inventory.size() < inventorySize) {
-                inventory.add(gh.objs[i]);
+            if (addItemToInventory(gh.objs[i])) {
                 // gh.playSound(1);
-                text = "Got a " + gh.objs[i].name + "!";
                 gh.objs[i] = null;
             }
-
-            else {
-                text = "Inventory full!";
-            }
-            gh.ui.addMessage(text);
         }
     }
 
@@ -470,6 +491,39 @@ public class Player extends Entity {
     private void setItems() {
         inventory.add(currentWeapon);
         inventory.add(new Key(gh));
+    }
+
+    public boolean hasItem(String itemId) {
+        if (itemId == null || itemId.isBlank()) {
+            return false;
+        }
+
+        for (Entity item : inventory) {
+            if (item != null && itemId.equalsIgnoreCase(item.itemId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasInventorySpace() {
+        return inventory.size() < inventorySize;
+    }
+
+    private boolean addItemToInventory(Entity item) {
+        if (item == null) {
+            return false;
+        }
+
+        if (!hasInventorySpace()) {
+            gh.ui.addMessage("Inventory full!");
+            return false;
+        }
+
+        inventory.add(item);
+        gh.ui.addMessage("Got a " + item.name + "!");
+        return true;
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {

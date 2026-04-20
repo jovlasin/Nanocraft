@@ -7,6 +7,7 @@ public class Sword extends Entity {
     public Sword(GameHandler gh) {
         super(gh);
 
+        itemId = "sword";
         type = sword;
         name = "Normal Sword";
         down1 = scale("/object/old_sword", gh.tileSize, gh.tileSize);

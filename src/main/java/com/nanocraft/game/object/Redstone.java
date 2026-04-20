@@ -3,13 +3,14 @@ package com.nanocraft.game.object;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.entity.Entity;
 
-public class OreChunk extends Entity {
-    public OreChunk(GameHandler gh) {
+public class Redstone extends Entity {
+    public Redstone(GameHandler gh) {
         super(gh);
-        itemId = "ore_chunk";
-        name = "Ore Chunk";
-        description = "[" + name + "]\nA chunk of mined ore.";
-        down1 = scale("/object/key", gh.tileSize, gh.tileSize);
+
+        itemId = "redstone";
+        name = "Redstone";
+        description = "[" + name + "]\nA bright red mineral.";
+        down1 = scaleOrFallback("/object/Redstone", "/tile/Red_Orea", gh.tileSize, gh.tileSize);
         collision = false;
 
         solidArea.x = 8;

@@ -3,13 +3,15 @@ package com.nanocraft.game.object;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.entity.Entity;
 
-public class OreChunk extends Entity {
-    public OreChunk(GameHandler gh) {
+public class DiamondPickaxe extends Entity {
+    public DiamondPickaxe(GameHandler gh) {
         super(gh);
-        itemId = "ore_chunk";
-        name = "Ore Chunk";
-        description = "[" + name + "]\nA chunk of mined ore.";
-        down1 = scale("/object/key", gh.tileSize, gh.tileSize);
+
+        itemId = "diamond_pickaxe";
+        type = tool;
+        name = "Diamond Pickaxe";
+        description = "[" + name + "]\nRequired for mining ore.";
+        down1 = scaleOrFallback("/object/Diamond_Pickaxe", "/object/old_sword", gh.tileSize, gh.tileSize);
         collision = false;
 
         solidArea.x = 8;
