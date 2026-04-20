@@ -36,6 +36,19 @@ public class Player extends Entity {
         getImage();
     }
 
+    public Player(GameHandler gh, KeyHandler kh, boolean loadAssets) {
+        super(gh);
+        this.kh = kh;
+
+        setStats();
+        setPos();
+
+        if (loadAssets) {
+            setItems();
+            getImage();
+        }
+    }
+
     public int getAttack() {
         attackArea = currentWeapon.attackArea;
         return strength * currentWeapon.attackValue;
@@ -493,4 +506,41 @@ public class Player extends Entity {
         
         return scaledImage;
     }
+    
+    public void handleMovementOnly() {
+    if (kh.up == true || kh.down == true || kh.left == true || kh.right == true || kh.space == true) {
+
+        if (kh.up == true) {
+            direction = "up";
+        } else if (kh.down == true) {
+            direction = "down";
+        } else if (kh.left == true) {
+            direction = "left";
+        } else if (kh.right == true) {
+            direction = "right";
+        }
+
+        collisionOn = false;
+        gh.ch.checkTile(this);
+
+        if (collisionOn == false && kh.space == false) {
+            switch (direction) {
+                case "up":
+                    worldY -= speed;
+                    break;
+                case "down":
+                    worldY += speed;
+                    break;
+                case "left":
+                    worldX -= speed;
+                    break;
+                case "right":
+                    worldX += speed;
+                    break;
+            }
+
+            gh.th.checkMapTransition();
+        }
+    }
+}
 }
