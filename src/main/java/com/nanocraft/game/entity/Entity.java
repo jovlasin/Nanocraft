@@ -12,6 +12,12 @@ import com.nanocraft.game.tile.ResourceLoader;
 
 
 public class Entity {
+    public static final int TYPE_PLAYER = 0;
+    public static final int TYPE_NPC = 1;
+    public static final int TYPE_MONSTER = 2;
+    public static final int TYPE_WEAPON = 3;
+    public static final int TYPE_CONSUMABLE = 6;
+
     public GameHandler gh;
     public int worldX, worldY;
     public String direction;
@@ -36,11 +42,11 @@ public class Entity {
     public boolean attacking;
     public int attackValue;
 
-    public final int player = 0;
-    public final int npc = 1;
-    public final int monster = 2;
-    public final int sword = 3;
-    public final int consumable = 6;
+    public final int player = TYPE_PLAYER;
+    public final int npc = TYPE_NPC;
+    public final int monster = TYPE_MONSTER;
+    public final int sword = TYPE_WEAPON;
+    public final int consumable = TYPE_CONSUMABLE;
     public int type;
 
     public Entity(GameHandler gh) {
@@ -176,6 +182,27 @@ public class Entity {
             case "right":
                 direction = "left";    
             break;
+        }
+    }
+
+    public BufferedImage getAttackSprite(String facingDirection, int attackFrame) {
+        boolean useFirstFrame = attackFrame == 1;
+
+        switch (facingDirection) {
+            case "up":
+                return useFirstFrame ? attackUp1 : attackUp2;
+
+            case "down":
+                return useFirstFrame ? attackDown1 : attackDown2;
+
+            case "left":
+                return useFirstFrame ? attackLeft1 : attackLeft2;
+
+            case "right":
+                return useFirstFrame ? attackRight1 : attackRight2;
+
+            default:
+                return null;
         }
     }
 }

@@ -3,6 +3,7 @@ package com.nanocraft.game.entity;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -10,11 +11,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 
 public class PlayerInteractionTest {
@@ -175,6 +178,49 @@ public class PlayerInteractionTest {
         assertEquals(gh.player.strength * replacementSword.attackValue, gh.player.attack);
     }
 
+    @Test
+    public void equipsPickaxeWhenSelectedFromInventory() {
+        GameHandler gh = new GameHandler();
+        Pickaxe pickaxe = new Pickaxe(gh);
+        gh.player.addToInventory(pickaxe);
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertSame(pickaxe, gh.player.currentWeapon);
+        assertEquals(gh.player.strength * pickaxe.attackValue, gh.player.attack);
+    }
+
+    @Test
+    public void resolvesDirectionalPickaxeAttackSpritesFromEquippedWeapon() {
+        GameHandler gh = new GameHandler();
+        Pickaxe pickaxe = new Pickaxe(gh);
+        gh.player.currentWeapon = pickaxe;
+
+        assertAttackSprite(gh.player, "up", 1, pickaxe.attackUp1);
+        assertAttackSprite(gh.player, "up", 2, pickaxe.attackUp2);
+        assertAttackSprite(gh.player, "down", 1, pickaxe.attackDown1);
+        assertAttackSprite(gh.player, "down", 2, pickaxe.attackDown2);
+        assertAttackSprite(gh.player, "left", 1, pickaxe.attackLeft1);
+        assertAttackSprite(gh.player, "left", 2, pickaxe.attackLeft2);
+        assertAttackSprite(gh.player, "right", 1, pickaxe.attackRight1);
+        assertAttackSprite(gh.player, "right", 2, pickaxe.attackRight2);
+    }
+
+    @Test
+    public void swordStillUsesSwordAttackSprites() {
+        GameHandler gh = new GameHandler();
+        Sword sword = new Sword(gh);
+        gh.player.currentWeapon = sword;
+
+        gh.player.direction = "up";
+        gh.player.spriteNum = 1;
+
+        assertSame(sword.attackUp1, gh.player.resolveCurrentAttackSprite());
+        assertNotEquals(sword.attackUp1, gh.player.up1);
+    }
+
     private ChestPlacement findOpenableChestPlacement(GameHandler gh) {
         for (int col = 0; col < 200; col++) {
             for (int row = 0; row < 200; row++) {
@@ -236,6 +282,12 @@ public class PlayerInteractionTest {
         }
 
         return null;
+    }
+
+    private void assertAttackSprite(Player player, String direction, int spriteNum, BufferedImage expectedSprite) {
+        player.direction = direction;
+        player.spriteNum = spriteNum;
+        assertSame(expectedSprite, player.resolveCurrentAttackSprite());
     }
 
     private static final class ChestPlacement {

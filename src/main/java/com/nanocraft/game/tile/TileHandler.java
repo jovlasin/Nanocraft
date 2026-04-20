@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import com.nanocraft.game.core.ChestState;
@@ -13,9 +14,19 @@ import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
     private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
+    private static final String VILLAGE_MAP_PATH = "/map/village.tmj";
     private static final String CHEST_INTERACTION_TYPE = "chest";
     private static final Set<String> FALLBACK_CHEST_TILE_TYPES = Set.of("034", "035");
     private static final Set<String> MARKER_MAP_CHEST_TILE_TYPES = Set.of("035");
+    private static final int MAX_RANDOM_CHEST_LOOT_ITEMS = 3;
+    private static final List<String> RANDOM_CHEST_LOOT_POOL = List.of(
+        "apple",
+        "meat",
+        "medkit",
+        "emerald",
+        "diamond",
+        "redstone"
+    );
     private final GameHandler gh;
     private final MapLoader mapLoader;
     private final Map<Integer, Tile> tileRegistry;
@@ -31,6 +42,8 @@ public class TileHandler {
     private boolean currentMapHasChestDefinitions;
     private String currentMapPath;
     private final List<MapTransition> transitions;
+    private final Random random;
+    private String specialVillageChestKey;
 
     public TileHandler(GameHandler gh) {
         this.gh = gh;
@@ -41,6 +54,7 @@ public class TileHandler {
         this.layerNames = new ArrayList<>();
         this.chestRegistry = new HashMap<>();
         this.transitions = new ArrayList<>();
+        this.random = new Random();
         loadMap(DEFAULT_MAP_PATH);
     }
 
@@ -450,21 +464,32 @@ public class TileHandler {
             return;
         }
 
+        List<int[]> chestTiles = findChestTilesOnCurrentMap();
+        if (isVillageFallbackMap() && specialVillageChestKey == null && !chestTiles.isEmpty()) {
+            int[] specialChest = chestTiles.get(random.nextInt(chestTiles.size()));
+            specialVillageChestKey = ChestState.buildKey(currentMapPath, specialChest[0], specialChest[1]);
+        }
+
+        for (int[] chestTile : chestTiles) {
+            int chestCol = chestTile[0];
+            int chestRow = chestTile[1];
+            String chestKey = ChestState.buildKey(currentMapPath, chestCol, chestRow);
+            chestRegistry.computeIfAbsent(chestKey, ignored -> createInitialChestState(chestCol, chestRow));
+        }
+    }
+
+    private List<int[]> findChestTilesOnCurrentMap() {
+        List<int[]> chestTiles = new ArrayList<>();
+
         for (int col = 0; col < mapWidth; col++) {
             for (int row = 0; row < mapHeight; row++) {
-                if (!hasChestLikeTileAt(col, row)) {
-                    continue;
+                if (hasChestLikeTileAt(col, row)) {
+                    chestTiles.add(new int[] { col, row });
                 }
-
-                int chestCol = col;
-                int chestRow = row;
-                String chestKey = ChestState.buildKey(currentMapPath, chestCol, chestRow);
-                chestRegistry.computeIfAbsent(
-                    chestKey,
-                    ignored -> new ChestState(currentMapPath, chestCol, chestRow)
-                );
             }
         }
+
+        return chestTiles;
     }
 
     private boolean hasChestLikeTileAt(int col, int row) {
@@ -505,23 +530,53 @@ public class TileHandler {
     }
 
     private ChestState createChestState(ChestDefinition definition) {
-        ChestState chestState = new ChestState(definition.mapPath, definition.col, definition.row);
+        return createInitialChestState(definition.mapPath, definition.col, definition.row);
+    }
 
-        for (String itemId : definition.lootItemIds) {
+    private ChestState createInitialChestState(int col, int row) {
+        return createInitialChestState(currentMapPath, col, row);
+    }
+
+    private ChestState createInitialChestState(String mapPath, int col, int row) {
+        ChestState chestState = new ChestState(mapPath, col, row);
+        String chestKey = chestState.getKey();
+        List<String> lootItems = chestKey.equals(specialVillageChestKey)
+            ? List.of("pickaxe")
+            : buildRandomChestLoot();
+
+        addLootItems(chestState, lootItems, chestKey);
+        return chestState;
+    }
+
+    private List<String> buildRandomChestLoot() {
+        int itemCount = 1 + random.nextInt(MAX_RANDOM_CHEST_LOOT_ITEMS);
+        List<String> lootItems = new ArrayList<>(itemCount);
+
+        for (int i = 0; i < itemCount; i++) {
+            lootItems.add(RANDOM_CHEST_LOOT_POOL.get(random.nextInt(RANDOM_CHEST_LOOT_POOL.size())));
+        }
+
+        return lootItems;
+    }
+
+    private void addLootItems(ChestState chestState, List<String> lootItemIds, String chestKey) {
+        for (String itemId : lootItemIds) {
             if (chestState.isFull()) {
-                System.out.println("Chest at " + definition.getKey() + " exceeded capacity. Extra items were ignored.");
+                System.out.println("Chest at " + chestKey + " exceeded capacity. Extra items were ignored.");
                 break;
             }
 
             Entity item = gh.createItemEntity(itemId);
             if (item == null) {
-                System.out.println("Unknown chest item type '" + itemId + "' at " + definition.getKey() + ".");
+                System.out.println("Unknown chest item type '" + itemId + "' at " + chestKey + ".");
                 continue;
             }
 
             chestState.addItem(item);
         }
+    }
 
-        return chestState;
+    private boolean isVillageFallbackMap() {
+        return VILLAGE_MAP_PATH.equals(currentMapPath) && !currentMapHasChestDefinitions;
     }
 }
