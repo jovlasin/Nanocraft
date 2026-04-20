@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
@@ -12,6 +13,9 @@ import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
     private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
+    private static final String CHEST_INTERACTION_TYPE = "chest";
+    private static final Set<String> FALLBACK_CHEST_TILE_TYPES = Set.of("034", "035");
+    private static final Set<String> MARKER_MAP_CHEST_TILE_TYPES = Set.of("035");
     private final GameHandler gh;
     private final MapLoader mapLoader;
     private final Map<Integer, Tile> tileRegistry;
@@ -24,6 +28,7 @@ public class TileHandler {
     private int mapHeight;
     private int belowPlayerLayerCount;
     private boolean zeroMeansEmpty;
+    private boolean currentMapHasChestDefinitions;
     private String currentMapPath;
     private final List<MapTransition> transitions;
 
@@ -103,6 +108,10 @@ public class TileHandler {
             return true;
         }
 
+        if (getChestAt(col, row) != null) {
+            return true;
+        }
+
         for (int[][] layer : layers) {
             int tileId = layer[col][row];
             if (zeroMeansEmpty && tileId == 0) {
@@ -131,8 +140,10 @@ public class TileHandler {
         mapWidth = mapData.mapWidth;
         mapHeight = mapData.mapHeight;
         zeroMeansEmpty = mapData.zeroMeansEmpty;
+        currentMapHasChestDefinitions = mapData.chestDefinitions != null && !mapData.chestDefinitions.isEmpty();
         currentMapPath = mapPath;
         registerChestDefinitions(mapData.chestDefinitions);
+        registerChestTiles();
         initializeLayerHealth();
         updateBelowPlayerLayerCount();
     }
@@ -158,6 +169,33 @@ public class TileHandler {
             ChestState chest = getChestAt(targetTile[0], targetTile[1]);
             if (chest != null) {
                 return chest;
+            }
+        }
+
+        return null;
+    }
+
+    public ChestState findChestNear(int worldX, int worldY, java.awt.Rectangle solidArea, int padding) {
+        if (solidArea == null) {
+            return null;
+        }
+
+        int leftWorldX = worldX + solidArea.x - padding;
+        int rightWorldX = worldX + solidArea.x + solidArea.width - 1 + padding;
+        int topWorldY = worldY + solidArea.y - padding;
+        int bottomWorldY = worldY + solidArea.y + solidArea.height - 1 + padding;
+
+        int startCol = Math.floorDiv(leftWorldX, gh.tileSize);
+        int endCol = Math.floorDiv(rightWorldX, gh.tileSize);
+        int startRow = Math.floorDiv(topWorldY, gh.tileSize);
+        int endRow = Math.floorDiv(bottomWorldY, gh.tileSize);
+
+        for (int row = startRow; row <= endRow; row++) {
+            for (int col = startCol; col <= endCol; col++) {
+                ChestState chest = getChestAt(col, row);
+                if (chest != null) {
+                    return chest;
+                }
             }
         }
 
@@ -399,12 +437,71 @@ public class TileHandler {
                 continue;
             }
 
-            if (!hasTileTypeAt(definition.col, definition.row, "035")) {
-                System.out.println("Chest marker at " + definition.getKey() + " is not placed on top of tile 035.");
+            if (!hasChestLikeTileAt(definition.col, definition.row)) {
+                System.out.println("Chest marker at " + definition.getKey() + " is not placed on top of a chest tile.");
             }
 
             chestRegistry.computeIfAbsent(definition.getKey(), ignored -> createChestState(definition));
         }
+    }
+
+    private void registerChestTiles() {
+        if (currentMapPath == null || currentMapPath.isBlank()) {
+            return;
+        }
+
+        for (int col = 0; col < mapWidth; col++) {
+            for (int row = 0; row < mapHeight; row++) {
+                if (!hasChestLikeTileAt(col, row)) {
+                    continue;
+                }
+
+                int chestCol = col;
+                int chestRow = row;
+                String chestKey = ChestState.buildKey(currentMapPath, chestCol, chestRow);
+                chestRegistry.computeIfAbsent(
+                    chestKey,
+                    ignored -> new ChestState(currentMapPath, chestCol, chestRow)
+                );
+            }
+        }
+    }
+
+    private boolean hasChestLikeTileAt(int col, int row) {
+        if (!isInsideMap(col, row)) {
+            return false;
+        }
+
+        Set<String> chestTileTypes = currentMapHasChestDefinitions
+            ? MARKER_MAP_CHEST_TILE_TYPES
+            : FALLBACK_CHEST_TILE_TYPES;
+
+        for (int[][] layer : layers) {
+            int tileId = layer[col][row];
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile currentTile = getTile(tileId);
+            if (currentTile == null) {
+                continue;
+            }
+
+            if (currentTile.interactionType != null
+                && CHEST_INTERACTION_TYPE.equalsIgnoreCase(currentTile.interactionType.trim())) {
+                return true;
+            }
+
+            if (currentTile.type == null || currentTile.type.isBlank()) {
+                continue;
+            }
+
+            if (chestTileTypes.contains(currentTile.type.trim())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private ChestState createChestState(ChestDefinition definition) {
