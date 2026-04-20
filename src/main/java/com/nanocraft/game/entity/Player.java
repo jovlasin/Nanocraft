@@ -39,6 +39,11 @@ public class Player extends Entity {
     }
 
     public int getAttack() {
+        if (currentWeapon == null) {
+            attackArea = new Rectangle(0, 0, 0, 0);
+            return 0;
+        }
+
         attackArea = currentWeapon.attackArea;
         return strength * currentWeapon.attackValue;
     }
@@ -96,7 +101,7 @@ public class Player extends Entity {
                     gh.th.checkMapTransition();
                 }
 
-                if (kh.space == true && cancelAttack == false) {
+                if (kh.space == true && cancelAttack == false && hasEquippedWeapon()) {
                     attacking = true;
                     spriteCounter = 0;
                 }
@@ -172,6 +177,24 @@ public class Player extends Entity {
         }
 
         return inventory.remove(index);
+    }
+
+    public boolean hasEquippedWeapon() {
+        return currentWeapon != null;
+    }
+
+    public void handleRemovedInventoryItem(Entity removedItem) {
+        if (removedItem == null || removedItem != currentWeapon) {
+            return;
+        }
+
+        currentWeapon = findFirstWeaponInInventory();
+        attack = getAttack();
+
+        if (currentWeapon == null) {
+            attacking = false;
+            spriteCounter = 0;
+        }
     }
 
     public boolean isInventoryFull() {
@@ -445,6 +468,16 @@ public class Player extends Entity {
                 inventory.remove(itemIndex);
             }
         }
+    }
+
+    private Entity findFirstWeaponInInventory() {
+        for (Entity item : inventory) {
+            if (item != null && item.type == sword) {
+                return item;
+            }
+        }
+
+        return null;
     }
 
     private void setItems() {

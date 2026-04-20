@@ -2,7 +2,10 @@ package com.nanocraft.game.entity;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -12,6 +15,7 @@ import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.object.Sword;
 
 public class PlayerInteractionTest {
     private static final Rectangle SOLID_AREA = new Rectangle(8, 16, 32, 32);
@@ -137,6 +141,38 @@ public class PlayerInteractionTest {
         assertNotNull(gh.activeChest);
         assertEquals(1, gh.activeChest.col);
         assertEquals(1, gh.activeChest.row);
+    }
+
+    @Test
+    public void unequipsPlayerWhenEquippedSwordLeavesInventory() {
+        GameHandler gh = new GameHandler();
+        Entity equippedSword = gh.player.currentWeapon;
+
+        Entity removedItem = gh.player.removeFromInventory(0);
+        gh.player.handleRemovedInventoryItem(removedItem);
+
+        assertSame(equippedSword, removedItem);
+        assertNull(gh.player.currentWeapon);
+        assertEquals(0, gh.player.attack);
+
+        gh.gameState = gh.play;
+        gh.kh.space = true;
+        gh.player.update();
+
+        assertFalse(gh.player.attacking);
+    }
+
+    @Test
+    public void equipsReplacementSwordWhenCurrentSwordLeavesInventory() {
+        GameHandler gh = new GameHandler();
+        Sword replacementSword = new Sword(gh);
+        gh.player.addToInventory(replacementSword);
+
+        Entity removedItem = gh.player.removeFromInventory(0);
+        gh.player.handleRemovedInventoryItem(removedItem);
+
+        assertSame(replacementSword, gh.player.currentWeapon);
+        assertEquals(gh.player.strength * replacementSword.attackValue, gh.player.attack);
     }
 
     private ChestPlacement findOpenableChestPlacement(GameHandler gh) {
