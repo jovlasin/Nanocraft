@@ -12,8 +12,15 @@ import javax.swing.JPanel;
 import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
+import com.nanocraft.game.object.Apple;
+import com.nanocraft.game.object.Diamond;
+import com.nanocraft.game.object.Emerald;
 import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.Meat;
+import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.OreChunk;
+import com.nanocraft.game.object.Pickaxe;
+import com.nanocraft.game.object.Redstone;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
@@ -189,6 +196,15 @@ public class GameHandler extends JPanel implements Runnable {
 
         String normalized = itemType.trim().toLowerCase();
         switch (normalized) {
+            case "apple":
+                return new Apple(this);
+
+            case "diamond":
+                return new Diamond(this);
+
+            case "emerald":
+                return new Emerald(this);
+
             case "ore_chunk":
             case "orechunk":
             case "ore":
@@ -196,6 +212,20 @@ public class GameHandler extends JPanel implements Runnable {
 
             case "key":
                 return new Key(this);
+
+            case "meat":
+                return new Meat(this);
+
+            case "medkit":
+                return new Medkit(this);
+
+            case "pickaxe":
+            case "diamond_pickaxe":
+            case "diamondpickaxe":
+                return new Pickaxe(this);
+
+            case "redstone":
+                return new Redstone(this);
 
             default:
                 return null;

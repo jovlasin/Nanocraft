@@ -220,8 +220,7 @@ public class Player extends Entity {
 
                 else if (attacking == true) {
                     tempY = screenY - gh.tileSize;
-                    if (spriteNum == 1) {image = attackUp1;}
-                    else if (spriteNum == 2) {image = attackUp2;}
+                    image = resolveCurrentAttackSprite();
                 }
             break;
 
@@ -232,8 +231,7 @@ public class Player extends Entity {
                 }
 
                 else if (attacking == true) {
-                    if (spriteNum == 1) {image = attackDown1;}
-                    else if (spriteNum == 2) {image = attackDown2;}
+                    image = resolveCurrentAttackSprite();
                 }
             break;
 
@@ -245,8 +243,7 @@ public class Player extends Entity {
 
                 else if (attacking == true) {
                     tempX = screenX - gh.tileSize;
-                    if (spriteNum == 1) {image = attackLeft1;}
-                    else if (spriteNum == 2) {image = attackLeft2;}
+                    image = resolveCurrentAttackSprite();
                 }
             break;
 
@@ -257,8 +254,7 @@ public class Player extends Entity {
                 }
 
                 else if (attacking == true) {
-                    if (spriteNum == 1) {image = attackRight1;}
-                    else if (spriteNum == 2) {image = attackRight2;}
+                    image = resolveCurrentAttackSprite();
                 }
             break;
         }
@@ -459,7 +455,7 @@ public class Player extends Entity {
         if (itemIndex < inventory.size()) {
             Entity item = inventory.get(itemIndex);
 
-            if (item.type == sword) {
+            if (item.type == TYPE_WEAPON) {
                 currentWeapon = item;
                 attack = getAttack();
             }
@@ -472,12 +468,21 @@ public class Player extends Entity {
 
     private Entity findFirstWeaponInInventory() {
         for (Entity item : inventory) {
-            if (item != null && item.type == sword) {
+            if (item != null && item.type == TYPE_WEAPON) {
                 return item;
             }
         }
 
         return null;
+    }
+
+    BufferedImage resolveCurrentAttackSprite() {
+        BufferedImage weaponSprite = currentWeapon == null ? null : currentWeapon.getAttackSprite(direction, spriteNum);
+        if (weaponSprite != null) {
+            return weaponSprite;
+        }
+
+        return getAttackSprite(direction, spriteNum);
     }
 
     private void setItems() {
