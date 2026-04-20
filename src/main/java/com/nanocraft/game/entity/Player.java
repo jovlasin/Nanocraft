@@ -478,6 +478,10 @@ public class Player extends Entity {
         return resolveInteractionTiles(worldX, worldY, solidArea, gh.tileSize, direction);
     }
 
+    public int[][] getAdjacentTiles() {
+        return resolveAdjacentTiles(worldX, worldY, solidArea, gh.tileSize);
+    }
+
     public int[] getPrimaryInteractionTile() {
         int[][] targetTiles = getInteractionTiles();
         if (targetTiles.length == 0) {
@@ -492,6 +496,32 @@ public class Player extends Entity {
             return new int[0][];
         }
 
+        ArrayList<int[]> targetTiles = new ArrayList<>();
+        appendTilesForDirection(targetTiles, worldX, worldY, solidArea, tileSize, direction);
+        return targetTiles.toArray(new int[targetTiles.size()][]);
+    }
+
+    public static int[][] resolveAdjacentTiles(int worldX, int worldY, Rectangle solidArea, int tileSize) {
+        if (solidArea == null || tileSize <= 0) {
+            return new int[0][];
+        }
+
+        ArrayList<int[]> targetTiles = new ArrayList<>();
+        appendTilesForDirection(targetTiles, worldX, worldY, solidArea, tileSize, "up");
+        appendTilesForDirection(targetTiles, worldX, worldY, solidArea, tileSize, "right");
+        appendTilesForDirection(targetTiles, worldX, worldY, solidArea, tileSize, "down");
+        appendTilesForDirection(targetTiles, worldX, worldY, solidArea, tileSize, "left");
+        return targetTiles.toArray(new int[targetTiles.size()][]);
+    }
+
+    private static void appendTilesForDirection(
+        ArrayList<int[]> targetTiles,
+        int worldX,
+        int worldY,
+        Rectangle solidArea,
+        int tileSize,
+        String direction
+    ) {
         int leftWorldX = worldX + solidArea.x;
         int rightWorldX = worldX + solidArea.x + solidArea.width - 1;
         int topWorldY = worldY + solidArea.y;
@@ -499,7 +529,6 @@ public class Player extends Entity {
         int centerWorldX = worldX + solidArea.x + (solidArea.width / 2);
         int centerWorldY = worldY + solidArea.y + (solidArea.height / 2);
 
-        ArrayList<int[]> targetTiles = new ArrayList<>();
         switch (direction) {
             case "up":
                 appendUniqueTile(targetTiles, toTileIndex(centerWorldX, tileSize), toTileIndex(topWorldY - 1, tileSize));
@@ -528,8 +557,6 @@ public class Player extends Entity {
             default:
             break;
         }
-
-        return targetTiles.toArray(new int[targetTiles.size()][]);
     }
 
     private boolean handleInteraction(int npcIndex) {
@@ -541,6 +568,9 @@ public class Player extends Entity {
 
         int[][] targetTiles = getInteractionTiles();
         ChestState chest = gh.th.findChestAt(targetTiles);
+        if (chest == null) {
+            chest = gh.th.findChestNear(worldX, worldY, solidArea, gh.tileSize);
+        }
         if (chest != null) {
             gh.openChest(chest);
             return true;
