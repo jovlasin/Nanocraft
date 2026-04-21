@@ -38,6 +38,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Ui ui = new Ui(this);
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
+    private boolean bronzeDragonDefeated;
 
     public final int title = 0;
     public final int pause = 1;
@@ -55,6 +56,7 @@ public class GameHandler extends JPanel implements Runnable {
         this.addKeyListener(kh);
         ah.setObjects();
         ah.setNPCS();
+        ah.setMonsters();
 
         gameState = title;
         // gameState = play;
@@ -95,15 +97,28 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
-            for (int i = 0; i < projectileList.size(); i++) {
-                if (projectileList.get(i) != null) {
-                    if (projectileList.get(i).alive == true) {
-                        projectileList.get(i).update();
-                    }
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    monsters[i].update();
 
-                    if (projectileList.get(i).alive == false) {
-                        projectileList.remove(i);
+                    if (monsters[i].alive == false) {
+                        monsters[i] = null;
                     }
+                }
+            }
+
+            for (int i = projectileList.size() - 1; i >= 0; i--) {
+                Entity projectile = projectileList.get(i);
+
+                if (projectile == null || projectile.alive == false) {
+                    projectileList.remove(i);
+                    continue;
+                }
+
+                projectile.update();
+
+                if (projectile.alive == false) {
+                    projectileList.remove(i);
                 }
             }
         }
@@ -178,6 +193,12 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    entityList.add(monsters[i]);
+                }
+            }
+
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null) {
                     entityList.add(objs[i]);
@@ -193,7 +214,9 @@ public class GameHandler extends JPanel implements Runnable {
             Collections.sort(entityList, new Comparator<Entity>() {
                 @Override
                 public int compare(Entity e1, Entity e2) {
-                    int result = Integer.compare(e1.worldY, e2.worldY);
+                    int e1Depth = e1.worldY + e1.solidArea.y + e1.solidArea.height;
+                    int e2Depth = e2.worldY + e2.solidArea.y + e2.solidArea.height;
+                    int result = Integer.compare(e1Depth, e2Depth);
                     return result;
                 }
             });
@@ -217,5 +240,17 @@ public class GameHandler extends JPanel implements Runnable {
     public void playSound(int i) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+    }
+
+    public void clearProjectiles() {
+        projectileList.clear();
+    }
+
+    public boolean isBronzeDragonDefeated() {
+        return bronzeDragonDefeated;
+    }
+
+    public void setBronzeDragonDefeated(boolean bronzeDragonDefeated) {
+        this.bronzeDragonDefeated = bronzeDragonDefeated;
     }
 }

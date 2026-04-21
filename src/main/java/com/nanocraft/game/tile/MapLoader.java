@@ -31,6 +31,7 @@ public final class MapLoader {
         final List<int[][]> layers;
         final List<String> layerNames;
         final List<MapTransition> transitions;
+        final List<MapMarker> markers;
         final int mapWidth;
         final int mapHeight;
         final boolean zeroMeansEmpty;
@@ -40,6 +41,7 @@ public final class MapLoader {
             List<int[][]> layers,
             List<String> layerNames,
             List<MapTransition> transitions,
+            List<MapMarker> markers,
             int mapWidth,
             int mapHeight,
             boolean zeroMeansEmpty
@@ -48,6 +50,7 @@ public final class MapLoader {
             this.layers = layers;
             this.layerNames = layerNames;
             this.transitions = transitions;
+            this.markers = markers;
             this.mapWidth = mapWidth;
             this.mapHeight = mapHeight;
             this.zeroMeansEmpty = zeroMeansEmpty;
@@ -61,6 +64,7 @@ public final class MapLoader {
     private final List<int[][]> layers;
     private final List<String> layerNames;
     private final List<MapTransition> transitions;
+    private final List<MapMarker> markers;
 
     private int mapWidth;
     private int mapHeight;
@@ -73,6 +77,7 @@ public final class MapLoader {
         this.layers = new ArrayList<>();
         this.layerNames = new ArrayList<>();
         this.transitions = new ArrayList<>();
+        this.markers = new ArrayList<>();
     }
 
     public MapData loadMap(String filePath) {
@@ -88,6 +93,7 @@ public final class MapLoader {
             layers,
             layerNames,
             transitions,
+            markers,
             mapWidth,
             mapHeight,
             zeroMeansEmpty
@@ -327,6 +333,7 @@ public final class MapLoader {
 
             if ("objectgroup".equals(layerData.type) && layerData.objects != null) {
                 loadTransitions(mapFilePath, mapData, layerData.objects);
+                loadMarkers(mapData, layerData.objects);
             }
         }
     }
@@ -381,6 +388,7 @@ public final class MapLoader {
         layers.clear();
         layerNames.clear();
         transitions.clear();
+        markers.clear();
         mapWidth = 0;
         mapHeight = 0;
     }
@@ -455,6 +463,26 @@ public final class MapLoader {
             ));
         }
         
+    }
+
+    private void loadMarkers(TiledMapData mapData, List<TiledObjectData> objects) {
+        int sourceTileWidth = mapData.tilewidth > 0 ? mapData.tilewidth : 1;
+        int sourceTileHeight = mapData.tileheight > 0 ? mapData.tileheight : 1;
+
+        for (TiledObjectData objectData : objects) {
+            if (objectData == null || objectData.name == null || objectData.name.isBlank()) {
+                continue;
+            }
+
+            String targetMap = getStringProperty(objectData.properties, "targetMap", null);
+            if (targetMap != null && !targetMap.isBlank()) {
+                continue;
+            }
+
+            int sourceCol = (int) Math.floor(objectData.x / sourceTileWidth);
+            int sourceRow = (int) Math.floor(objectData.y / sourceTileHeight);
+            markers.add(new MapMarker(objectData.name.trim(), objectData.type, sourceCol, sourceRow));
+        }
     }
 
     private List<TiledPropertyData> findTileProperties(List<TiledTileData> tiles, int localId) {
