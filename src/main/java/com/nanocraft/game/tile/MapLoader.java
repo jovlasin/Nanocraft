@@ -32,6 +32,7 @@ public final class MapLoader {
         final List<String> layerNames;
         final List<MapTransition> transitions;
         final List<MapMarker> markers;
+        final List<ChestDefinition> chestDefinitions;
         final int mapWidth;
         final int mapHeight;
         final boolean zeroMeansEmpty;
@@ -42,6 +43,7 @@ public final class MapLoader {
             List<String> layerNames,
             List<MapTransition> transitions,
             List<MapMarker> markers,
+            List<ChestDefinition> chestDefinitions,
             int mapWidth,
             int mapHeight,
             boolean zeroMeansEmpty
@@ -51,6 +53,7 @@ public final class MapLoader {
             this.layerNames = layerNames;
             this.transitions = transitions;
             this.markers = markers;
+            this.chestDefinitions = chestDefinitions;
             this.mapWidth = mapWidth;
             this.mapHeight = mapHeight;
             this.zeroMeansEmpty = zeroMeansEmpty;
@@ -65,6 +68,7 @@ public final class MapLoader {
     private final List<String> layerNames;
     private final List<MapTransition> transitions;
     private final List<MapMarker> markers;
+    private final List<ChestDefinition> chestDefinitions;
 
     private int mapWidth;
     private int mapHeight;
@@ -78,6 +82,7 @@ public final class MapLoader {
         this.layerNames = new ArrayList<>();
         this.transitions = new ArrayList<>();
         this.markers = new ArrayList<>();
+        this.chestDefinitions = new ArrayList<>();
     }
 
     public MapData loadMap(String filePath) {
@@ -94,6 +99,7 @@ public final class MapLoader {
             layerNames,
             transitions,
             markers,
+            chestDefinitions,
             mapWidth,
             mapHeight,
             zeroMeansEmpty
@@ -165,6 +171,7 @@ public final class MapLoader {
                 tile.replacementTileId = getIntProperty(tileData.properties, "replacementTileId", 0);
                 tile.dropItemType = getStringProperty(tileData.properties, "dropItemType", null);
                 tile.type = resolveTileType(tileset.name, tileData.image);
+                tile.interactionType = getInteractionType(tileData.properties);
                 applyTransitionProperties(tile, mapFilePath, tileData.properties);
 
                 int globalId = tileset.firstgid + tileData.id;
@@ -195,6 +202,7 @@ public final class MapLoader {
         Map<Integer, Integer> healthByTileId = new HashMap<>();
         Map<Integer, Integer> replacementByTileId = new HashMap<>();
         Map<Integer, String> dropByTileId = new HashMap<>();
+        Map<Integer, String> interactionByTileId = new HashMap<>();
         if (tileset.tiles != null) {
             for (TiledTileData tileData : tileset.tiles) {
                 if (tileData == null) {
@@ -204,6 +212,7 @@ public final class MapLoader {
                 healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
                 replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
                 dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
+                interactionByTileId.put(tileData.id, getInteractionType(tileData.properties));
             }
         }
 
@@ -222,6 +231,7 @@ public final class MapLoader {
             tile.replacementTileId = replacementByTileId.getOrDefault(0, 0);
             tile.dropItemType = dropByTileId.get(0);
             tile.type = resolveTileType(tileset.name, tileset.image);
+            tile.interactionType = interactionByTileId.get(0);
             applyTransitionProperties(tile, mapFilePath, tileset.tiles == null ? null : tileset.tiles.stream()
                 .filter(tileData -> tileData != null && tileData.id == 0)
                 .findFirst()
@@ -249,6 +259,7 @@ public final class MapLoader {
             tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
             tile.dropItemType = dropByTileId.get(localId);
             tile.type = resolveTileType(tileset.name, tileset.image);
+            tile.interactionType = interactionByTileId.get(localId);
             applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(tileset.firstgid + localId, tile);
         }
@@ -279,6 +290,7 @@ public final class MapLoader {
         Map<Integer, Integer> healthByTileId = new HashMap<>();
         Map<Integer, Integer> replacementByTileId = new HashMap<>();
         Map<Integer, String> dropByTileId = new HashMap<>();
+        Map<Integer, String> interactionByTileId = new HashMap<>();
         if (tileset.tiles != null) {
             for (TiledTileData tileData : tileset.tiles) {
                 if (tileData == null) {
@@ -288,6 +300,7 @@ public final class MapLoader {
                 healthByTileId.put(tileData.id, getIntProperty(tileData.properties, "oreHealth", 0));
                 replacementByTileId.put(tileData.id, getIntProperty(tileData.properties, "replacementTileId", 0));
                 dropByTileId.put(tileData.id, getStringProperty(tileData.properties, "dropItemType", null));
+                interactionByTileId.put(tileData.id, getInteractionType(tileData.properties));
             }
         }
 
@@ -301,6 +314,7 @@ public final class MapLoader {
             tile.replacementTileId = replacementByTileId.getOrDefault(localId, 0);
             tile.dropItemType = dropByTileId.get(localId);
             tile.type = resolveTileType(tileset.name, imagePath);
+            tile.interactionType = interactionByTileId.get(localId);
             applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(gid, tile);
         }
@@ -334,6 +348,7 @@ public final class MapLoader {
             if ("objectgroup".equals(layerData.type) && layerData.objects != null) {
                 loadTransitions(mapFilePath, mapData, layerData.objects);
                 loadMarkers(mapData, layerData.objects);
+                loadChests(mapFilePath, mapData, layerData.objects);
             }
         }
     }
@@ -389,8 +404,10 @@ public final class MapLoader {
         layerNames.clear();
         transitions.clear();
         markers.clear();
+        chestDefinitions.clear();
         mapWidth = 0;
         mapHeight = 0;
+        zeroMeansEmpty = false;
     }
 
     private void registerLegacyTiles() {
@@ -483,6 +500,44 @@ public final class MapLoader {
             int sourceRow = (int) Math.floor(objectData.y / sourceTileHeight);
             markers.add(new MapMarker(objectData.name.trim(), objectData.type, sourceCol, sourceRow));
         }
+    }
+
+    private void loadChests(String mapFilePath, TiledMapData mapData, List<TiledObjectData> objects) {
+        int sourceTileWidth = mapData.tilewidth > 0 ? mapData.tilewidth : 1;
+        int sourceTileHeight = mapData.tileheight > 0 ? mapData.tileheight : 1;
+
+        for (TiledObjectData objectData : objects) {
+            if (objectData == null || objectData.type == null) {
+                continue;
+            }
+
+            if (!"chest".equalsIgnoreCase(objectData.type.trim())) {
+                continue;
+            }
+
+            int sourceCol = getObjectTileCol(objectData, sourceTileWidth);
+            int sourceRow = getObjectTileRow(objectData, sourceTileHeight);
+            List<String> lootItemIds = parseLootItemIds(getStringProperty(objectData.properties, "loot", ""));
+
+            chestDefinitions.add(new ChestDefinition(mapFilePath, sourceCol, sourceRow, lootItemIds));
+        }
+    }
+
+    private int getObjectTileCol(TiledObjectData objectData, int tileWidth) {
+        if (objectData == null) {
+            return -1;
+        }
+
+        return (int) Math.floor(objectData.x / tileWidth);
+    }
+
+    private int getObjectTileRow(TiledObjectData objectData, int tileHeight) {
+        if (objectData == null) {
+            return -1;
+        }
+
+        double sourceY = objectData.gid == null ? objectData.y : objectData.y - tileHeight;
+        return (int) Math.floor(sourceY / tileHeight);
     }
 
     private List<TiledPropertyData> findTileProperties(List<TiledTileData> tiles, int localId) {
@@ -579,6 +634,42 @@ public final class MapLoader {
         return defaultValue;
     }
 
+    private String getInteractionType(List<TiledPropertyData> properties) {
+        String interactionType = getStringProperty(properties, "interactionType", null);
+        if (interactionType != null) {
+            return interactionType.trim().toLowerCase();
+        }
+
+        interactionType = getStringProperty(properties, "interaction", null);
+        if (interactionType != null) {
+            return interactionType.trim().toLowerCase();
+        }
+
+        if (getBooleanProperty(properties, "sleep", false)) {
+            return "sleep";
+        }
+
+        return null;
+    }
+
+    private boolean getBooleanProperty(List<TiledPropertyData> properties, String propertyName, boolean defaultValue) {
+        if (properties == null || propertyName == null) {
+            return defaultValue;
+        }
+
+        for (TiledPropertyData property : properties) {
+            if (property == null || property.name == null) {
+                continue;
+            }
+
+            if (propertyName.equalsIgnoreCase(property.name)) {
+                return parseBoolean(property.value);
+            }
+        }
+
+        return defaultValue;
+    }
+
     private boolean parseBoolean(Object value) {
         if (value instanceof Boolean boolValue) {
             return boolValue;
@@ -606,6 +697,27 @@ public final class MapLoader {
         }
 
         return defaultValue;
+    }
+
+    private List<String> parseLootItemIds(String lootValue) {
+        List<String> lootItemIds = new ArrayList<>();
+        if (lootValue == null || lootValue.isBlank()) {
+            return lootItemIds;
+        }
+
+        String[] rawItems = lootValue.split(",");
+        for (String rawItem : rawItems) {
+            if (rawItem == null) {
+                continue;
+            }
+
+            String itemId = rawItem.trim().toLowerCase();
+            if (!itemId.isEmpty()) {
+                lootItemIds.add(itemId);
+            }
+        }
+
+        return lootItemIds;
     }
 
     private int stripFlipFlags(int gid) {
