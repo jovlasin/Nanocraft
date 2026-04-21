@@ -8,6 +8,7 @@ public class Diamond extends Entity {
         super(gh);
 
         itemId = "diamond";
+        configureStacking(true, DEFAULT_STACK_LIMIT);
         name = "Diamond";
         description = "[" + name + "]\nA rare ore crystal.";
         down1 = scaleOrFallback("/object/Diamond", "/tile/Diamond_Ore", gh.tileSize, gh.tileSize);

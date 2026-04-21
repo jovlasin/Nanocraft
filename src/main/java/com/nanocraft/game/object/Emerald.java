@@ -8,6 +8,7 @@ public class Emerald extends Entity {
         super(gh);
 
         itemId = "emerald";
+        configureStacking(true, DEFAULT_STACK_LIMIT);
         name = "Emerald";
         description = "[" + name + "]\nA polished green gem.";
         down1 = scaleOrFallback("/object/Emerald", "/tile/Green_Ore", gh.tileSize, gh.tileSize);

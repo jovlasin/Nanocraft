@@ -8,6 +8,7 @@ public class Redstone extends Entity {
         super(gh);
 
         itemId = "redstone";
+        configureStacking(true, DEFAULT_STACK_LIMIT);
         name = "Redstone";
         description = "[" + name + "]\nA bright red mineral.";
         down1 = scaleOrFallback("/object/Redstone", "/tile/Red_Orea", gh.tileSize, gh.tileSize);
