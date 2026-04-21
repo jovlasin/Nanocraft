@@ -12,8 +12,15 @@ import javax.swing.JPanel;
 import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
+import com.nanocraft.game.object.Apple;
+import com.nanocraft.game.object.Diamond;
+import com.nanocraft.game.object.Emerald;
 import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.Meat;
+import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.OreChunk;
+import com.nanocraft.game.object.Pickaxe;
+import com.nanocraft.game.object.Redstone;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
@@ -36,6 +43,7 @@ public class GameHandler extends JPanel implements Runnable {
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
+    public ChestState activeChest;
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
     private boolean bronzeDragonDefeated;
@@ -43,8 +51,9 @@ public class GameHandler extends JPanel implements Runnable {
     public final int title = 0;
     public final int pause = 1;
     public final int play = 2;
-    public final int dialogue = 2;
+    public final int dialogue = 3;
     public final int stats = 4;
+    public final int chest = 5;
     public int gameState = 999;
 
     public GameHandler() {
@@ -128,14 +137,46 @@ public class GameHandler extends JPanel implements Runnable {
         }
     }
 
+    public void openChest(ChestState chestState) {
+        if (chestState == null) {
+            return;
+        }
+
+        activeChest = chestState;
+        activeChest.opened = true;
+        ui.resetChestUi();
+        ui.addMessage("Opened chest.");
+        gameState = chest;
+    }
+
+    public void closeChest() {
+        activeChest = null;
+        ui.resetChestUi();
+        gameState = play;
+    }
+
+    public void transferActiveChestSelection() {
+        if (activeChest == null) {
+            return;
+        }
+
+        if (ui.isChestPanelActive()) {
+            transferChestItemToPlayer();
+            return;
+        }
+
+        transferPlayerItemToChest();
+    }
+
     public void spawnDroppedItem(int worldX, int worldY, String itemType) {
         for (int i = 0; i < objs.length; i++) {
             if (objs[i] != null) {
                 continue;
             }
 
-            Entity droppedItem = createDropEntity(itemType);
+            Entity droppedItem = createItemEntity(itemType);
             if (droppedItem == null) {
+                System.out.println("Unknown dropped item type: " + itemType);
                 return;
             }
 
@@ -148,13 +189,37 @@ public class GameHandler extends JPanel implements Runnable {
         System.out.println("No free world object slot for dropped item: " + itemType);
     }
 
-    private Entity createDropEntity(String itemType) {
+    public void onPlayerSleep() {
+        String currentMapPath = th.getCurrentMapPath();
+        int playerWorldX = player.worldX;
+        int playerWorldY = player.worldY;
+        String playerDirection = player.direction;
+
+        th.loadMap(currentMapPath);
+        player.worldX = playerWorldX;
+        player.worldY = playerWorldY;
+        player.direction = playerDirection;
+        ah.setObjects();
+        ah.setNPCS();
+        System.out.println("You slept. The world has reset.");
+    }
+
+    public Entity createItemEntity(String itemType) {
         if (itemType == null || itemType.isBlank()) {
             return null;
         }
 
         String normalized = itemType.trim().toLowerCase();
         switch (normalized) {
+            case "apple":
+                return new Apple(this);
+
+            case "diamond":
+                return new Diamond(this);
+
+            case "emerald":
+                return new Emerald(this);
+
             case "ore_chunk":
             case "orechunk":
             case "ore":
@@ -163,8 +228,22 @@ public class GameHandler extends JPanel implements Runnable {
             case "key":
                 return new Key(this);
 
+            case "meat":
+                return new Meat(this);
+
+            case "medkit":
+                return new Medkit(this);
+
+            case "pickaxe":
+            case "diamond_pickaxe":
+            case "diamondpickaxe":
+                return new Pickaxe(this);
+
+            case "redstone":
+                return new Redstone(this);
+
             default:
-                return new OreChunk(this);
+                return null;
         }
     }
 
@@ -252,5 +331,66 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setBronzeDragonDefeated(boolean bronzeDragonDefeated) {
         this.bronzeDragonDefeated = bronzeDragonDefeated;
+    }
+
+    private void transferChestItemToPlayer() {
+        if (activeChest == null) {
+            return;
+        }
+
+        int itemIndex = ui.getSelectedChestSlotIndex();
+        if (itemIndex < 0 || itemIndex >= activeChest.items.size()) {
+            return;
+        }
+
+        Entity item = activeChest.items.get(itemIndex);
+        if (!player.canAcceptInventoryItem(item)) {
+            ui.addMessage("Inventory full.");
+            return;
+        }
+
+        item = activeChest.removeItem(itemIndex);
+        if (item == null) {
+            return;
+        }
+
+        if (!player.addToInventory(item)) {
+            activeChest.addItem(item);
+            ui.addMessage("Inventory full.");
+            return;
+        }
+
+        ui.addMessage("Moved " + item.name + ".");
+    }
+
+    private void transferPlayerItemToChest() {
+        if (activeChest == null) {
+            return;
+        }
+
+        int itemIndex = ui.getSelectedPlayerChestSlotIndex();
+        if (itemIndex < 0 || itemIndex >= player.inventory.size()) {
+            return;
+        }
+
+        Entity item = player.inventory.get(itemIndex);
+        if (!activeChest.canAcceptItem(item)) {
+            ui.addMessage("Chest is full.");
+            return;
+        }
+
+        item = player.removeFromInventory(itemIndex);
+        if (item == null) {
+            return;
+        }
+
+        if (!activeChest.addItem(item)) {
+            player.addToInventory(item);
+            ui.addMessage("Chest is full.");
+            return;
+        }
+
+        player.handleRemovedInventoryItem(item);
+        ui.addMessage("Stored " + item.name + ".");
     }
 }
