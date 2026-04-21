@@ -414,7 +414,7 @@ public class Ui {
         g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
         int textX = infoX + 20;
         int textY = infoY + 36;
-        g2d.drawString("TAB: switch panel   SPACE/ENTER: transfer   ESC: close", textX, textY);
+        g2d.drawString("TAB: Switch panel   SPACE/ENTER: Transfer item   ESC: Close chest", textX, textY);
         textY += 36;
 
         Entity selectedItem = getSelectedChestScreenItem();
