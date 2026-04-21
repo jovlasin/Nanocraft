@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.core.ItemStacking;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
@@ -163,12 +164,7 @@ public class Player extends Entity {
     }
 
     public boolean addToInventory(Entity item) {
-        if (item == null || isInventoryFull()) {
-            return false;
-        }
-
-        inventory.add(item);
-        return true;
+        return ItemStacking.addItem(inventory, inventorySize, item);
     }
 
     public Entity removeFromInventory(int index) {
@@ -199,6 +195,10 @@ public class Player extends Entity {
 
     public boolean isInventoryFull() {
         return inventory.size() >= inventorySize;
+    }
+
+    public boolean canAcceptInventoryItem(Entity item) {
+        return ItemStacking.canStore(inventory, inventorySize, item);
     }
 
     public void attemptMine() {
@@ -461,7 +461,10 @@ public class Player extends Entity {
             }
 
             else if (item.type == consumable) {
-                inventory.remove(itemIndex);
+                item.stackCount--;
+                if (item.stackCount <= 0) {
+                    inventory.remove(itemIndex);
+                }
             }
         }
     }

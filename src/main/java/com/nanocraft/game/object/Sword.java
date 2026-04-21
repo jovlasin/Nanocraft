@@ -6,6 +6,7 @@ import com.nanocraft.game.entity.Entity;
 public class Sword extends Entity {
     public Sword(GameHandler gh) {
         super(gh);
+        configureStacking(false, 1);
 
         type = TYPE_WEAPON;
         name = "Normal Sword";

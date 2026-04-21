@@ -12,6 +12,7 @@ import com.nanocraft.game.tile.ResourceLoader;
 
 
 public class Entity {
+    public static final int DEFAULT_STACK_LIMIT = 99;
     public static final int TYPE_PLAYER = 0;
     public static final int TYPE_NPC = 1;
     public static final int TYPE_MONSTER = 2;
@@ -41,6 +42,9 @@ public class Entity {
     public boolean alive;
     public boolean attacking;
     public int attackValue;
+    public boolean stackable;
+    public int stackCount;
+    public int maxStackSize;
 
     public final int player = TYPE_PLAYER;
     public final int npc = TYPE_NPC;
@@ -57,6 +61,8 @@ public class Entity {
         this.spriteNum = 1;
         this.dialogues = new String[20];
         this.alive = true;
+        this.stackCount = 1;
+        this.maxStackSize = 1;
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
@@ -204,5 +210,38 @@ public class Entity {
             default:
                 return null;
         }
+    }
+
+    public String getStackKey() {
+        return getClass().getName();
+    }
+
+    public boolean canStackWith(Entity other) {
+        return other != null
+            && stackable
+            && other.stackable
+            && maxStackSize > 1
+            && other.maxStackSize > 1
+            && getStackKey().equals(other.getStackKey());
+    }
+
+    public int getAvailableStackSpace() {
+        return Math.max(0, maxStackSize - stackCount);
+    }
+
+    public Entity copyForStack(int count) {
+        try {
+            Entity copy = getClass().getDeclaredConstructor(GameHandler.class).newInstance(gh);
+            copy.stackCount = count;
+            return copy;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Unable to copy stackable item: " + getClass().getName(), e);
+        }
+    }
+
+    protected void configureStacking(boolean stackable, int maxStackSize) {
+        this.stackable = stackable;
+        this.maxStackSize = stackable ? Math.max(1, maxStackSize) : 1;
+        this.stackCount = 1;
     }
 }

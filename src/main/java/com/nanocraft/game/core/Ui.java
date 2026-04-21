@@ -3,6 +3,7 @@ package com.nanocraft.game.core;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
@@ -221,9 +222,7 @@ public class Ui {
                 g2d.setColor(new Color(240, 190, 90));
                 g2d.fillRoundRect(slotX, slotY, gh.tileSize, gh.tileSize, 10, 10);
             }
-            if (item != null && item.down1 != null) {
-                g2d.drawImage(item.down1, slotX, slotY, null);
-            }
+            drawItemSlot(item, slotX, slotY);
 
             slotX += slotSize;
             if (i == 4 || i == 9 || i == 14) {
@@ -443,9 +442,7 @@ public class Ui {
 
         for (int i = 0; i < items.size(); i++) {
             Entity item = items.get(i);
-            if (item != null && item.down1 != null) {
-                g2d.drawImage(item.down1, slotX, slotY, null);
-            }
+            drawItemSlot(item, slotX, slotY);
 
             slotX += slotSize;
             if (i == 4 || i == 9 || i == 14) {
@@ -493,5 +490,43 @@ public class Ui {
 
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private void drawItemSlot(Entity item, int slotX, int slotY) {
+        if (item == null) {
+            return;
+        }
+
+        if (item.down1 != null) {
+            g2d.drawImage(item.down1, slotX, slotY, null);
+        }
+
+        if (item.stackCount > 1) {
+            drawStackCountBadge(item.stackCount, slotX, slotY);
+        }
+    }
+
+    private void drawStackCountBadge(int count, int slotX, int slotY) {
+        String countText = String.valueOf(count);
+        Font originalFont = g2d.getFont();
+        Font badgeFont = originalFont.deriveFont(Font.BOLD, 18F);
+        g2d.setFont(badgeFont);
+
+        FontMetrics metrics = g2d.getFontMetrics();
+        int textWidth = metrics.stringWidth(countText);
+        int badgeWidth = textWidth + 10;
+        int badgeHeight = metrics.getAscent() + 4;
+        int badgeX = slotX + gh.tileSize - badgeWidth - 2;
+        int badgeY = slotY + gh.tileSize - badgeHeight - 2;
+        int textX = badgeX + 5;
+        int textY = badgeY + metrics.getAscent() - 1;
+
+        g2d.setColor(new Color(0, 0, 0, 190));
+        g2d.fillRoundRect(badgeX, badgeY, badgeWidth, badgeHeight, 8, 8);
+        g2d.setColor(Color.white);
+        g2d.drawString(countText, textX, textY);
+
+        g2d.setFont(originalFont);
+        g2d.setColor(Color.white);
     }
 }
