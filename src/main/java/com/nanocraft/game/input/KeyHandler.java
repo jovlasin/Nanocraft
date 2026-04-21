@@ -136,6 +136,10 @@ public class KeyHandler implements KeyListener {
             gh.gameState = gh.stats;
         }
 
+        if (code == KeyEvent.VK_N) {
+            gh.cycleTimeOfDay();
+        }
+
         if (code == KeyEvent.VK_F) {
             shoot = true;
         }
