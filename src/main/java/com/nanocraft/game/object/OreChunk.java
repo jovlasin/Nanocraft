@@ -6,6 +6,7 @@ import com.nanocraft.game.entity.Entity;
 public class OreChunk extends Entity {
     public OreChunk(GameHandler gh) {
         super(gh);
+        configureStacking(true, DEFAULT_STACK_LIMIT);
         name = "Ore Chunk";
         description = "[" + name + "]\nA chunk of mined ore.";
         down1 = scale("/object/key", gh.tileSize, gh.tileSize);
