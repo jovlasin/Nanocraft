@@ -308,12 +308,13 @@ public class GameHandler extends JPanel implements Runnable {
             return;
         }
 
-        if (player.isInventoryFull()) {
+        Entity item = activeChest.items.get(itemIndex);
+        if (!player.canAcceptInventoryItem(item)) {
             ui.addMessage("Inventory full.");
             return;
         }
 
-        Entity item = activeChest.removeItem(itemIndex);
+        item = activeChest.removeItem(itemIndex);
         if (item == null) {
             return;
         }
@@ -337,12 +338,13 @@ public class GameHandler extends JPanel implements Runnable {
             return;
         }
 
-        if (activeChest.isFull()) {
+        Entity item = player.inventory.get(itemIndex);
+        if (!activeChest.canAcceptItem(item)) {
             ui.addMessage("Chest is full.");
             return;
         }
 
-        Entity item = player.removeFromInventory(itemIndex);
+        item = player.removeFromInventory(itemIndex);
         if (item == null) {
             return;
         }

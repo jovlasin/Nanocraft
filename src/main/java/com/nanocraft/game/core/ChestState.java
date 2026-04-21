@@ -22,12 +22,7 @@ public class ChestState {
     }
 
     public boolean addItem(Entity item) {
-        if (item == null || isFull()) {
-            return false;
-        }
-
-        items.add(item);
-        return true;
+        return ItemStacking.addItem(items, CAPACITY, item);
     }
 
     public Entity removeItem(int index) {
@@ -40,6 +35,10 @@ public class ChestState {
 
     public boolean isFull() {
         return items.size() >= CAPACITY;
+    }
+
+    public boolean canAcceptItem(Entity item) {
+        return ItemStacking.canStore(items, CAPACITY, item);
     }
 
     public String getKey() {

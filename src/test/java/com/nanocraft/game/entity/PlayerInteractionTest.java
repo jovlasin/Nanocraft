@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.object.Emerald;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 
@@ -193,6 +194,160 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void stacksMatchingEmeraldsIntoSingleInventorySlot() {
+        GameHandler gh = new GameHandler();
+
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(2, gh.player.inventory.get(2).stackCount);
+    }
+
+    @Test
+    public void createsSecondInventorySlotWhenStackLimitIsExceeded() {
+        GameHandler gh = new GameHandler();
+
+        for (int i = 0; i < 100; i++) {
+            assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        }
+
+        assertEquals(4, gh.player.inventory.size());
+        assertEquals(99, gh.player.inventory.get(2).stackCount);
+        assertEquals(1, gh.player.inventory.get(3).stackCount);
+    }
+
+    @Test
+    public void matchingPartialStackAcceptsPickupWhenInventorySlotsAreFull() {
+        GameHandler gh = new GameHandler();
+
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        gh.player.inventory.get(2).stackCount = 98;
+
+        while (gh.player.inventory.size() < gh.player.inventorySize) {
+            assertTrue(gh.player.addToInventory(new Pickaxe(gh)));
+        }
+
+        assertTrue(gh.player.isInventoryFull());
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        assertEquals(gh.player.inventorySize, gh.player.inventory.size());
+        assertEquals(99, gh.player.inventory.get(2).stackCount);
+    }
+
+    @Test
+    public void keepsWeaponsAsSeparateInventoryEntries() {
+        GameHandler gh = new GameHandler();
+
+        assertTrue(gh.player.addToInventory(new Pickaxe(gh)));
+        assertTrue(gh.player.addToInventory(new Pickaxe(gh)));
+
+        assertEquals(4, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals(1, gh.player.inventory.get(3).stackCount);
+    }
+
+    @Test
+    public void stackedInventoryKeepsSlotSelectionCompact() {
+        GameHandler gh = new GameHandler();
+        Pickaxe pickaxe = new Pickaxe(gh);
+
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        assertTrue(gh.player.addToInventory(pickaxe));
+
+        gh.ui.slotCol = 3;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(4, gh.player.inventory.size());
+        assertSame(pickaxe, gh.player.currentWeapon);
+    }
+
+    @Test
+    public void transfersChestStacksIntoExistingPlayerStacks() {
+        GameHandler gh = new GameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+        Emerald chestEmeralds = new Emerald(gh);
+        chestEmeralds.stackCount = 3;
+
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        assertTrue(chest.addItem(chestEmeralds));
+
+        gh.openChest(chest);
+        gh.transferActiveChestSelection();
+
+        assertTrue(chest.items.isEmpty());
+        assertEquals(4, gh.player.inventory.get(2).stackCount);
+    }
+
+    @Test
+    public void transfersPlayerStacksIntoExistingChestStacks() {
+        GameHandler gh = new GameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+        Emerald chestEmeralds = new Emerald(gh);
+        chestEmeralds.stackCount = 4;
+        Emerald playerEmeralds = new Emerald(gh);
+        playerEmeralds.stackCount = 3;
+
+        assertTrue(chest.addItem(chestEmeralds));
+        assertTrue(gh.player.addToInventory(playerEmeralds));
+
+        gh.openChest(chest);
+        gh.ui.toggleChestPanel();
+        gh.ui.moveChestCursor(2, 0);
+        gh.transferActiveChestSelection();
+
+        assertEquals(2, gh.player.inventory.size());
+        assertEquals(7, chest.items.get(0).stackCount);
+    }
+
+    @Test
+    public void fullStackTransferToPlayerFailsAtomicallyWhenCapacityIsInsufficient() {
+        GameHandler gh = new GameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+        Emerald chestEmeralds = new Emerald(gh);
+        chestEmeralds.stackCount = 50;
+
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        gh.player.inventory.get(2).stackCount = 90;
+        while (gh.player.inventory.size() < gh.player.inventorySize) {
+            assertTrue(gh.player.addToInventory(new Pickaxe(gh)));
+        }
+        assertTrue(chest.addItem(chestEmeralds));
+
+        gh.openChest(chest);
+        gh.transferActiveChestSelection();
+
+        assertEquals(90, gh.player.inventory.get(2).stackCount);
+        assertEquals(50, chest.items.get(0).stackCount);
+        assertEquals(50, getTotalEmeraldCount(chest.items));
+    }
+
+    @Test
+    public void overflowTransferToPlayerUsesPartialStackSpaceAndFreeSlot() {
+        GameHandler gh = new GameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+        Emerald chestEmeralds = new Emerald(gh);
+        chestEmeralds.stackCount = 50;
+
+        assertTrue(gh.player.addToInventory(new Emerald(gh)));
+        gh.player.inventory.get(2).stackCount = 90;
+        while (gh.player.inventory.size() < gh.player.inventorySize - 1) {
+            assertTrue(gh.player.addToInventory(new Pickaxe(gh)));
+        }
+        assertTrue(chest.addItem(chestEmeralds));
+
+        gh.openChest(chest);
+        gh.transferActiveChestSelection();
+
+        assertTrue(chest.items.isEmpty());
+        assertEquals(gh.player.inventorySize, gh.player.inventory.size());
+        assertEquals(140, getTotalEmeraldCount(gh.player.inventory));
+        assertEquals(2, countEmeraldStacks(gh.player.inventory));
+        assertEquals(99, gh.player.inventory.get(2).stackCount);
+    }
+
+    @Test
     public void resolvesDirectionalPickaxeAttackSpritesFromEquippedWeapon() {
         GameHandler gh = new GameHandler();
         Pickaxe pickaxe = new Pickaxe(gh);
@@ -288,6 +443,26 @@ public class PlayerInteractionTest {
         player.direction = direction;
         player.spriteNum = spriteNum;
         assertSame(expectedSprite, player.resolveCurrentAttackSprite());
+    }
+
+    private int getTotalEmeraldCount(Iterable<Entity> items) {
+        int total = 0;
+        for (Entity item : items) {
+            if (item instanceof Emerald) {
+                total += item.stackCount;
+            }
+        }
+        return total;
+    }
+
+    private int countEmeraldStacks(Iterable<Entity> items) {
+        int count = 0;
+        for (Entity item : items) {
+            if (item instanceof Emerald) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static final class ChestPlacement {
