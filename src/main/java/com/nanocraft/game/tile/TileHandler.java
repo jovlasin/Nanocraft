@@ -16,6 +16,7 @@ public class TileHandler {
     private final List<int[][]> layers;
     private final List<int[][]> layerHealth;
     private final List<String> layerNames;
+    private final List<MapMarker> markers;
 
     private int mapWidth;
     private int mapHeight;
@@ -32,6 +33,7 @@ public class TileHandler {
         this.layerHealth = new ArrayList<>();
         this.layerNames = new ArrayList<>();
         this.transitions = new ArrayList<>();
+        this.markers = new ArrayList<>();
         loadMap(DEFAULT_MAP_PATH);
     }
 
@@ -118,12 +120,14 @@ public class TileHandler {
         tileRegistry.clear();
         layers.clear();
         layerNames.clear();
+        markers.clear();
 
         tileRegistry.putAll(mapData.tileRegistry);
         layers.addAll(mapData.layers);
         layerNames.addAll(mapData.layerNames);
         transitions.clear();
         transitions.addAll(mapData.transitions);
+        markers.addAll(mapData.markers);
         mapWidth = mapData.mapWidth;
         mapHeight = mapData.mapHeight;
         zeroMeansEmpty = mapData.zeroMeansEmpty;
@@ -158,6 +162,20 @@ public class TileHandler {
 
     public String getCurrentMapPath() {
         return currentMapPath;
+    }
+
+    public MapMarker getMarker(String markerName) {
+        if (markerName == null || markerName.isBlank()) {
+            return null;
+        }
+
+        for (MapMarker marker : markers) {
+            if (marker != null && marker.name != null && marker.name.equalsIgnoreCase(markerName)) {
+                return marker;
+            }
+        }
+
+        return null;
     }
 
     public MapTransition getTransitionAt(int col, int row) {
@@ -215,8 +233,10 @@ public class TileHandler {
         gh.player.worldX = playerCol * gh.tileSize;
         gh.player.worldY = playerRow * gh.tileSize;
         gh.player.direction = direction;
+        gh.clearProjectiles();
         gh.ah.setObjects();
         gh.ah.setNPCS();
+        gh.ah.setMonsters();
     }
 
     public void damageBreakableTile(int col, int row, int damage) {

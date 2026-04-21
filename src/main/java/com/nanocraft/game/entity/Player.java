@@ -342,15 +342,8 @@ public class Player extends Entity {
 
     private void interactMonster(int i) {
         if (i != 999) {
-            if (invincible == false && gh.monsters[i].dying == false) {
-                // gh.playSound(6);
-                int damage = gh.monsters[i].attack - defense;
-
-                if (damage < 0) {
-                    damage = 0;
-                }
-                life -= damage;
-                invincible = true;
+            if (gh.monsters[i].dying == false) {
+                receiveDamage(gh.monsters[i].attack);
             }
         }
     }
@@ -409,6 +402,10 @@ public class Player extends Entity {
 
     public void damage(int i, int attack) {
         if (i != 999) {
+            if (gh.monsters[i].dying == true || gh.monsters[i].alive == false) {
+                return;
+            }
+
             if (gh.monsters[i].invincible == false) {
                 // gh.playSound(5);
                 int damage = attack - gh.monsters[i].defense;
@@ -431,6 +428,20 @@ public class Player extends Entity {
                 }
             }
         }
+    }
+
+    public void receiveDamage(int incomingAttack) {
+        if (invincible == true) {
+            return;
+        }
+
+        int damage = incomingAttack - defense;
+        if (damage < 0) {
+            damage = 0;
+        }
+
+        life = Math.max(0, life - damage);
+        invincible = true;
     }
 
     private void checkLevelUp() {
