@@ -564,7 +564,7 @@ public class Player extends Entity {
 
         MiningRules.Result miningResult = MiningRules.evaluate(
             targetTile,
-            hasItem(targetTile.requiredItemType),
+            hasEquippedItem(targetTile.requiredItemType),
             canStoreMinedDrop(targetTile.dropItemType)
         );
 
@@ -578,7 +578,7 @@ public class Player extends Entity {
             return true;
         }
 
-        startToolSwingAnimation(findInventoryItem(targetTile.requiredItemType));
+        startToolSwingAnimation(currentWeapon);
         String dropItemType = gh.th.damageBreakableTile(targetTileCoordinates[0], targetTileCoordinates[1], 1);
         if (dropItemType == null || dropItemType.isBlank()) {
             return true;
@@ -594,6 +594,13 @@ public class Player extends Entity {
 
     public boolean hasItem(String itemId) {
         return findInventoryItem(itemId) != null;
+    }
+
+    public boolean hasEquippedItem(String itemId) {
+        return currentWeapon != null
+            && itemId != null
+            && !itemId.isBlank()
+            && itemId.equalsIgnoreCase(currentWeapon.itemId);
     }
 
     private Entity findInventoryItem(String itemId) {

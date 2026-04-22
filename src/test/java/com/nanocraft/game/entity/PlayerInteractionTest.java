@@ -168,6 +168,16 @@ public class PlayerInteractionTest {
         assertEquals("diamond_pickaxe", pickaxe.itemId);
         assertTrue(gh.player.addToInventory(pickaxe));
         assertTrue(gh.player.hasItem("diamond_pickaxe"));
+        assertFalse(gh.player.hasEquippedItem("diamond_pickaxe"));
+
+        performMineInteraction(gh, placement);
+        assertEquals(initialInventorySize + 1, gh.player.inventory.size());
+        assertNotNull(gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow));
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+        assertTrue(gh.player.hasEquippedItem("diamond_pickaxe"));
 
         int inventoryBeforeDrop = gh.player.inventory.size();
         for (int i = 0; i < oreTile.maxHealth - 1; i++) {
@@ -230,12 +240,13 @@ public class PlayerInteractionTest {
     }
 
     @Test
-    public void miningUsesPickaxeSwingSpriteEvenWhenSwordRemainsEquipped() {
+    public void miningDoesNotStartPickaxeSwingWhenPickaxeIsNotEquipped() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/cave.tmj");
         gh.gameState = gh.play;
 
         OrePlacement placement = findMineableOrePlacement(gh);
+        Tile oreTile = gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow);
         Pickaxe pickaxe = new Pickaxe(gh);
         assertTrue(gh.player.addToInventory(pickaxe));
 
@@ -252,8 +263,11 @@ public class PlayerInteractionTest {
         gh.player.update();
 
         assertFalse(gh.player.attacking);
-        assertTrue(gh.player.isToolSwinging());
-        assertSame(pickaxe.getAttackSprite(placement.direction, gh.player.getToolSwingSpriteNum()), gh.player.resolveCurrentActionSprite());
+        assertFalse(gh.player.isToolSwinging());
+        assertSame(sword, gh.player.currentWeapon);
+        assertSame(sword.getAttackSprite(placement.direction, 1), gh.player.resolveCurrentAttackSprite());
+        assertNotNull(oreTile);
+        assertNotNull(gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow));
         assertSame(sword, gh.player.currentWeapon);
     }
 
