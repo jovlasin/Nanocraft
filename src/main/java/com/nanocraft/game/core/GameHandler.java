@@ -18,6 +18,7 @@ import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.Diamond;
 import com.nanocraft.game.object.Emerald;
+import com.nanocraft.game.object.EyeOfEnder;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.object.Meat;
 import com.nanocraft.game.object.Medkit;
@@ -109,15 +110,28 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
-            for (int i = 0; i < projectileList.size(); i++) {
-                if (projectileList.get(i) != null) {
-                    if (projectileList.get(i).alive == true) {
-                        projectileList.get(i).update();
-                    }
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    monsters[i].update();
 
-                    if (projectileList.get(i).alive == false) {
-                        projectileList.remove(i);
+                    if (monsters[i].alive == false) {
+                        monsters[i] = null;
                     }
+                }
+            }
+
+            for (int i = projectileList.size() - 1; i >= 0; i--) {
+                Entity projectile = projectileList.get(i);
+
+                if (projectile == null || projectile.alive == false) {
+                    projectileList.remove(i);
+                    continue;
+                }
+
+                projectile.update();
+
+                if (projectile.alive == false) {
+                    projectileList.remove(i);
                 }
             }
         }
@@ -199,6 +213,7 @@ public class GameHandler extends JPanel implements Runnable {
     public void refreshCurrentMapState() {
         restoreCurrentMapObjects();
         ah.setNPCS();
+        ah.setMonsters();
     }
 
     public void beforeMapChange() {
@@ -345,6 +360,9 @@ public class GameHandler extends JPanel implements Runnable {
                 return new Diamond(this);
             case "emerald":
                 return new Emerald(this);
+            case "eye_of_ender":
+            case "eyeofender":
+                return new EyeOfEnder(this);
 
             case "ore_chunk":
             case "orechunk":
@@ -392,6 +410,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         if (item instanceof Emerald) {
             return "emerald";
+        }
+
+        if (item instanceof EyeOfEnder) {
+            return "eye_of_ender";
         }
 
         if (item instanceof OreChunk) {
@@ -454,6 +476,12 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    entityList.add(monsters[i]);
+                }
+            }
+
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null) {
                     entityList.add(objs[i]);
@@ -493,6 +521,10 @@ public class GameHandler extends JPanel implements Runnable {
     public void playSound(int i) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+    }
+
+    public void clearProjectiles() {
+        projectileList.clear();
     }
 
     private void transferChestItemToPlayer() {
@@ -643,4 +675,3 @@ public class GameHandler extends JPanel implements Runnable {
         }
     }
 }
-
