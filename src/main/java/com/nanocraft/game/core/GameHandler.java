@@ -7,6 +7,9 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.swing.JPanel;
 
 import com.nanocraft.game.entity.Entity;
@@ -21,6 +24,7 @@ import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.OreChunk;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Redstone;
+import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
@@ -46,6 +50,8 @@ public class GameHandler extends JPanel implements Runnable {
     public ChestState activeChest;
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
+    private final SaveManager saveManager = new SaveManager();
+    private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
 
     public final int title = 0;
     public final int pause = 1;
@@ -62,8 +68,7 @@ public class GameHandler extends JPanel implements Runnable {
         this.setFocusable(true);
         this.setFocusTraversalKeysEnabled(false);
         this.addKeyListener(kh);
-        ah.setObjects();
-        ah.setNPCS();
+        refreshCurrentMapState();
 
         gameState = title;
         // gameState = play;
@@ -168,6 +173,7 @@ public class GameHandler extends JPanel implements Runnable {
             droppedItem.worldX = worldX;
             droppedItem.worldY = worldY;
             objs[i] = droppedItem;
+            rememberCurrentMapObjects();
             return;
         }
 
@@ -180,13 +186,102 @@ public class GameHandler extends JPanel implements Runnable {
         int playerWorldY = player.worldY;
         String playerDirection = player.direction;
 
+        persistentObjectStates.remove(currentMapPath);
+        th.resetStoredMapState(currentMapPath);
         th.loadMap(currentMapPath);
         player.worldX = playerWorldX;
         player.worldY = playerWorldY;
         player.direction = playerDirection;
-        ah.setObjects();
-        ah.setNPCS();
+        refreshCurrentMapState();
         System.out.println("You slept. The world has reset.");
+    }
+
+    public void refreshCurrentMapState() {
+        restoreCurrentMapObjects();
+        ah.setNPCS();
+    }
+
+    public void beforeMapChange() {
+        rememberCurrentMapObjects();
+    }
+
+    public void rememberCurrentMapObjects() {
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null || currentMapPath.isBlank()) {
+            return;
+        }
+
+        persistentObjectStates.put(currentMapPath, snapshotObjects(objs));
+    }
+
+    public List<SaveManager.ObjectMapData> createObjectSaveData() {
+        rememberCurrentMapObjects();
+
+        List<SaveManager.ObjectMapData> objectMaps = new ArrayList<>();
+        for (Map.Entry<String, List<SaveManager.WorldObjectData>> entry : persistentObjectStates.entrySet()) {
+            SaveManager.ObjectMapData objectMapData = new SaveManager.ObjectMapData();
+            objectMapData.mapPath = entry.getKey();
+            objectMapData.objects = copyWorldObjectData(entry.getValue());
+            objectMaps.add(objectMapData);
+        }
+
+        return objectMaps;
+    }
+
+    public void applySaveData(SaveManager.SaveData saveData) {
+        activeChest = null;
+        projectileList.clear();
+        ui.resetChestUi();
+        ui.message.clear();
+        ui.counter.clear();
+        ui.currentDialogue = "";
+
+        persistentObjectStates.clear();
+        if (saveData.objectStates != null) {
+            for (SaveManager.ObjectMapData objectMapData : saveData.objectStates) {
+                if (objectMapData == null || objectMapData.mapPath == null || objectMapData.mapPath.isBlank()) {
+                    continue;
+                }
+
+                persistentObjectStates.put(objectMapData.mapPath, copyWorldObjectData(objectMapData.objects));
+            }
+        }
+
+        th.restoreChestSaveData(saveData.chests);
+        th.restoreMapStateSaveData(saveData.mapStates);
+        th.loadMap(saveData.currentMapPath);
+        refreshCurrentMapState();
+        player.applySaveData(saveData.player);
+        gameState = play;
+        ui.titleScreen = 1;
+    }
+
+    public boolean saveGame() {
+        try {
+            saveManager.save(this);
+            ui.addMessage("Game saved.");
+            return true;
+        } catch (Exception e) {
+            ui.addMessage("Save failed.");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean loadGame() {
+        try {
+            if (!saveManager.load(this)) {
+                System.out.println("No save file found.");
+                return false;
+            }
+
+            ui.addMessage("Game loaded.");
+            return true;
+        } catch (Exception e) {
+            System.out.println("Failed to load save.");
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public Entity createItemEntity(String itemType) {
@@ -227,9 +322,62 @@ public class GameHandler extends JPanel implements Runnable {
             case "redstone":
                 return new Redstone(this);
 
+            case "sword":
+            case "normal_sword":
+            case "normalsword":
+                return new Sword(this);
+
             default:
                 return null;
         }
+    }
+
+    public String getItemId(Entity item) {
+        if (item == null) {
+            return null;
+        }
+
+        if (item instanceof Apple) {
+            return "apple";
+        }
+
+        if (item instanceof Diamond) {
+            return "diamond";
+        }
+
+        if (item instanceof Emerald) {
+            return "emerald";
+        }
+
+        if (item instanceof OreChunk) {
+            return "ore_chunk";
+        }
+
+        if (item instanceof Key) {
+            return "key";
+        }
+
+        if (item instanceof Meat) {
+            return "meat";
+        }
+
+        if (item instanceof Medkit) {
+            return "medkit";
+        }
+
+        if (item instanceof Pickaxe) {
+            return "pickaxe";
+        }
+
+        if (item instanceof Redstone) {
+            return "redstone";
+        }
+
+        if (item instanceof Sword) {
+            return "sword";
+        }
+
+        return null;
     }
 
     public void paintComponent(Graphics g) {
@@ -357,5 +505,92 @@ public class GameHandler extends JPanel implements Runnable {
 
         player.handleRemovedInventoryItem(item);
         ui.addMessage("Stored " + item.name + ".");
+    }
+
+    private void restoreCurrentMapObjects() {
+        clearObjects();
+
+        String currentMapPath = th.getCurrentMapPath();
+        List<SaveManager.WorldObjectData> savedObjects = persistentObjectStates.get(currentMapPath);
+        if (savedObjects == null) {
+            ah.setObjects();
+            rememberCurrentMapObjects();
+            return;
+        }
+
+        applyObjects(savedObjects);
+    }
+
+    private List<SaveManager.WorldObjectData> snapshotObjects(Entity[] sourceObjects) {
+        List<SaveManager.WorldObjectData> savedObjects = new ArrayList<>();
+
+        for (Entity object : sourceObjects) {
+            if (object == null) {
+                continue;
+            }
+
+            String itemId = getItemId(object);
+            if (itemId == null) {
+                continue;
+            }
+
+            SaveManager.WorldObjectData worldObjectData = new SaveManager.WorldObjectData();
+            worldObjectData.itemId = itemId;
+            worldObjectData.worldX = object.worldX;
+            worldObjectData.worldY = object.worldY;
+            worldObjectData.stackCount = Math.max(1, object.stackCount);
+            savedObjects.add(worldObjectData);
+        }
+
+        return savedObjects;
+    }
+
+    private List<SaveManager.WorldObjectData> copyWorldObjectData(List<SaveManager.WorldObjectData> sourceObjects) {
+        List<SaveManager.WorldObjectData> copy = new ArrayList<>();
+        if (sourceObjects == null) {
+            return copy;
+        }
+
+        for (SaveManager.WorldObjectData sourceObject : sourceObjects) {
+            if (sourceObject == null) {
+                continue;
+            }
+
+            SaveManager.WorldObjectData targetObject = new SaveManager.WorldObjectData();
+            targetObject.itemId = sourceObject.itemId;
+            targetObject.worldX = sourceObject.worldX;
+            targetObject.worldY = sourceObject.worldY;
+            targetObject.stackCount = sourceObject.stackCount;
+            copy.add(targetObject);
+        }
+
+        return copy;
+    }
+
+    private void applyObjects(List<SaveManager.WorldObjectData> savedObjects) {
+        int objectIndex = 0;
+
+        for (SaveManager.WorldObjectData savedObject : savedObjects) {
+            if (savedObject == null || objectIndex >= objs.length) {
+                continue;
+            }
+
+            Entity object = createItemEntity(savedObject.itemId);
+            if (object == null) {
+                continue;
+            }
+
+            object.worldX = savedObject.worldX;
+            object.worldY = savedObject.worldY;
+            object.stackCount = Math.max(1, savedObject.stackCount);
+            objs[objectIndex] = object;
+            objectIndex++;
+        }
+    }
+
+    private void clearObjects() {
+        for (int i = 0; i < objs.length; i++) {
+            objs[i] = null;
+        }
     }
 }

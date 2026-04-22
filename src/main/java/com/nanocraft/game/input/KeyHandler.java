@@ -20,6 +20,18 @@ public class KeyHandler implements KeyListener {
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
 
+        if (code == KeyEvent.VK_F5 && gh.gameState != gh.title) {
+            gh.saveGame();
+            return;
+        }
+
+        if (code == KeyEvent.VK_F9) {
+            if (gh.gameState == gh.title || gh.gameState == gh.play || gh.gameState == gh.pause || gh.gameState == gh.stats) {
+                gh.loadGame();
+            }
+            return;
+        }
+
         if (gh.gameState == gh.title) {
             titleState(code);
         }
@@ -100,7 +112,7 @@ public class KeyHandler implements KeyListener {
                 }
 
                 else if (gh.ui.commandNum == 1) {
-                    // TODO
+                    gh.loadGame();
                 }
 
                 else if (gh.ui.commandNum == 2) {

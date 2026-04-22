@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.core.SaveManager;
 import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
@@ -34,6 +35,7 @@ public class TileHandler {
     private final List<int[][]> layerHealth;
     private final List<String> layerNames;
     private final Map<String, ChestState> chestRegistry;
+    private final Map<String, StoredMapState> storedMapStates;
 
     private int mapWidth;
     private int mapHeight;
@@ -53,6 +55,7 @@ public class TileHandler {
         this.layerHealth = new ArrayList<>();
         this.layerNames = new ArrayList<>();
         this.chestRegistry = new HashMap<>();
+        this.storedMapStates = new HashMap<>();
         this.transitions = new ArrayList<>();
         this.random = new Random();
         loadMap(DEFAULT_MAP_PATH);
@@ -141,6 +144,8 @@ public class TileHandler {
     }
 
     public void loadMap(String mapPath) {
+        rememberCurrentMapState();
+
         MapLoader.MapData mapData = mapLoader.loadMap(mapPath);
         tileRegistry.clear();
         layers.clear();
@@ -159,6 +164,7 @@ public class TileHandler {
         registerChestDefinitions(mapData.chestDefinitions);
         registerChestTiles();
         initializeLayerHealth();
+        restoreStoredMapState(mapPath);
         updateBelowPlayerLayerCount();
     }
 
@@ -315,12 +321,12 @@ public class TileHandler {
     }
 
     public void swapMap(String mapPath, int playerCol, int playerRow, String direction) {
+        gh.beforeMapChange();
         loadMap(mapPath);
         gh.player.worldX = playerCol * gh.tileSize;
         gh.player.worldY = playerRow * gh.tileSize;
         gh.player.direction = direction;
-        gh.ah.setObjects();
-        gh.ah.setNPCS();
+        gh.refreshCurrentMapState();
     }
 
     public void damageBreakableTile(int col, int row, int damage) {
@@ -370,6 +376,114 @@ public class TileHandler {
         int[][] layer = layers.get(layerIndex);
         layer[col][row] = newTileId;
         setLayerHealth(layerIndex, col, row, initialHealthForTile(newTileId));
+        rememberCurrentMapState();
+    }
+
+    public List<SaveManager.ChestData> createChestSaveData() {
+        List<SaveManager.ChestData> chestDataList = new ArrayList<>();
+
+        for (ChestState chestState : chestRegistry.values()) {
+            if (chestState == null) {
+                continue;
+            }
+
+            SaveManager.ChestData chestData = new SaveManager.ChestData();
+            chestData.mapPath = chestState.mapPath;
+            chestData.col = chestState.col;
+            chestData.row = chestState.row;
+            chestData.opened = chestState.opened;
+
+            for (Entity item : chestState.items) {
+                String itemId = gh.getItemId(item);
+                if (itemId == null) {
+                    continue;
+                }
+
+                SaveManager.ItemData itemData = new SaveManager.ItemData();
+                itemData.itemId = itemId;
+                itemData.stackCount = Math.max(1, item.stackCount);
+                chestData.items.add(itemData);
+            }
+
+            chestDataList.add(chestData);
+        }
+
+        return chestDataList;
+    }
+
+    public void restoreChestSaveData(List<SaveManager.ChestData> savedChests) {
+        chestRegistry.clear();
+        if (savedChests == null) {
+            return;
+        }
+
+        for (SaveManager.ChestData savedChest : savedChests) {
+            if (savedChest == null || savedChest.mapPath == null || savedChest.mapPath.isBlank()) {
+                continue;
+            }
+
+            ChestState chestState = new ChestState(savedChest.mapPath, savedChest.col, savedChest.row);
+            chestState.opened = savedChest.opened;
+
+            if (savedChest.items != null) {
+                for (SaveManager.ItemData itemData : savedChest.items) {
+                    if (itemData == null) {
+                        continue;
+                    }
+
+                    Entity item = gh.createItemEntity(itemData.itemId);
+                    if (item == null) {
+                        continue;
+                    }
+
+                    item.stackCount = Math.max(1, itemData.stackCount);
+                    chestState.addItem(item);
+                }
+            }
+
+            chestRegistry.put(chestState.getKey(), chestState);
+        }
+    }
+
+    public List<SaveManager.MapStateData> createMapStateSaveData() {
+        rememberCurrentMapState();
+
+        List<SaveManager.MapStateData> mapStateDataList = new ArrayList<>();
+        for (Map.Entry<String, StoredMapState> entry : storedMapStates.entrySet()) {
+            SaveManager.MapStateData mapStateData = new SaveManager.MapStateData();
+            mapStateData.mapPath = entry.getKey();
+            mapStateData.layers = toLayerData(entry.getValue().layers);
+            mapStateData.healthLayers = toLayerData(entry.getValue().healthLayers);
+            mapStateDataList.add(mapStateData);
+        }
+
+        return mapStateDataList;
+    }
+
+    public void restoreMapStateSaveData(List<SaveManager.MapStateData> savedMapStates) {
+        storedMapStates.clear();
+        if (savedMapStates == null) {
+            return;
+        }
+
+        for (SaveManager.MapStateData savedMapState : savedMapStates) {
+            if (savedMapState == null || savedMapState.mapPath == null || savedMapState.mapPath.isBlank()) {
+                continue;
+            }
+
+            storedMapStates.put(
+                savedMapState.mapPath,
+                new StoredMapState(fromLayerData(savedMapState.layers), fromLayerData(savedMapState.healthLayers))
+            );
+        }
+    }
+
+    public void resetStoredMapState(String mapPath) {
+        if (mapPath == null || mapPath.isBlank()) {
+            return;
+        }
+
+        storedMapStates.remove(mapPath);
     }
 
     private Tile getTile(int globalId) {
@@ -420,6 +534,7 @@ public class TileHandler {
         }
 
         layerHealth.get(layerIndex)[col][row] = Math.max(0, health);
+        rememberCurrentMapState();
     }
 
     private boolean isInsideMap(int col, int row) {
@@ -578,5 +693,137 @@ public class TileHandler {
 
     private boolean isVillageFallbackMap() {
         return VILLAGE_MAP_PATH.equals(currentMapPath) && !currentMapHasChestDefinitions;
+    }
+
+    private void rememberCurrentMapState() {
+        if (currentMapPath == null || currentMapPath.isBlank() || layers.isEmpty()) {
+            return;
+        }
+
+        storedMapStates.put(currentMapPath, new StoredMapState(copyLayerList(layers), copyLayerList(layerHealth)));
+    }
+
+    private void restoreStoredMapState(String mapPath) {
+        StoredMapState storedMapState = storedMapStates.get(mapPath);
+        if (storedMapState == null) {
+            rememberCurrentMapState();
+            return;
+        }
+
+        applyLayerCopies(layers, storedMapState.layers);
+        applyLayerCopies(layerHealth, storedMapState.healthLayers);
+    }
+
+    private List<SaveManager.LayerData> toLayerData(List<int[][]> sourceLayers) {
+        List<SaveManager.LayerData> layerDataList = new ArrayList<>();
+        if (sourceLayers == null) {
+            return layerDataList;
+        }
+
+        for (int[][] layer : sourceLayers) {
+            if (layer == null || layer.length == 0 || layer[0].length == 0) {
+                continue;
+            }
+
+            SaveManager.LayerData layerData = new SaveManager.LayerData();
+            layerData.width = layer.length;
+            layerData.height = layer[0].length;
+            layerData.values = flattenLayer(layer);
+            layerDataList.add(layerData);
+        }
+
+        return layerDataList;
+    }
+
+    private List<int[][]> fromLayerData(List<SaveManager.LayerData> layerDataList) {
+        List<int[][]> restoredLayers = new ArrayList<>();
+        if (layerDataList == null) {
+            return restoredLayers;
+        }
+
+        for (SaveManager.LayerData layerData : layerDataList) {
+            if (layerData == null || layerData.width <= 0 || layerData.height <= 0) {
+                continue;
+            }
+
+            restoredLayers.add(expandLayer(layerData.width, layerData.height, layerData.values));
+        }
+
+        return restoredLayers;
+    }
+
+    private List<int[][]> copyLayerList(List<int[][]> sourceLayers) {
+        List<int[][]> copies = new ArrayList<>();
+        for (int[][] layer : sourceLayers) {
+            if (layer == null) {
+                continue;
+            }
+
+            int width = layer.length;
+            int height = width == 0 ? 0 : layer[0].length;
+            int[][] copy = new int[width][height];
+            for (int col = 0; col < width; col++) {
+                System.arraycopy(layer[col], 0, copy[col], 0, height);
+            }
+            copies.add(copy);
+        }
+        return copies;
+    }
+
+    private void applyLayerCopies(List<int[][]> targetLayers, List<int[][]> sourceLayers) {
+        if (targetLayers.size() != sourceLayers.size()) {
+            return;
+        }
+
+        for (int i = 0; i < targetLayers.size(); i++) {
+            int[][] targetLayer = targetLayers.get(i);
+            int[][] sourceLayer = sourceLayers.get(i);
+            if (targetLayer.length != sourceLayer.length || (targetLayer.length > 0 && targetLayer[0].length != sourceLayer[0].length)) {
+                return;
+            }
+
+            for (int col = 0; col < targetLayer.length; col++) {
+                System.arraycopy(sourceLayer[col], 0, targetLayer[col], 0, targetLayer[col].length);
+            }
+        }
+    }
+
+    private int[] flattenLayer(int[][] layer) {
+        int width = layer.length;
+        int height = width == 0 ? 0 : layer[0].length;
+        int[] values = new int[width * height];
+        int index = 0;
+
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                values[index++] = layer[col][row];
+            }
+        }
+
+        return values;
+    }
+
+    private int[][] expandLayer(int width, int height, int[] values) {
+        int[][] layer = new int[width][height];
+        int index = 0;
+
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                layer[col][row] = values != null && index < values.length ? values[index] : 0;
+                index++;
+            }
+        }
+
+        return layer;
+    }
+
+    private static final class StoredMapState {
+        private final List<int[][]> layers;
+        private final List<int[][]> healthLayers;
+
+        private StoredMapState(List<int[][]> layers, List<int[][]> healthLayers) {
+            this.layers = layers;
+            this.healthLayers = healthLayers;
+        }
     }
 }
