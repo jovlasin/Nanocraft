@@ -323,9 +323,31 @@ public class TileHandler {
         gh.ah.setNPCS();
     }
 
-    public void damageBreakableTile(int col, int row, int damage) {
+    public Tile getTopBreakableTileAt(int col, int row) {
+        if (!isInsideMap(col, row)) {
+            return null;
+        }
+
+        for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--) {
+            int[][] layer = layers.get(layerIndex);
+            int tileId = layer[col][row];
+
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile tile = getTile(tileId);
+            if (tile != null && tile.maxHealth > 0) {
+                return tile;
+            }
+        }
+
+        return null;
+    }
+
+    public String damageBreakableTile(int col, int row, int damage) {
         if (!isInsideMap(col, row) || damage <= 0) {
-            return;
+            return null;
         }
 
         for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--) {
@@ -349,17 +371,14 @@ public class TileHandler {
             int nextHealth = currentHealth - damage;
             if (nextHealth > 0) {
                 setLayerHealth(layerIndex, col, row, nextHealth);
-                return;
+                return null;
             }
 
             replaceTile(layerIndex, col, row, tile.replacementTileId);
-            if (tile.dropItemType != null && !tile.dropItemType.isBlank()) {
-                int dropWorldX = col * gh.tileSize;
-                int dropWorldY = row * gh.tileSize;
-                gh.spawnDroppedItem(dropWorldX, dropWorldY, tile.dropItemType);
-            }
-            return;
+            return tile.dropItemType;
         }
+
+        return null;
     }
 
     public void replaceTile(int layerIndex, int col, int row, int newTileId) {

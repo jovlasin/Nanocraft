@@ -8,6 +8,7 @@ public class Sword extends Entity {
         super(gh);
         configureStacking(false, 1);
 
+        itemId = "sword";
         type = TYPE_WEAPON;
         name = "Normal Sword";
         down1 = scale("/object/old_sword", gh.tileSize, gh.tileSize);
