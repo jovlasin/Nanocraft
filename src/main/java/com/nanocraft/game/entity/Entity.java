@@ -247,6 +247,25 @@ public class Entity {
         }
     }
 
+    public boolean use(Player player) {
+        return false;
+    }
+
+    protected int restoreLife(Player player, int amount) {
+        if (player == null || amount <= 0) {
+            return 0;
+        }
+
+        int missingLife = player.maxLife - player.life;
+        if (missingLife <= 0) {
+            return 0;
+        }
+
+        int restoredLife = Math.min(amount, missingLife);
+        player.life += restoredLife;
+        return restoredLife;
+    }
+
     public String getStackKey() {
         return getClass().getName();
     }
