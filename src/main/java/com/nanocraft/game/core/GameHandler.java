@@ -22,6 +22,8 @@ import com.nanocraft.game.object.OreChunk;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
+    private static final String NETHER_MAP_PATH = "/map/nether.tmj";
+    private static final String END_MAP_PATH = "/map/end.tmj";
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -229,6 +231,11 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void cycleTimeOfDay() {
+        if (isInDayMap()) {
+            ui.addMessage("Time: Day");
+            return;
+        }
+
         dayNightCycle.advanceToNextPhase();
         ui.addMessage("Time: " + dayNightCycle.getPhaseName());
     }
@@ -237,8 +244,33 @@ public class GameHandler extends JPanel implements Runnable {
         return AssetHandler.CAVE_MAP_PATH.equals(th.getCurrentMapPath());
     }
 
+    public boolean isInDayMap() {
+        String currentMapPath = th.getCurrentMapPath();
+        return NETHER_MAP_PATH.equals(currentMapPath) || END_MAP_PATH.equals(currentMapPath);
+    }
+
+    public float getCurrentDarknessAlpha() {
+        if (isInDayMap()) {
+            return 0f;
+        }
+
+        return isInCave() ? dayNightCycle.getMaxDarknessAlpha() : dayNightCycle.getDarknessAlpha();
+    }
+
+    public String getTimeLabel() {
+        if (isInCave()) {
+            return "Cave  Night";
+        }
+
+        if (isInDayMap()) {
+            return "12:00  Day";
+        }
+
+        return dayNightCycle.getClockText() + "  " + dayNightCycle.getPhaseName();
+    }
+
     private void drawLighting(Graphics2D g2d) {
-        float darknessAlpha = isInCave() ? dayNightCycle.getMaxDarknessAlpha() : dayNightCycle.getDarknessAlpha();
+        float darknessAlpha = getCurrentDarknessAlpha();
 
         if (darknessAlpha <= 0f) {
             return;
