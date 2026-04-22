@@ -225,6 +225,7 @@ public class GameHandler extends JPanel implements Runnable {
         restoreCurrentMapObjects();
         ah.setNPCS();
         ah.setMonsters();
+        ah.applyMapProgression();
     }
 
     public void beforeMapChange() {
@@ -539,6 +540,20 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void clearProjectiles() {
         projectileList.clear();
+    }
+
+    public void handleBronzeDragonDefeat() {
+        if (bronzeDragonDefeated) {
+            return;
+        }
+
+        bronzeDragonDefeated = true;
+        clearProjectiles();
+        ui.addMessage("The bronze dragon collapses into ash.");
+
+        if (ah.applyMapProgression()) {
+            ui.addMessage("A portal back to the village appears.");
+        }
     }
 
     public boolean isBronzeDragonDefeated() {
