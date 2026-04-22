@@ -15,6 +15,8 @@ import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
     private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
+    private static final String END_MAP_PATH = "/map/end.tmj";
+    private static final String END_MAP_REQUIRED_ITEM_ID = "eye_of_ender";
     private static final String VILLAGE_MAP_PATH = "/map/village.tmj";
     private static final String CHEST_INTERACTION_TYPE = "chest";
     private static final Set<String> FALLBACK_CHEST_TILE_TYPES = Set.of("034", "035");
@@ -42,6 +44,7 @@ public class TileHandler {
     private int belowPlayerLayerCount;
     private boolean zeroMeansEmpty;
     private boolean currentMapHasChestDefinitions;
+    private int blockedTransitionMessageCooldown;
     private String currentMapPath;
     private final List<MapTransition> transitions;
     private final Random random;
@@ -160,6 +163,7 @@ public class TileHandler {
         mapHeight = mapData.mapHeight;
         zeroMeansEmpty = mapData.zeroMeansEmpty;
         currentMapHasChestDefinitions = mapData.chestDefinitions != null && !mapData.chestDefinitions.isEmpty();
+        blockedTransitionMessageCooldown = 0;
         currentMapPath = mapPath;
         registerChestDefinitions(mapData.chestDefinitions);
         registerChestTiles();
@@ -311,11 +315,51 @@ public class TileHandler {
         return null;
     }
 
+    public int[] findNearestOpenTile(int preferredCol, int preferredRow) {
+        if (mapWidth <= 0 || mapHeight <= 0) {
+            return null;
+        }
+
+        int clampedCol = Math.max(0, Math.min(mapWidth - 1, preferredCol));
+        int clampedRow = Math.max(0, Math.min(mapHeight - 1, preferredRow));
+        int maxRadius = Math.max(mapWidth, mapHeight);
+
+        for (int radius = 0; radius < maxRadius; radius++) {
+            int minCol = Math.max(0, clampedCol - radius);
+            int maxCol = Math.min(mapWidth - 1, clampedCol + radius);
+            int minRow = Math.max(0, clampedRow - radius);
+            int maxRow = Math.min(mapHeight - 1, clampedRow + radius);
+
+            for (int row = minRow; row <= maxRow; row++) {
+                for (int col = minCol; col <= maxCol; col++) {
+                    boolean onPerimeter = radius == 0 || col == minCol || col == maxCol || row == minRow || row == maxRow;
+                    if (onPerimeter == false) {
+                        continue;
+                    }
+
+                    if (isCollisionAt(col, row) == false) {
+                        return new int[] { col, row };
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     public void checkMapTransition() {
+        if (blockedTransitionMessageCooldown > 0) {
+            blockedTransitionMessageCooldown--;
+        }
+
         int playerCol = (gh.player.worldX + gh.player.solidArea.x + (gh.player.solidArea.width / 2)) / gh.tileSize;
         int playerRow = (gh.player.worldY + gh.player.solidArea.y + (gh.player.solidArea.height / 2)) / gh.tileSize;
         MapTransition transition = getTransitionAt(playerCol, playerRow);
         if (transition != null) {
+            if (isBlockedEndTransition(transition)) {
+                return;
+            }
+            consumeEndTransitionItem(transition);
             swapMap(transition.targetMapPath, transition.targetCol, transition.targetRow, transition.targetDirection);
         }
     }
@@ -326,7 +370,44 @@ public class TileHandler {
         gh.player.worldX = playerCol * gh.tileSize;
         gh.player.worldY = playerRow * gh.tileSize;
         gh.player.direction = direction;
+        gh.clearProjectiles();
         gh.refreshCurrentMapState();
+    }
+
+    private boolean isBlockedEndTransition(MapTransition transition) {
+        if (transition == null || END_MAP_PATH.equals(transition.targetMapPath) == false) {
+            return false;
+        }
+
+        if (gh.player.hasItem(END_MAP_REQUIRED_ITEM_ID)) {
+            return false;
+        }
+
+        if (blockedTransitionMessageCooldown == 0) {
+            gh.ui.addMessage("Need Eye of Ender to enter the End!");
+            blockedTransitionMessageCooldown = 30;
+        }
+
+        return true;
+    }
+
+    private void consumeEndTransitionItem(MapTransition transition) {
+        if (transition == null || END_MAP_PATH.equals(transition.targetMapPath) == false) {
+            return;
+        }
+
+        for (int i = 0; i < gh.player.inventory.size(); i++) {
+            Entity item = gh.player.inventory.get(i);
+            if (item == null || END_MAP_REQUIRED_ITEM_ID.equalsIgnoreCase(item.itemId) == false) {
+                continue;
+            }
+
+            item.stackCount--;
+            if (item.stackCount <= 0) {
+                gh.player.inventory.remove(i);
+            }
+            return;
+        }
     }
 
     public Tile getTopBreakableTileAt(int col, int row) {

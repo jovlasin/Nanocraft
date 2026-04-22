@@ -19,11 +19,30 @@ public class Projectile extends Entity {
     }
 
     public void update() {
-        int index = gh.ch.checkEntity(this, gh.monsters);
+        if (user != null && user.type == TYPE_MONSTER) {
+            boolean contactPlayer = gh.ch.checkPlayer(this);
+            if (contactPlayer) {
+                if (gh.player.invincible == false) {
+                    int damage = attack - gh.player.defense;
 
-        if (index != 999) {
-            gh.player.damage(index, attack);
-            alive = false;
+                    if (damage < 0) {
+                        damage = 0;
+                    }
+
+                    gh.player.life -= damage;
+                    gh.player.invincible = true;
+                }
+                alive = false;
+                return;
+            }
+        } else {
+            int index = gh.ch.checkEntity(this, gh.monsters);
+
+            if (index != 999) {
+                gh.player.damage(index, attack);
+                alive = false;
+                return;
+            }
         }
 
         switch (direction) {
