@@ -492,21 +492,31 @@ public class Player extends Entity {
     public void selectItem() {
         int itemIndex = gh.ui.getItemIndexOnSlot();
 
-        if (itemIndex < inventory.size()) {
-            Entity item = inventory.get(itemIndex);
-
-            if (item.type == TYPE_WEAPON) {
-                currentWeapon = item;
-                attack = getAttack();
-            }
-
-            else if (item.type == consumable) {
-                item.stackCount--;
-                if (item.stackCount <= 0) {
-                    inventory.remove(itemIndex);
-                }
-            }
+        if (itemIndex >= inventory.size()) {
+            return;
         }
+
+        Entity item = inventory.get(itemIndex);
+
+        if (item.type == TYPE_WEAPON) {
+            currentWeapon = item;
+            attack = getAttack();
+            return;
+        }
+
+        if (item.type == consumable) {
+            if (!item.use(this)) {
+                return;
+            }
+
+            item.stackCount--;
+            if (item.stackCount <= 0) {
+                inventory.remove(itemIndex);
+            }
+            return;
+        }
+
+        gh.ui.addMessage(item.name + " can't be used.");
     }
 
     private Entity findFirstWeaponInInventory() {

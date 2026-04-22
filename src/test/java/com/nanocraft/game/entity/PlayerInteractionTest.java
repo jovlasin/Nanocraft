@@ -17,7 +17,10 @@ import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.Emerald;
+import com.nanocraft.game.object.Meat;
+import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.Tile;
@@ -237,6 +240,66 @@ public class PlayerInteractionTest {
 
         assertSame(pickaxe, gh.player.currentWeapon);
         assertEquals(gh.player.strength * pickaxe.attackValue, gh.player.attack);
+    }
+
+    @Test
+    public void usesAppleAndRemovesItFromInventory() {
+        GameHandler gh = new GameHandler();
+        Apple apple = new Apple(gh);
+        assertTrue(gh.player.addToInventory(apple));
+        gh.player.life = gh.player.maxLife - 1;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(2, gh.player.inventory.size());
+    }
+
+    @Test
+    public void usingHealingItemAtFullHealthDoesNotConsumeIt() {
+        GameHandler gh = new GameHandler();
+        Meat meat = new Meat(gh);
+        assertTrue(gh.player.addToInventory(meat));
+        gh.player.life = gh.player.maxLife;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertSame(meat, gh.player.inventory.get(2));
+    }
+
+    @Test
+    public void usingStackedMedkitConsumesOnlyOneItem() {
+        GameHandler gh = new GameHandler();
+        assertTrue(gh.player.addToInventory(new Medkit(gh)));
+        assertTrue(gh.player.addToInventory(new Medkit(gh)));
+        gh.player.life = gh.player.maxLife - 3;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+    }
+
+    @Test
+    public void nonUsableItemsAreNotConsumedWhenSelected() {
+        GameHandler gh = new GameHandler();
+        Entity key = gh.player.inventory.get(1);
+
+        gh.ui.slotCol = 1;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(2, gh.player.inventory.size());
+        assertSame(key, gh.player.inventory.get(1));
     }
 
     @Test
