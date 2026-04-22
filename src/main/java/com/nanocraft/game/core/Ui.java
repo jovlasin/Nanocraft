@@ -22,6 +22,7 @@ public class Ui {
     public ArrayList<String> message = new ArrayList<>();
     public ArrayList<Integer> counter = new ArrayList<>();
     public String currentDialogue = "";
+    private int pauseMenuIndex;
     private int chestSlotCol;
     private int chestSlotRow;
     private int playerChestSlotCol;
@@ -84,6 +85,18 @@ public class Ui {
     public void addMessage(String text) {
         message.add(text);
         counter.add(0);
+    }
+
+    public void resetPauseMenu() {
+        pauseMenuIndex = 0;
+    }
+
+    public void movePauseMenuSelection(int delta) {
+        pauseMenuIndex = clamp(pauseMenuIndex + delta, 0, 3);
+    }
+
+    public int getPauseMenuSelection() {
+        return pauseMenuIndex;
     }
 
     public void resetChestUi() {
@@ -172,13 +185,40 @@ public class Ui {
     }
 
     private void drawPauseScreen() {
-        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 100f));
-        String text = "PAUSED";
-        
-        int x = u.getXforCenteredText(text, g2d);
-        int y = gh.screenHeight / 2;
+        g2d.setColor(new Color(0, 0, 0, 170));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
 
-        g2d.drawString(text, x, y);
+        int frameWidth = gh.tileSize * 7;
+        int frameHeight = gh.tileSize * 7;
+        int frameX = (gh.screenWidth - frameWidth) / 2;
+        int frameY = (gh.screenHeight - frameHeight) / 2;
+        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+        String title = "PAUSED";
+        g2d.drawString(title, u.getXforCenteredText(title, g2d), frameY + gh.tileSize + 8);
+
+        String[] options = { "CONTINUE", "SAVE", "LOAD" };
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
+
+        int optionY = frameY + (gh.tileSize * 2) + 40;
+        for (int i = 0; i < options.length; i++) {
+            String option = options[i];
+            int optionX = u.getXforCenteredText(option, g2d);
+
+            if (pauseMenuIndex == i) {
+                g2d.setColor(new Color(240, 190, 90));
+                g2d.drawString(">", optionX - gh.tileSize, optionY);
+            }
+
+            g2d.setColor(Color.white);
+            g2d.drawString(option, optionX, optionY);
+            optionY += gh.tileSize - 2;
+        }
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+        String help = "ENTER/SPACE: Select";
+        g2d.drawString(help, u.getXforCenteredText(help, g2d), frameY + frameHeight - 18);
     }
 
     private void drawPlayerHealth() {
