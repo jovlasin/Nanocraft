@@ -58,6 +58,7 @@ public class Ui {
 
         else if (gh.gameState == gh.play) {
             drawPlayerHealth();
+            drawTimeOfDay();
             drawMessage();
         }
 
@@ -67,6 +68,7 @@ public class Ui {
 
         else if (gh.gameState == gh.dialogue) {
             drawPlayerHealth();
+            drawTimeOfDay();
             drawDialogue();
         }
 
@@ -432,6 +434,26 @@ public class Ui {
         }
     }
 
+    private void drawTimeOfDay() {
+        String timeLabel = gh.getTimeLabel();
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 24F));
+
+        int boxWidth = gh.tileSize * 4;
+        int boxHeight = gh.tileSize;
+        int boxX = gh.screenWidth - boxWidth - (gh.tileSize / 2);
+        int boxY = gh.tileSize / 2;
+
+        g2d.setColor(new Color(0, 0, 0, 160));
+        g2d.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 14, 14);
+        g2d.setColor(Color.white);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 14, 14);
+
+        int textX = boxX + Math.max(14, (boxWidth - g2d.getFontMetrics().stringWidth(timeLabel)) / 2);
+        int textY = boxY + (boxHeight / 2) + 8;
+        g2d.drawString(timeLabel, textX, textY);
+    }
+  
     private void drawChestScreen() {
         int panelY = gh.tileSize / 2;
         int panelWidth = gh.tileSize * 6;
