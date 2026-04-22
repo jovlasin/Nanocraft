@@ -271,7 +271,8 @@ public class GameHandler extends JPanel implements Runnable {
     public boolean loadGame() {
         try {
             if (!saveManager.load(this)) {
-                System.out.println("No save file found.");
+                ui.addMessage("No save file found.");
+                closePauseMenu();
                 return false;
             }
 
@@ -281,6 +282,38 @@ public class GameHandler extends JPanel implements Runnable {
             System.out.println("Failed to load save.");
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public void openPauseMenu() {
+        ui.resetPauseMenu();
+        gameState = pause;
+    }
+
+    public void closePauseMenu() {
+        gameState = play;
+    }
+
+    public void activatePauseMenuSelection() {
+        switch (ui.getPauseMenuSelection()) {
+            case 0:
+                closePauseMenu();
+                break;
+
+            case 1:
+                if (saveGame()) {
+                    closePauseMenu();
+                }
+                break;
+
+            case 2:
+                if (loadGame()) {
+                    closePauseMenu();
+                }
+                break;
+
+            default:
+                break;
         }
     }
 

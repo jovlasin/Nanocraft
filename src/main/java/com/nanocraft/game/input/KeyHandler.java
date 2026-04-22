@@ -20,18 +20,6 @@ public class KeyHandler implements KeyListener {
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
 
-        if (code == KeyEvent.VK_F5 && gh.gameState != gh.title) {
-            gh.saveGame();
-            return;
-        }
-
-        if (code == KeyEvent.VK_F9) {
-            if (gh.gameState == gh.title || gh.gameState == gh.play || gh.gameState == gh.pause || gh.gameState == gh.stats) {
-                gh.loadGame();
-            }
-            return;
-        }
-
         if (gh.gameState == gh.title) {
             titleState(code);
         }
@@ -140,7 +128,12 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_P) {
-            gh.gameState = gh.pause;   
+            gh.openPauseMenu();
+        }
+
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.openPauseMenu();
+            return;
         }
 
         if (code == KeyEvent.VK_SPACE) {
@@ -158,8 +151,23 @@ public class KeyHandler implements KeyListener {
     }
 
     private void pauseState(int code) {
-        if (code == KeyEvent.VK_P) {
-            gh.gameState = gh.play;
+        if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_P) {
+            gh.closePauseMenu();
+            return;
+        }
+
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.movePauseMenuSelection(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.movePauseMenuSelection(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.activatePauseMenuSelection();
         }
     }
 
