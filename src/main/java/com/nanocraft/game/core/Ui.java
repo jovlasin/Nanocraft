@@ -344,7 +344,7 @@ public class Ui {
     }
 
     private void drawTimeOfDay() {
-        String timeLabel = gh.isInCave() ? "Cave  Night" : gh.dayNightCycle.getClockText() + "  " + gh.dayNightCycle.getPhaseName();
+        String timeLabel = gh.getTimeLabel();
         g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 24F));
 
         int boxWidth = gh.tileSize * 4;
