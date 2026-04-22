@@ -6,6 +6,8 @@ import com.nanocraft.game.core.GameHandler;
 public class Key extends Entity {
     public Key(GameHandler gm) {
         super(gm);
+        itemId = "key";
+        configureStacking(true, DEFAULT_STACK_LIMIT);
         name = "Key";
         down1 = scale("/object/key", gm.tileSize, gm.tileSize);
         description = "[" + name + "]\nIt opens something...";
