@@ -20,6 +20,7 @@ import com.nanocraft.game.entity.Entity;
 
 public class MapLoaderChestTest {
     private static final Set<String> RANDOM_CHEST_ITEM_NAMES = Set.of(
+        "Arrow",
         "Apple",
         "Meat",
         "Medkit",

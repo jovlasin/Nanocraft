@@ -21,6 +21,7 @@ public class TileHandler {
     private static final Set<String> MARKER_MAP_CHEST_TILE_TYPES = Set.of("035");
     private static final int MAX_RANDOM_CHEST_LOOT_ITEMS = 3;
     private static final List<String> RANDOM_CHEST_LOOT_POOL = List.of(
+        "arrow",
         "apple",
         "meat",
         "medkit",
