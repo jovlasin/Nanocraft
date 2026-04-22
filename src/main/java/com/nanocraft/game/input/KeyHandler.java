@@ -100,7 +100,7 @@ public class KeyHandler implements KeyListener {
                 }
 
                 else if (gh.ui.commandNum == 1) {
-                    // TODO
+                    gh.loadGame();
                 }
 
                 else if (gh.ui.commandNum == 2) {
@@ -128,7 +128,12 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_P) {
-            gh.gameState = gh.pause;   
+            gh.openPauseMenu();
+        }
+
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.openPauseMenu();
+            return;
         }
 
         if (code == KeyEvent.VK_SPACE) {
@@ -140,18 +145,55 @@ public class KeyHandler implements KeyListener {
             gh.gameState = gh.stats;
         }
 
-        if (code == KeyEvent.VK_N) {
-            gh.cycleTimeOfDay();
-        }
-
         if (code == KeyEvent.VK_F) {
             shoot = true;
         }
     }
 
     private void pauseState(int code) {
-        if (code == KeyEvent.VK_P) {
-            gh.gameState = gh.play;
+        if (gh.ui.isPauseExitConfirmationVisible()) {
+            pauseExitConfirmationState(code);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_P) {
+            gh.closePauseMenu();
+            return;
+        }
+
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.movePauseMenuSelection(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.movePauseMenuSelection(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.activatePauseMenuSelection();
+        }
+    }
+
+    private void pauseExitConfirmationState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.ui.closePauseExitConfirmation();
+            return;
+        }
+
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            gh.ui.movePauseExitConfirmationSelection(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            gh.ui.movePauseExitConfirmationSelection(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.confirmPauseExitSelection();
         }
     }
 
@@ -232,3 +274,4 @@ public class KeyHandler implements KeyListener {
         }
     }
 }
+

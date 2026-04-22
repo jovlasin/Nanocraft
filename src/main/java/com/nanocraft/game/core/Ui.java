@@ -22,6 +22,9 @@ public class Ui {
     public ArrayList<String> message = new ArrayList<>();
     public ArrayList<Integer> counter = new ArrayList<>();
     public String currentDialogue = "";
+    private int pauseMenuIndex;
+    private boolean pauseExitConfirmationVisible;
+    private int pauseExitConfirmationIndex;
     private int chestSlotCol;
     private int chestSlotRow;
     private int playerChestSlotCol;
@@ -57,7 +60,6 @@ public class Ui {
 
         else if (gh.gameState == gh.play) {
             drawPlayerHealth();
-            drawTimeOfDay();
             drawMessage();
         }
 
@@ -67,7 +69,6 @@ public class Ui {
 
         else if (gh.gameState == gh.dialogue) {
             drawPlayerHealth();
-            drawTimeOfDay();
             drawDialogue();
         }
 
@@ -86,6 +87,42 @@ public class Ui {
     public void addMessage(String text) {
         message.add(text);
         counter.add(0);
+    }
+
+    public void resetPauseMenu() {
+        pauseMenuIndex = 0;
+        pauseExitConfirmationVisible = false;
+        pauseExitConfirmationIndex = 1;
+    }
+
+    public void movePauseMenuSelection(int delta) {
+        pauseMenuIndex = clamp(pauseMenuIndex + delta, 0, 4);
+    }
+
+    public int getPauseMenuSelection() {
+        return pauseMenuIndex;
+    }
+
+    public void openPauseExitConfirmation() {
+        pauseExitConfirmationVisible = true;
+        pauseExitConfirmationIndex = 1;
+    }
+
+    public void closePauseExitConfirmation() {
+        pauseExitConfirmationVisible = false;
+        pauseExitConfirmationIndex = 1;
+    }
+
+    public boolean isPauseExitConfirmationVisible() {
+        return pauseExitConfirmationVisible;
+    }
+
+    public void movePauseExitConfirmationSelection(int delta) {
+        pauseExitConfirmationIndex = clamp(pauseExitConfirmationIndex + delta, 0, 1);
+    }
+
+    public boolean shouldExitFromPauseConfirmation() {
+        return pauseExitConfirmationIndex == 1;
     }
 
     public void resetChestUi() {
@@ -174,13 +211,80 @@ public class Ui {
     }
 
     private void drawPauseScreen() {
-        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 100f));
-        String text = "PAUSED";
-        
-        int x = u.getXforCenteredText(text, g2d);
-        int y = gh.screenHeight / 2;
+        g2d.setColor(new Color(0, 0, 0, 170));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
 
-        g2d.drawString(text, x, y);
+        int frameWidth = gh.tileSize * 7;
+        int frameHeight = gh.tileSize * 7;
+        int frameX = (gh.screenWidth - frameWidth) / 2;
+        int frameY = (gh.screenHeight - frameHeight) / 2;
+        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+        String title = "PAUSED";
+        g2d.drawString(title, u.getXforCenteredText(title, g2d), frameY + gh.tileSize + 8);
+
+        String[] options = { "CONTINUE", "SAVE", "LOAD", "EXIT" };
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
+
+        int optionY = frameY + (gh.tileSize * 2) + 12;
+        for (int i = 0; i < options.length; i++) {
+            String option = options[i];
+            int optionX = u.getXforCenteredText(option, g2d);
+
+            if (pauseMenuIndex == i) {
+                g2d.setColor(new Color(240, 190, 90));
+                g2d.drawString(">", optionX - gh.tileSize, optionY);
+            }
+
+            g2d.setColor(Color.white);
+            g2d.drawString(option, optionX, optionY);
+            optionY += gh.tileSize - 2;
+        }
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+        String help = "ESC: Resume   ENTER/SPACE: Select";
+        g2d.drawString(help, u.getXforCenteredText(help, g2d), frameY + frameHeight - 18);
+
+        if (pauseExitConfirmationVisible) {
+            drawPauseExitConfirmation();
+        }
+    }
+
+    private void drawPauseExitConfirmation() {
+        g2d.setColor(new Color(0, 0, 0, 180));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+
+        int frameWidth = gh.tileSize * 10;
+        int frameHeight = gh.tileSize * 4;
+        int frameX = (gh.screenWidth - frameWidth) / 2;
+        int frameY = (gh.screenHeight - frameHeight) / 2;
+        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
+        String line1 = "Exit Game?";
+        g2d.drawString(line1, u.getXforCenteredText(line1, g2d), frameY + 42);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 22F));
+        String line2 = "All unsaved progress will be lost if you exit now.";
+        g2d.drawString(line2, u.getXforCenteredText(line2, g2d), frameY + 84);
+
+        String[] options = { "CANCEL", "EXIT" };
+        int optionY = frameY + frameHeight - 34;
+        int cancelX = frameX + (gh.tileSize * 2);
+        int exitX = frameX + frameWidth - (gh.tileSize * 3);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 26F));
+        for (int i = 0; i < options.length; i++) {
+            int optionX = i == 0 ? cancelX : exitX;
+            if (pauseExitConfirmationIndex == i) {
+                g2d.setColor(new Color(240, 190, 90));
+                g2d.drawString(">", optionX - 28, optionY);
+            }
+
+            g2d.setColor(Color.white);
+            g2d.drawString(options[i], optionX, optionY);
+        }
     }
 
     private void drawPlayerHealth() {
@@ -394,26 +498,6 @@ public class Ui {
         }
     }
 
-    private void drawTimeOfDay() {
-        String timeLabel = gh.getTimeLabel();
-        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 24F));
-
-        int boxWidth = gh.tileSize * 4;
-        int boxHeight = gh.tileSize;
-        int boxX = gh.screenWidth - boxWidth - (gh.tileSize / 2);
-        int boxY = gh.tileSize / 2;
-
-        g2d.setColor(new Color(0, 0, 0, 160));
-        g2d.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 14, 14);
-        g2d.setColor(Color.white);
-        g2d.setStroke(new BasicStroke(2));
-        g2d.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 14, 14);
-
-        int textX = boxX + Math.max(14, (boxWidth - g2d.getFontMetrics().stringWidth(timeLabel)) / 2);
-        int textY = boxY + (boxHeight / 2) + 8;
-        g2d.drawString(timeLabel, textX, textY);
-    }
-  
     private void drawChestScreen() {
         int panelY = gh.tileSize / 2;
         int panelWidth = gh.tileSize * 6;
@@ -552,3 +636,4 @@ public class Ui {
         g2d.setColor(Color.white);
     }
 }
+
