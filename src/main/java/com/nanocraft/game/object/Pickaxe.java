@@ -8,6 +8,7 @@ public class Pickaxe extends Entity {
         super(gh);
         configureStacking(false, 1);
 
+        itemId = "diamond_pickaxe";
         type = TYPE_WEAPON;
         name = "Diamond Pickaxe";
         down1 = scale("/object/Diamond_Pickaxe", gh.tileSize, gh.tileSize);
