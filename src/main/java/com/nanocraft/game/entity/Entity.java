@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
@@ -17,6 +18,7 @@ public class Entity {
     public static final int TYPE_NPC = 1;
     public static final int TYPE_MONSTER = 2;
     public static final int TYPE_WEAPON = 3;
+    public static final int TYPE_TOOL = 4;
     public static final int TYPE_CONSUMABLE = 6;
 
     public GameHandler gh;
@@ -28,6 +30,7 @@ public class Entity {
     public Projectile projectile;
     public boolean collisionOn, collision;
     public String name;
+    public String itemId;
     public String description;
     public BufferedImage up1, up2, down1, down2, left1, left2, right1, right2;
     public BufferedImage attackUp1, attackUp2, attackDown1, attackDown2, attackLeft1, attackLeft2, attackRight1, attackRight2;
@@ -50,6 +53,7 @@ public class Entity {
     public final int npc = TYPE_NPC;
     public final int monster = TYPE_MONSTER;
     public final int sword = TYPE_WEAPON;
+    public final int tool = TYPE_TOOL;
     public final int consumable = TYPE_CONSUMABLE;
     public int type;
 
@@ -66,16 +70,48 @@ public class Entity {
     }
 
     public BufferedImage scale(String imgPath, int width, int height ) {
-        BufferedImage image = null;
-
-        try {
-            image = ImageIO.read(getClass().getResourceAsStream(imgPath + ".png"));
-            image = ResourceLoader.scaleImage(image, width, height);
-            
-        } catch (IOException e) {
-            e.printStackTrace();
+        BufferedImage image = loadScaledImageIfPresent(imgPath, width, height);
+        if (image == null) {
+            throw new IllegalStateException("Failed to load image resource: " + imgPath + ".png");
         }
         return image;
+    }
+
+    protected BufferedImage scaleOrFallback(String primaryImgPath, String fallbackImgPath, int width, int height) {
+        BufferedImage image = loadScaledImageIfPresent(primaryImgPath, width, height);
+        if (image != null) {
+            return image;
+        }
+
+        image = loadScaledImageIfPresent(fallbackImgPath, width, height);
+        if (image != null) {
+            return image;
+        }
+
+        throw new IllegalStateException(
+            "Failed to load image resource: " + primaryImgPath + ".png and fallback " + fallbackImgPath + ".png"
+        );
+    }
+
+    private BufferedImage loadScaledImageIfPresent(String imgPath, int width, int height) {
+        if (imgPath == null || imgPath.isBlank()) {
+            return null;
+        }
+
+        try (InputStream stream = getClass().getResourceAsStream(imgPath + ".png")) {
+            if (stream == null) {
+                return null;
+            }
+
+            BufferedImage image = ImageIO.read(stream);
+            if (image == null) {
+                return null;
+            }
+
+            return ResourceLoader.scaleImage(image, width, height);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     public void draw(Graphics2D g2) {
@@ -190,7 +226,6 @@ public class Entity {
             break;
         }
     }
-
     public BufferedImage getAttackSprite(String facingDirection, int attackFrame) {
         boolean useFirstFrame = attackFrame == 1;
 
