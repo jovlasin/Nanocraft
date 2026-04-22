@@ -59,7 +59,6 @@ public class GameHandler extends JPanel implements Runnable {
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
     private boolean bronzeDragonDefeated;
-    public DayNightCycle dayNightCycle = new DayNightCycle();
     private final SaveManager saveManager = new SaveManager();
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
