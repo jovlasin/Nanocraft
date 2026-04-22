@@ -11,6 +11,7 @@ import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.tile.ResourceLoader;
 
 public class BronzeDragon extends Entity {
+    private static final int MAX_LIFE = 36;
     private static final int FRAME_COUNT = 4;
     private static final int SOURCE_FRAME_SIZE = 16;
     private static final int DRAW_WIDTH_TILES = 3;
@@ -40,7 +41,7 @@ public class BronzeDragon extends Entity {
         type = monster;
         name = "Bronze Dragon";
         speed = 0;
-        maxLife = 18;
+        maxLife = MAX_LIFE;
         life = maxLife;
         attack = 5;
         defense = 0;
@@ -174,9 +175,7 @@ public class BronzeDragon extends Entity {
     private void updateDyingState() {
         if (defeatHandled == false) {
             defeatHandled = true;
-            gh.setBronzeDragonDefeated(true);
-            gh.clearProjectiles();
-            gh.ui.addMessage("The bronze dragon collapses into ash.");
+            gh.handleBronzeDragonDefeat();
         }
 
         dyingCounter++;

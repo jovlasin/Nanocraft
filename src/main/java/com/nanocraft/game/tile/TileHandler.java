@@ -288,6 +288,39 @@ public class TileHandler {
         return null;
     }
 
+    public boolean placeTileAtMarker(String layerName, String markerName, String tileType) {
+        MapMarker marker = getMarker(markerName);
+        if (marker == null) {
+            return false;
+        }
+
+        int tileId = findTileIdByType(tileType);
+        if (tileId < 0) {
+            return false;
+        }
+
+        return setTileAt(layerName, marker.col, marker.row, tileId);
+    }
+
+    public boolean setTileAt(String layerName, int col, int row, int tileId) {
+        int layerIndex = findLayerIndex(layerName);
+        if (layerIndex < 0 || !isInsideMap(col, row)) {
+            return false;
+        }
+
+        if (tileId < 0 || !tileRegistry.containsKey(tileId)) {
+            return false;
+        }
+
+        int[][] layer = layers.get(layerIndex);
+        if (layer[col][row] == tileId) {
+            return false;
+        }
+
+        replaceTile(layerIndex, col, row, tileId);
+        return true;
+    }
+
     public MapTransition getTransitionAt(int col, int row) {
         for (MapTransition transition : transitions) {
             if (transition != null && transition.contains(col, row)) {
@@ -529,6 +562,42 @@ public class TileHandler {
             return null;
         }
         return tileRegistry.get(globalId);
+    }
+
+    private int findLayerIndex(String layerName) {
+        if (layerName == null || layerName.isBlank()) {
+            return -1;
+        }
+
+        for (int i = 0; i < layerNames.size(); i++) {
+            String currentLayerName = layerNames.get(i);
+            if (currentLayerName != null && currentLayerName.equalsIgnoreCase(layerName)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private int findTileIdByType(String tileType) {
+        if (tileType == null || tileType.isBlank()) {
+            return -1;
+        }
+
+        int matchingTileId = -1;
+
+        for (Map.Entry<Integer, Tile> entry : tileRegistry.entrySet()) {
+            Tile tile = entry.getValue();
+            if (tile == null || tile.type == null || !tile.type.equalsIgnoreCase(tileType)) {
+                continue;
+            }
+
+            if (matchingTileId < 0 || entry.getKey() < matchingTileId) {
+                matchingTileId = entry.getKey();
+            }
+        }
+
+        return matchingTileId;
     }
 
     private void initializeLayerHealth() {

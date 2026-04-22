@@ -9,6 +9,9 @@ public class AssetHandler {
     public static final String SPAWN_MAP_PATH = "/map/spawn.tmj";
     public static final String CAVE_MAP_PATH = "/map/cave.tmj";
     public static final String END_MAP_PATH = "/map/end.tmj";
+    private static final String END_RETURN_PORTAL_MARKER = "end_return_portal_spawn";
+    private static final String END_RETURN_PORTAL_LAYER = "Portal";
+    private static final String END_RETURN_PORTAL_TILE_TYPE = "end_return_portal";
     private GameHandler gh;
 
     public AssetHandler(GameHandler gh) {
@@ -47,6 +50,14 @@ public class AssetHandler {
         int spawnRow = marker == null ? 9 : marker.row;
         drawBronzeDragon(0, spawnCol, spawnRow);
         gh.ui.addMessage("A bronze dragon guards the End.");
+    }
+
+    public boolean applyMapProgression() {
+        if (!END_MAP_PATH.equals(gh.th.getCurrentMapPath()) || !gh.isBronzeDragonDefeated()) {
+            return false;
+        }
+
+        return gh.th.placeTileAtMarker(END_RETURN_PORTAL_LAYER, END_RETURN_PORTAL_MARKER, END_RETURN_PORTAL_TILE_TYPE);
     }
 
     private void clearObjects() {
