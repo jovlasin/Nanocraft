@@ -343,7 +343,6 @@ public class GameHandler extends JPanel implements Runnable {
 
             case "diamond":
                 return new Diamond(this);
-
             case "emerald":
                 return new Emerald(this);
 
@@ -365,7 +364,6 @@ public class GameHandler extends JPanel implements Runnable {
             case "diamond_pickaxe":
             case "diamondpickaxe":
                 return new Pickaxe(this);
-
             case "redstone":
                 return new Redstone(this);
 
@@ -425,6 +423,10 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         return null;
+    }
+  
+    public Entity createDropEntity(String itemType) {
+        return createItemEntity(itemType);
     }
 
     public void paintComponent(Graphics g) {
