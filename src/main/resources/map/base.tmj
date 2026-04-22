@@ -48,13 +48,13 @@
  "nextobjectid":1,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.12.1",
+ "tiledversion":"1.11.2",
  "tileheight":16,
  "tilesets":[
         {
          "columns":16,
          "firstgid":1,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/Cozy_Tavern_Free\/Furniture\/Furniture.png",
+         "image":"..\/..\/Downloads\/Cozy_Tavern_Free\/Furniture\/Furniture.png",
          "imageheight":208,
          "imagewidth":256,
          "margin":0,
@@ -188,6 +188,11 @@
                          "name":"collison",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"interactionType",
+                         "type":"string",
+                         "value":"sleep"
                         }]
                 }, 
                 {
@@ -197,6 +202,11 @@
                          "name":"collison",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"interactionType",
+                         "type":"string",
+                         "value":"sleep"
                         }]
                 }, 
                 {
@@ -233,6 +243,11 @@
                          "name":"collison",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"interactionType",
+                         "type":"string",
+                         "value":"sleep"
                         }]
                 }, 
                 {
@@ -242,6 +257,11 @@
                          "name":"collison",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"interactionType",
+                         "type":"string",
+                         "value":"sleep"
                         }]
                 },
             
@@ -259,7 +279,7 @@
         {
          "columns":7,
          "firstgid":209,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/Cozy_Tavern_Free\/Tilesets\/Tileset_Collection_Free.png",
+         "image":"..\/..\/Downloads\/Cozy_Tavern_Free\/Tilesets\/Tileset_Collection_Free.png",
          "imageheight":96,
          "imagewidth":112,
          "margin":0,
