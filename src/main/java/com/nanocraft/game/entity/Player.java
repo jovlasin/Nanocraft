@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.core.ItemStacking;
+import com.nanocraft.game.core.SaveManager;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
@@ -549,6 +550,92 @@ public class Player extends Entity {
         inventory.add(new Key(gh));
     }
 
+    public SaveManager.PlayerData createSaveData() {
+        SaveManager.PlayerData playerData = new SaveManager.PlayerData();
+        playerData.worldX = worldX;
+        playerData.worldY = worldY;
+        playerData.direction = direction;
+        playerData.speed = speed;
+        playerData.maxLife = maxLife;
+        playerData.life = life;
+        playerData.level = level;
+        playerData.strength = strength;
+        playerData.dexterity = dexterity;
+        playerData.exp = exp;
+        playerData.nextLevelExp = nextLevelExp;
+        playerData.coin = coin;
+        playerData.currentWeaponIndex = inventory.indexOf(currentWeapon);
+
+        for (Entity item : inventory) {
+            String itemId = gh.getItemId(item);
+            if (itemId == null) {
+                continue;
+            }
+
+            SaveManager.ItemData itemData = new SaveManager.ItemData();
+            itemData.itemId = itemId;
+            itemData.stackCount = Math.max(1, item.stackCount);
+            playerData.inventory.add(itemData);
+        }
+
+        return playerData;
+    }
+
+    public void applySaveData(SaveManager.PlayerData playerData) {
+        if (playerData == null) {
+            return;
+        }
+
+        worldX = playerData.worldX;
+        worldY = playerData.worldY;
+        direction = playerData.direction == null || playerData.direction.isBlank() ? "down" : playerData.direction;
+        speed = playerData.speed;
+        maxLife = playerData.maxLife;
+        life = Math.max(0, Math.min(playerData.life, maxLife));
+        level = playerData.level;
+        strength = playerData.strength;
+        dexterity = playerData.dexterity;
+        exp = playerData.exp;
+        nextLevelExp = playerData.nextLevelExp;
+        coin = playerData.coin;
+        attacking = false;
+        cancelAttack = false;
+        collisionOn = false;
+        invincible = false;
+        invincibleCounter = 0;
+        shotCounter = 30;
+        spriteCounter = 0;
+        spriteNum = 1;
+        projectile = new Arrow(gh);
+
+        inventory.clear();
+        if (playerData.inventory != null) {
+            for (SaveManager.ItemData itemData : playerData.inventory) {
+                if (itemData == null) {
+                    continue;
+                }
+
+                Entity item = gh.createItemEntity(itemData.itemId);
+                if (item == null) {
+                    continue;
+                }
+
+                item.stackCount = Math.max(1, itemData.stackCount);
+                inventory.add(item);
+            }
+        }
+
+        if (playerData.currentWeaponIndex >= 0 && playerData.currentWeaponIndex < inventory.size()) {
+            currentWeapon = inventory.get(playerData.currentWeaponIndex);
+        }
+        else {
+            currentWeapon = findFirstWeaponInInventory();
+        }
+
+        attack = getAttack();
+        defense = getDefense();
+    }
+  
     private boolean attemptMineIfPossible() {
         int[] targetTileCoordinates = getPrimaryInteractionTile();
         Tile targetTile = gh.th.getTopBreakableTileAt(targetTileCoordinates[0], targetTileCoordinates[1]);
