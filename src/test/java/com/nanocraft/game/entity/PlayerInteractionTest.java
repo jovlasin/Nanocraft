@@ -230,6 +230,34 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void miningUsesPickaxeSwingSpriteEvenWhenSwordRemainsEquipped() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.gameState = gh.play;
+
+        OrePlacement placement = findMineableOrePlacement(gh);
+        Pickaxe pickaxe = new Pickaxe(gh);
+        assertTrue(gh.player.addToInventory(pickaxe));
+
+        Sword sword = new Sword(gh);
+        gh.player.currentWeapon = sword;
+        gh.player.attack = gh.player.getAttack();
+
+        gh.player.worldX = placement.worldX;
+        gh.player.worldY = placement.worldY;
+        gh.player.direction = placement.direction;
+        gh.player.requestInteract();
+        gh.kh.space = true;
+
+        gh.player.update();
+
+        assertFalse(gh.player.attacking);
+        assertTrue(gh.player.isToolSwinging());
+        assertSame(pickaxe.getAttackSprite(placement.direction, gh.player.getToolSwingSpriteNum()), gh.player.resolveCurrentActionSprite());
+        assertSame(sword, gh.player.currentWeapon);
+    }
+
+    @Test
     public void stacksMatchingEmeraldsIntoSingleInventorySlot() {
         GameHandler gh = new GameHandler();
 

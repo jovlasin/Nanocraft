@@ -20,11 +20,16 @@ import com.nanocraft.game.tile.Tile;
 
 public class Player extends Entity {
     private static final int MINE_COOLDOWN_TICKS = 8;
+    private static final int TOOL_SWING_TOTAL_TICKS = 8;
+    private static final int TOOL_SWING_FRAME_SWITCH_TICK = 4;
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
     private int mineCooldownTicks;
+    private int toolSwingTicks;
+    private int toolSwingSpriteNum = 1;
     private boolean interactRequested;
+    private Entity toolSwingSource;
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int inventorySize = 20;
@@ -104,6 +109,7 @@ public class Player extends Entity {
                 }
 
                 if (kh.space == true && cancelAttack == false && hasEquippedWeapon()) {
+                    clearToolSwingAnimation();
                     attacking = true;
                     spriteCounter = 0;
                 }
@@ -138,6 +144,8 @@ public class Player extends Entity {
                 standCounter = 0;
             }
         }
+
+        updateToolSwingAnimation();
 
         if (gh.kh.shoot == true && projectile.alive == false && shotCounter == 30) {
             projectile.set(worldX, worldY, direction, true, this);
@@ -185,6 +193,10 @@ public class Player extends Entity {
     }
 
     public void handleRemovedInventoryItem(Entity removedItem) {
+        if (removedItem == toolSwingSource) {
+            clearToolSwingAnimation();
+        }
+
         if (removedItem == null || removedItem != currentWeapon) {
             return;
         }
@@ -214,51 +226,52 @@ public class Player extends Entity {
         BufferedImage image = null;
         int tempX = screenX;
         int tempY = screenY;
+        boolean showingActionAnimation = isShowingActionAnimation();
 
         switch (direction) {
             case "up":
-                if (attacking == false) {
+                if (!showingActionAnimation) {
                     if (spriteNum == 1) {image = up1;}
                     else if (spriteNum == 2) {image = up2;}
                 }
 
-                else if (attacking == true) {
+                else {
                     tempY = screenY - gh.tileSize;
-                    image = resolveCurrentAttackSprite();
+                    image = resolveCurrentActionSprite();
                 }
             break;
 
             case "down":
-                if (attacking == false) {
+                if (!showingActionAnimation) {
                     if (spriteNum == 1) {image = down1;}
                     else if (spriteNum == 2) {image = down2;}
                 }
 
-                else if (attacking == true) {
-                    image = resolveCurrentAttackSprite();
+                else {
+                    image = resolveCurrentActionSprite();
                 }
             break;
 
             case "left":
-                if (attacking == false) {
+                if (!showingActionAnimation) {
                     if (spriteNum == 1) {image = left1;}
                     else if (spriteNum == 2) {image = left2;}
                 }
 
-                else if (attacking == true) {
+                else {
                     tempX = screenX - gh.tileSize;
-                    image = resolveCurrentAttackSprite();
+                    image = resolveCurrentActionSprite();
                 }
             break;
 
             case "right":
-                if (attacking == false) {
+                if (!showingActionAnimation) {
                     if (spriteNum == 1) {image = right1;}
                     else if (spriteNum == 2) {image = right2;}
                 }
 
-                else if (attacking == true) {
-                    image = resolveCurrentAttackSprite();
+                else {
+                    image = resolveCurrentActionSprite();
                 }
             break;
         }
@@ -407,6 +420,35 @@ public class Player extends Entity {
         }
     }
 
+    private void updateToolSwingAnimation() {
+        if (!isToolSwinging()) {
+            return;
+        }
+
+        toolSwingTicks++;
+        toolSwingSpriteNum = toolSwingTicks <= TOOL_SWING_FRAME_SWITCH_TICK ? 1 : 2;
+
+        if (toolSwingTicks >= TOOL_SWING_TOTAL_TICKS) {
+            clearToolSwingAnimation();
+        }
+    }
+
+    private void startToolSwingAnimation(Entity tool) {
+        if (tool == null) {
+            return;
+        }
+
+        toolSwingSource = tool;
+        toolSwingTicks = 0;
+        toolSwingSpriteNum = 1;
+    }
+
+    private void clearToolSwingAnimation() {
+        toolSwingSource = null;
+        toolSwingTicks = 0;
+        toolSwingSpriteNum = 1;
+    }
+
     public void damage(int i, int attack) {
         if (i != 999) {
             if (gh.monsters[i].invincible == false) {
@@ -485,6 +527,23 @@ public class Player extends Entity {
         return getAttackSprite(direction, spriteNum);
     }
 
+    BufferedImage resolveCurrentActionSprite() {
+        if (attacking) {
+            return resolveCurrentAttackSprite();
+        }
+
+        if (!isToolSwinging()) {
+            return null;
+        }
+
+        BufferedImage toolSprite = toolSwingSource.getAttackSprite(direction, toolSwingSpriteNum);
+        if (toolSprite != null) {
+            return toolSprite;
+        }
+
+        return getAttackSprite(direction, toolSwingSpriteNum);
+    }
+
     private void setItems() {
         inventory.add(currentWeapon);
         inventory.add(new Key(gh));
@@ -519,6 +578,7 @@ public class Player extends Entity {
             return true;
         }
 
+        startToolSwingAnimation(findInventoryItem(targetTile.requiredItemType));
         String dropItemType = gh.th.damageBreakableTile(targetTileCoordinates[0], targetTileCoordinates[1], 1);
         if (dropItemType == null || dropItemType.isBlank()) {
             return true;
@@ -533,17 +593,21 @@ public class Player extends Entity {
     }
 
     public boolean hasItem(String itemId) {
+        return findInventoryItem(itemId) != null;
+    }
+
+    private Entity findInventoryItem(String itemId) {
         if (itemId == null || itemId.isBlank()) {
-            return false;
+            return null;
         }
 
         for (Entity item : inventory) {
             if (item != null && itemId.equalsIgnoreCase(item.itemId)) {
-                return true;
+                return item;
             }
         }
 
-        return false;
+        return null;
     }
 
     private boolean canStoreMinedDrop(String itemType) {
@@ -710,6 +774,18 @@ public class Player extends Entity {
         else if (kh.right == true) {
             direction = "right";
         }
+    }
+
+    boolean isToolSwinging() {
+        return toolSwingSource != null;
+    }
+
+    int getToolSwingSpriteNum() {
+        return toolSwingSpriteNum;
+    }
+
+    private boolean isShowingActionAnimation() {
+        return attacking || isToolSwinging();
     }
 
     private static void appendUniqueTile(ArrayList<int[]> targetTiles, int col, int row) {
