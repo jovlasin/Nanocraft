@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.swing.JPanel;
 
 import com.nanocraft.game.entity.Entity;
@@ -61,6 +62,7 @@ public class GameHandler extends JPanel implements Runnable {
     public DayNightCycle dayNightCycle = new DayNightCycle();
     private final SaveManager saveManager = new SaveManager();
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
+    public DayNightCycle dayNightCycle = new DayNightCycle();
 
     public final int title = 0;
     public final int pause = 1;
@@ -623,6 +625,7 @@ public class GameHandler extends JPanel implements Runnable {
 
         g2d.drawImage(lightingFilter, 0, 0, null);
     }
+
     private void transferChestItemToPlayer() {
         if (activeChest == null) {
             return;
