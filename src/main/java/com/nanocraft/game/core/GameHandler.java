@@ -1,15 +1,21 @@
 package com.nanocraft.game.core;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RadialGradientPaint;
+import java.awt.RenderingHints;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.swing.JPanel;
 
 import com.nanocraft.game.entity.Entity;
@@ -28,6 +34,8 @@ import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
+    private static final String NETHER_MAP_PATH = "/map/nether.tmj";
+    private static final String END_MAP_PATH = "/map/end.tmj";
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -52,6 +60,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Utility u = new Utility(this);
     private final SaveManager saveManager = new SaveManager();
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
+    public DayNightCycle dayNightCycle = new DayNightCycle();
 
     public final int title = 0;
     public final int pause = 1;
@@ -60,6 +69,7 @@ public class GameHandler extends JPanel implements Runnable {
     public final int stats = 4;
     public final int chest = 5;
     public int gameState = 999;
+    private BufferedImage lightingFilter;
 
     public GameHandler() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -101,6 +111,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void update() {
         if (gameState == play) {
+            dayNightCycle.update();
             player.update();
 
             for (int i = 0; i < npcs.length; i++) {
@@ -479,6 +490,7 @@ public class GameHandler extends JPanel implements Runnable {
             }
 
             entityList.clear();
+            drawLighting(g2d);
             ui.draw(g2d);
         }
         
@@ -495,6 +507,82 @@ public class GameHandler extends JPanel implements Runnable {
         throw new UnsupportedOperationException("Unimplemented method 'playSound'");
     }
 
+    public void cycleTimeOfDay() {
+        if (isInDayMap()) {
+            ui.addMessage("Time: Day");
+            return;
+        }
+
+        dayNightCycle.advanceToNextPhase();
+        ui.addMessage("Time: " + dayNightCycle.getPhaseName());
+    }
+
+    public boolean isInCave() {
+        return AssetHandler.CAVE_MAP_PATH.equals(th.getCurrentMapPath());
+    }
+
+    public boolean isInDayMap() {
+        String currentMapPath = th.getCurrentMapPath();
+        return NETHER_MAP_PATH.equals(currentMapPath) || END_MAP_PATH.equals(currentMapPath);
+    }
+
+    public float getCurrentDarknessAlpha() {
+        if (isInDayMap()) {
+            return 0f;
+        }
+
+        return isInCave() ? dayNightCycle.getMaxDarknessAlpha() : dayNightCycle.getDarknessAlpha();
+    }
+
+    public String getTimeLabel() {
+        if (isInCave()) {
+            return "Cave  Night";
+        }
+
+        if (isInDayMap()) {
+            return "12:00  Day";
+        }
+
+        return dayNightCycle.getClockText() + "  " + dayNightCycle.getPhaseName();
+    }
+
+    private void drawLighting(Graphics2D g2d) {
+        float darknessAlpha = getCurrentDarknessAlpha();
+
+        if (darknessAlpha <= 0f) {
+            return;
+        }
+
+        if (lightingFilter == null || lightingFilter.getWidth() != screenWidth || lightingFilter.getHeight() != screenHeight) {
+            lightingFilter = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_ARGB);
+        }
+
+        Graphics2D lightG = lightingFilter.createGraphics();
+        lightG.setComposite(AlphaComposite.Clear);
+        lightG.fillRect(0, 0, screenWidth, screenHeight);
+
+        lightG.setComposite(AlphaComposite.SrcOver);
+        lightG.setColor(new Color(0f, 0.04f, 0.10f, darknessAlpha));
+        lightG.fillRect(0, 0, screenWidth, screenHeight);
+
+        int lightRadius = tileSize * 3;
+        Point2D center = new Point2D.Float(player.screenX + (tileSize / 2f), player.screenY + (tileSize / 2f));
+        float[] dist = {0f, 0.45f, 1f};
+        Color[] colors = {
+            new Color(0f, 0f, 0f, darknessAlpha),
+            new Color(0f, 0f, 0f, darknessAlpha * 0.45f),
+            new Color(0f, 0f, 0f, 0f)
+        };
+
+        lightG.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        lightG.setComposite(AlphaComposite.DstOut);
+        lightG.setPaint(new RadialGradientPaint(center, lightRadius, dist, colors));
+        lightG.fillOval(Math.round((float) center.getX()) - lightRadius, Math.round((float) center.getY()) - lightRadius, lightRadius * 2, lightRadius * 2);
+        lightG.dispose();
+
+        g2d.drawImage(lightingFilter, 0, 0, null);
+    }
+  
     private void transferChestItemToPlayer() {
         if (activeChest == null) {
             return;
@@ -643,4 +731,3 @@ public class GameHandler extends JPanel implements Runnable {
         }
     }
 }
-
