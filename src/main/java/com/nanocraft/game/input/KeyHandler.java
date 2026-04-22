@@ -145,16 +145,17 @@ public class KeyHandler implements KeyListener {
             gh.gameState = gh.stats;
         }
 
-        if (code == KeyEvent.VK_N) {
-            gh.cycleTimeOfDay();
-        }
-
         if (code == KeyEvent.VK_F) {
             shoot = true;
         }
     }
 
     private void pauseState(int code) {
+        if (gh.ui.isPauseExitConfirmationVisible()) {
+            pauseExitConfirmationState(code);
+            return;
+        }
+
         if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_P) {
             gh.closePauseMenu();
             return;
@@ -172,6 +173,27 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
             gh.activatePauseMenuSelection();
+        }
+    }
+
+    private void pauseExitConfirmationState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.ui.closePauseExitConfirmation();
+            return;
+        }
+
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            gh.ui.movePauseExitConfirmationSelection(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            gh.ui.movePauseExitConfirmationSelection(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.confirmPauseExitSelection();
         }
     }
 
@@ -252,3 +274,4 @@ public class KeyHandler implements KeyListener {
         }
     }
 }
+
