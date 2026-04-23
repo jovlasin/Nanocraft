@@ -29,6 +29,7 @@ public class SaveManager {
         saveData.chests = gh.th.createChestSaveData();
         saveData.mapStates = gh.th.createMapStateSaveData();
         saveData.objectStates = gh.createObjectSaveData();
+        saveData.monsterStates = gh.createMonsterSaveData();
 
         try (Writer writer = Files.newBufferedWriter(SAVE_FILE_PATH)) {
             gson.toJson(saveData, writer);
@@ -60,6 +61,7 @@ public class SaveManager {
         public List<ChestData> chests = new ArrayList<>();
         public List<MapStateData> mapStates = new ArrayList<>();
         public List<ObjectMapData> objectStates = new ArrayList<>();
+        public List<MonsterMapData> monsterStates = new ArrayList<>();
     }
 
     public static class PlayerData {
@@ -114,6 +116,11 @@ public class SaveManager {
         public int worldX;
         public int worldY;
         public int stackCount = 1;
+    }
+
+    public static class MonsterMapData {
+        public String mapPath;
+        public List<Integer> killedSlots = new ArrayList<>();
     }
 
     public static Map<String, ChestData> indexChestsByKey(List<ChestData> chests) {

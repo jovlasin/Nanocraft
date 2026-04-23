@@ -10,11 +10,13 @@ import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
@@ -60,6 +62,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Utility u = new Utility(this);
     private final SaveManager saveManager = new SaveManager();
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
+    private final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
 
     public final int title = 0;
@@ -127,6 +130,7 @@ public class GameHandler extends JPanel implements Runnable {
                     }
 
                     if (monsters[i].alive == false) {
+                        markMonsterKilled(i);
                         monsters[i] = null;
                     }
                 }
@@ -210,6 +214,7 @@ public class GameHandler extends JPanel implements Runnable {
         String playerDirection = player.direction;
 
         persistentObjectStates.remove(currentMapPath);
+        persistentMonsterStates.remove(currentMapPath);
         th.resetStoredMapState(currentMapPath);
         th.loadMap(currentMapPath);
         player.worldX = playerWorldX;
@@ -252,6 +257,22 @@ public class GameHandler extends JPanel implements Runnable {
         return objectMaps;
     }
 
+    public List<SaveManager.MonsterMapData> createMonsterSaveData() {
+        List<SaveManager.MonsterMapData> monsterMaps = new ArrayList<>();
+        for (Map.Entry<String, Set<Integer>> entry : persistentMonsterStates.entrySet()) {
+            if (entry.getKey() == null || entry.getKey().isBlank()) {
+                continue;
+            }
+
+            SaveManager.MonsterMapData monsterMapData = new SaveManager.MonsterMapData();
+            monsterMapData.mapPath = entry.getKey();
+            monsterMapData.killedSlots = new ArrayList<>(entry.getValue());
+            monsterMaps.add(monsterMapData);
+        }
+
+        return monsterMaps;
+    }
+
     public void applySaveData(SaveManager.SaveData saveData) {
         activeChest = null;
         projectileList.clear();
@@ -261,6 +282,7 @@ public class GameHandler extends JPanel implements Runnable {
         ui.currentDialogue = "";
 
         persistentObjectStates.clear();
+        persistentMonsterStates.clear();
         if (saveData.objectStates != null) {
             for (SaveManager.ObjectMapData objectMapData : saveData.objectStates) {
                 if (objectMapData == null || objectMapData.mapPath == null || objectMapData.mapPath.isBlank()) {
@@ -268,6 +290,24 @@ public class GameHandler extends JPanel implements Runnable {
                 }
 
                 persistentObjectStates.put(objectMapData.mapPath, copyWorldObjectData(objectMapData.objects));
+            }
+        }
+
+        if (saveData.monsterStates != null) {
+            for (SaveManager.MonsterMapData monsterMapData : saveData.monsterStates) {
+                if (monsterMapData == null || monsterMapData.mapPath == null || monsterMapData.mapPath.isBlank()) {
+                    continue;
+                }
+
+                Set<Integer> killedSlots = new HashSet<>();
+                if (monsterMapData.killedSlots != null) {
+                    for (Integer slotIndex : monsterMapData.killedSlots) {
+                        if (slotIndex != null && slotIndex >= 0) {
+                            killedSlots.add(slotIndex);
+                        }
+                    }
+                }
+                persistentMonsterStates.put(monsterMapData.mapPath, killedSlots);
             }
         }
 
@@ -748,5 +788,32 @@ public class GameHandler extends JPanel implements Runnable {
         for (int i = 0; i < objs.length; i++) {
             objs[i] = null;
         }
+    }
+
+    public boolean isMonsterKilledOnCurrentMap(int slotIndex) {
+        if (slotIndex < 0) {
+            return false;
+        }
+
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null || currentMapPath.isBlank()) {
+            return false;
+        }
+
+        Set<Integer> killedSlots = persistentMonsterStates.get(currentMapPath);
+        return killedSlots != null && killedSlots.contains(slotIndex);
+    }
+
+    private void markMonsterKilled(int slotIndex) {
+        if (slotIndex < 0) {
+            return;
+        }
+
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null || currentMapPath.isBlank()) {
+            return;
+        }
+
+        persistentMonsterStates.computeIfAbsent(currentMapPath, key -> new HashSet<>()).add(slotIndex);
     }
 }
