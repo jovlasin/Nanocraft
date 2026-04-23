@@ -64,6 +64,8 @@ public class GameHandler extends JPanel implements Runnable {
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
     private final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
+    private boolean monsterSpawnWindowOpen;
+    private boolean wasNightPhase;
 
     public final int title = 0;
     public final int pause = 1;
@@ -81,6 +83,8 @@ public class GameHandler extends JPanel implements Runnable {
         this.setFocusable(true);
         this.setFocusTraversalKeysEnabled(false);
         this.addKeyListener(kh);
+        wasNightPhase = dayNightCycle.isNight();
+        monsterSpawnWindowOpen = isNightForMonsterSpawns();
         refreshCurrentMapState();
 
         gameState = title;
@@ -115,6 +119,7 @@ public class GameHandler extends JPanel implements Runnable {
     public void update() {
         if (gameState == play) {
             dayNightCycle.update();
+            reconcileMonsterSpawnWindow();
             player.update();
 
             for (int i = 0; i < npcs.length; i++) {
@@ -573,6 +578,7 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         dayNightCycle.advanceToNextPhase();
+        reconcileMonsterSpawnWindow();
         ui.addMessage("Time: " + dayNightCycle.getPhaseName());
     }
 
@@ -583,6 +589,10 @@ public class GameHandler extends JPanel implements Runnable {
     public boolean isInDayMap() {
         String currentMapPath = th.getCurrentMapPath();
         return NETHER_MAP_PATH.equals(currentMapPath) || END_MAP_PATH.equals(currentMapPath);
+    }
+
+    public boolean isNightForMonsterSpawns() {
+        return isInCave() || (!isInDayMap() && dayNightCycle.isNight());
     }
 
     public float getCurrentDarknessAlpha() {
@@ -815,5 +825,32 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         persistentMonsterStates.computeIfAbsent(currentMapPath, key -> new HashSet<>()).add(slotIndex);
+    }
+
+    private void reconcileMonsterSpawnWindow() {
+        boolean nightPhaseNow = dayNightCycle.isNight();
+        if (nightPhaseNow && !wasNightPhase) {
+            clearKilledMonstersForNightRespawn();
+        }
+        wasNightPhase = nightPhaseNow;
+
+        boolean spawnWindowOpenNow = isNightForMonsterSpawns();
+        if (spawnWindowOpenNow == monsterSpawnWindowOpen) {
+            return;
+        }
+
+        monsterSpawnWindowOpen = spawnWindowOpenNow;
+        ah.setMonsters();
+    }
+
+    private void clearKilledMonstersForNightRespawn() {
+        List<String> mapPaths = new ArrayList<>(persistentMonsterStates.keySet());
+        for (String mapPath : mapPaths) {
+            if (AssetHandler.CAVE_MAP_PATH.equals(mapPath)) {
+                continue;
+            }
+
+            persistentMonsterStates.remove(mapPath);
+        }
     }
 }
