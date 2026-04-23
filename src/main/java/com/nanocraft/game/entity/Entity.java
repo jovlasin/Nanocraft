@@ -22,6 +22,9 @@ public class Entity {
     public static final int TYPE_WEAPON = 3;
     public static final int TYPE_TOOL = 4;
     public static final int TYPE_CONSUMABLE = 6;
+    public static final int VIEW_DISTANCE_TILES = 6;
+    public static final int VIEW_WIDTH_TILES = 2;
+    public static final int AGGRO_LOST_DISTANCE_TILES = 10;
 
     public GameHandler gh;
     public int worldX, worldY;
@@ -58,6 +61,7 @@ public class Entity {
     public final int tool = TYPE_TOOL;
     public final int consumable = TYPE_CONSUMABLE;
     public int type;
+    public boolean aggroed;
 
     public Entity(GameHandler gh) {
         this.gh = gh;

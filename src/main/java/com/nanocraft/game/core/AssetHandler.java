@@ -3,6 +3,7 @@ package com.nanocraft.game.core;
 import com.nanocraft.game.entity.Elder;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.monster.GreenSlime;
+import com.nanocraft.monster.Skeleton;
 import com.nanocraft.monster.Zombie;
 
 public class AssetHandler {
@@ -69,11 +70,18 @@ public class AssetHandler {
             drawZombies(17, 12, 46);
             drawZombies(18, 28, 32);
             drawZombies(19, 4, 49);
+
+            drawSkeletons(20, 17, 25);
+            drawSkeletons(21, 2, 42);
+            drawSkeletons(22, 37, 6);
+            drawSkeletons(23, 49, 24);
+            drawSkeletons(24, 41, 38);
+            drawSkeletons(25, 28, 24);
+            drawSkeletons(26, 5, 36);
+            drawSkeletons(27, 41, 12);
+            drawSkeletons(28, 28, 41);
+            drawSkeletons(29, 8, 17);
         }
-
-        
-
-        
     }
 
     private void clearObjects() {
@@ -122,6 +130,16 @@ public class AssetHandler {
         }
 
         gh.monsters[i] = new Zombie(gh);
+        gh.monsters[i].worldX = gh.tileSize * x;
+        gh.monsters[i].worldY = gh.tileSize * y;
+    }
+
+    private void drawSkeletons(int i, int x, int y) {
+        if (gh.isMonsterKilledOnCurrentMap(i)) {
+            return;
+        }
+
+        gh.monsters[i] = new Skeleton(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
     }
