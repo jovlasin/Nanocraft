@@ -4,18 +4,26 @@ import java.util.Random;
 
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.entity.Entity;
+import com.nanocraft.game.object.Arrow;
 
-public class Zombie extends Entity {
-    public Zombie(GameHandler gh) {
+public class Skeleton extends Entity {
+    private static final int VIEW_DISTANCE_TILES = 8;
+    private static final int VIEW_WIDTH_TILES = 3;
+    private static final int AGGRO_LOST_DISTANCE_TILES = 12;
+    private boolean aggroed;
+
+    public Skeleton(GameHandler gh) {
         super(gh);
         type = monster;
-        name = "Zombie";
+        name = "Skeleton";
         speed = 1;
-        maxLife = 8;
+        maxLife = 10;
         life = maxLife;
-        attack = 8;
-        defense = 1;
-        exp = 3;
+        attack = 10;
+        defense = 0;
+        exp = 10;
+        projectile = new Arrow(gh);
+        shotCounter = 30;
 
         solidArea.x = 8;
         solidArea.y = 16;
@@ -27,14 +35,14 @@ public class Zombie extends Entity {
     }
 
     public void getImage() {
-        up1 = scale("/monster/ZombieWalkU1", gh.tileSize, gh.tileSize);
-        up2 = scale("/monster/ZombieWalkU2", gh.tileSize, gh.tileSize);
-        down1 = scale("/monster/ZombieWalkD1", gh.tileSize, gh.tileSize);
-        down2 = scale("/monster/ZombieWalkD2", gh.tileSize, gh.tileSize);
-        left1 = scale("/monster/ZombieWalkL1", gh.tileSize, gh.tileSize);
-        left2 = scale("/monster/ZombieWalkL2", gh.tileSize, gh.tileSize);
-        right1 = scale("/monster/ZombieWalkR1", gh.tileSize, gh.tileSize);
-        right2 = scale("/monster/ZombieWalkR2", gh.tileSize, gh.tileSize);
+        up1 = scale("/monster/SkeletonWalkU1", gh.tileSize, gh.tileSize);
+        up2 = scale("/monster/SkeletonWalkU2", gh.tileSize, gh.tileSize);
+        down1 = scale("/monster/SkeletonWalkD1", gh.tileSize, gh.tileSize);
+        down2 = scale("/monster/SkeletonWalkD2", gh.tileSize, gh.tileSize);
+        left1 = scale("/monster/SkeletonWalkL1", gh.tileSize, gh.tileSize);
+        left2 = scale("/monster/SkeletonWalkL2", gh.tileSize, gh.tileSize);
+        right1 = scale("/monster/SkeletonWalkR1", gh.tileSize, gh.tileSize);
+        right2 = scale("/monster/SkeletonWalkR2", gh.tileSize, gh.tileSize);
     }
 
     public void setAction() {
@@ -44,6 +52,7 @@ public class Zombie extends Entity {
                 actionCounter = 0;
             } else {
                 chasePlayer();
+                tryShootProjectile();
                 return;
             }
         }
@@ -130,6 +139,15 @@ public class Zombie extends Entity {
 
         if (i > 75 && i <= 100) {
             direction = "right";
+        }
+    }
+
+    private void tryShootProjectile() {
+        int i = new Random().nextInt(100) + 1;
+        if (i > 99 && projectile.alive == false && shotCounter == 30) {
+            projectile.set(worldX, worldY, direction, true, this);
+            gh.projectileList.add(projectile);
+            shotCounter = 0;
         }
     }
 }
