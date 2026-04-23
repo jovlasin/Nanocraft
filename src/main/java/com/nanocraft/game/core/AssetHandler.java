@@ -2,10 +2,13 @@ package com.nanocraft.game.core;
 
 import com.nanocraft.game.entity.Elder;
 import com.nanocraft.game.object.Key;
+import com.nanocraft.monster.GreenSlime;
 
 public class AssetHandler {
-    public static final String SPAWN_MAP_PATH = "/map/spawn.tmj";
+    public static final String SPAWN_MAP_PATH = "/map/village.tmj";
     public static final String CAVE_MAP_PATH = "/map/cave.tmj";
+    public static final String NETHER_MAP_PATH = "/map/nether.tmj";
+    public static final String END_MAP_PATH = "/map/end.tmj";
     private GameHandler gh;
 
     public AssetHandler(GameHandler gh) {
@@ -32,6 +35,31 @@ public class AssetHandler {
         drawElder(0, 51, 18);
     }
 
+    public void setMonsters() {
+        clearMonsters();
+
+        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath()) || END_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+            return;
+        }
+
+        if (SPAWN_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+            drawGreenSlime(0, 30, 46);
+            drawGreenSlime(1, 33, 42);
+            drawGreenSlime(2, 46, 40);
+            drawGreenSlime(3, 34, 36);
+            drawGreenSlime(4, 35, 28);
+            drawGreenSlime(5, 38, 21);
+            drawGreenSlime(6, 1, 46);
+            drawGreenSlime(7, 10, 38);
+            drawGreenSlime(8, 46, 6);
+            drawGreenSlime(9, 12, 5);
+        }
+
+        
+
+        
+    }
+
     private void clearObjects() {
         for (int i = 0; i < gh.objs.length; i++) {
             gh.objs[i] = null;
@@ -41,6 +69,12 @@ public class AssetHandler {
     private void clearNPCs() {
         for (int i = 0; i < gh.npcs.length; i++) {
             gh.npcs[i] = null;
+        }
+    }
+
+    private void clearMonsters() {
+        for (int i = 0; i < gh.monsters.length; i++) {
+            gh.monsters[i] = null;
         }
     }
 
@@ -54,5 +88,11 @@ public class AssetHandler {
         gh.npcs[i] = new Elder(gh);
         gh.npcs[i].worldX = gh.tileSize * x;
         gh.npcs[i].worldY = gh.tileSize * y;
+    }
+
+    private void drawGreenSlime(int i, int x, int y) {
+        gh.monsters[i] = new GreenSlime(gh);
+        gh.monsters[i].worldX = gh.tileSize * x;
+        gh.monsters[i].worldY = gh.tileSize * y;
     }
 }
