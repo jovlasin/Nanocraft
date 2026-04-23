@@ -65,7 +65,7 @@ public class AssetHandler {
             drawZombies(13, 47, 46);
             drawZombies(14, 7, 26);
             drawZombies(15, 7, 18);
-            drawZombies(16, 1, 6);
+            drawZombies(16, 5, 9);
             drawZombies(17, 12, 46);
             drawZombies(18, 28, 32);
             drawZombies(19, 4, 49);
