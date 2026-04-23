@@ -51,7 +51,7 @@ public class GameHandler extends JPanel implements Runnable {
     public CollisionHandler ch = new CollisionHandler(this);
     public Entity objs[] = new Entity[10];
     public Entity npcs[] = new Entity[10];
-    public Entity monsters[] = new Entity[20];
+    public Entity monsters[] = new Entity[50];
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
@@ -117,6 +117,18 @@ public class GameHandler extends JPanel implements Runnable {
             for (int i = 0; i < npcs.length; i++) {
                 if (npcs[i] != null) {
                     npcs[i].update();
+                }
+            }
+
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    if (monsters[i].alive == true && monsters[i].dying == false) {
+                        monsters[i].update();
+                    }
+
+                    if (monsters[i].alive == false) {
+                        monsters[i] = null;
+                    }
                 }
             }
 
@@ -210,6 +222,7 @@ public class GameHandler extends JPanel implements Runnable {
     public void refreshCurrentMapState() {
         restoreCurrentMapObjects();
         ah.setNPCS();
+        ah.setMonsters();
     }
 
     public void beforeMapChange() {
@@ -465,6 +478,12 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    entityList.add(monsters[i]);
+                }
+            }
+
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null) {
                     entityList.add(objs[i]);
@@ -499,12 +518,12 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void playMusic() {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
+        // throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
     }
 
     public void playSound(int i) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+        // throw new UnsupportedOperationException("Unimplemented method 'playSound'");
     }
 
     public void cycleTimeOfDay() {
