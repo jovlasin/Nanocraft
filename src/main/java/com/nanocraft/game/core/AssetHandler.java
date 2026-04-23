@@ -91,6 +91,10 @@ public class AssetHandler {
     }
 
     private void drawGreenSlime(int i, int x, int y) {
+        if (gh.isMonsterKilledOnCurrentMap(i)) {
+            return;
+        }
+
         gh.monsters[i] = new GreenSlime(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
