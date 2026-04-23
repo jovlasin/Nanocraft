@@ -42,6 +42,10 @@ public class AssetHandler {
             return;
         }
 
+        if (!CAVE_MAP_PATH.equals(gh.th.getCurrentMapPath()) && !gh.isNightForMonsterSpawns()) {
+            return;
+        }
+
         if (SPAWN_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
             drawGreenSlime(0, 30, 46);
             drawGreenSlime(1, 33, 42);
