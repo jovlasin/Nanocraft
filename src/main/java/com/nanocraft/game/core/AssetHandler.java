@@ -3,6 +3,7 @@ package com.nanocraft.game.core;
 import com.nanocraft.game.entity.Elder;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.monster.GreenSlime;
+import com.nanocraft.monster.Zombie;
 
 public class AssetHandler {
     public static final String SPAWN_MAP_PATH = "/map/village.tmj";
@@ -57,6 +58,17 @@ public class AssetHandler {
             drawGreenSlime(7, 10, 38);
             drawGreenSlime(8, 46, 6);
             drawGreenSlime(9, 12, 5);
+
+            drawZombies(10, 25, 49);
+            drawZombies(11, 2, 21);
+            drawZombies(12, 14, 11);
+            drawZombies(13, 47, 46);
+            drawZombies(14, 7, 26);
+            drawZombies(15, 7, 18);
+            drawZombies(16, 1, 6);
+            drawZombies(17, 12, 46);
+            drawZombies(18, 28, 32);
+            drawZombies(19, 4, 49);
         }
 
         
@@ -100,6 +112,16 @@ public class AssetHandler {
         }
 
         gh.monsters[i] = new GreenSlime(gh);
+        gh.monsters[i].worldX = gh.tileSize * x;
+        gh.monsters[i].worldY = gh.tileSize * y;
+    }
+
+    private void drawZombies(int i, int x, int y) {
+        if (gh.isMonsterKilledOnCurrentMap(i)) {
+            return;
+        }
+
+        gh.monsters[i] = new Zombie(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
     }
