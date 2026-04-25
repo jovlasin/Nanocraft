@@ -462,6 +462,10 @@ public class Player extends Entity {
                     gh.ui.addMessage("You killed a " + gh.monsters[i].name + "!");
                     gh.ui.addMessage("Exp + " + gh.monsters[i].exp);
                     exp += gh.monsters[i].exp;
+                    gh.monsters[i].onDefeated();
+                    if (gh.monsters[i].alive == false) {
+                        gh.monsters[i] = null;
+                    }
                     checkLevelUp();
                 }
             }
