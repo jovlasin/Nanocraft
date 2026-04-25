@@ -25,6 +25,7 @@ import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.ArrowItem;
 import com.nanocraft.game.object.Diamond;
 import com.nanocraft.game.object.Emerald;
+import com.nanocraft.game.object.EyeOfEnder;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.object.Meat;
 import com.nanocraft.game.object.Medkit;
@@ -384,6 +385,9 @@ public class GameHandler extends JPanel implements Runnable {
                 return new Diamond(this);
             case "emerald":
                 return new Emerald(this);
+            case "eye_of_ender":
+            case "eyeofender":
+                return new EyeOfEnder(this);
 
             case "ore_chunk":
             case "orechunk":
@@ -435,6 +439,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         if (item instanceof Emerald) {
             return "emerald";
+        }
+
+        if (item instanceof EyeOfEnder) {
+            return "eye_of_ender";
         }
 
         if (item instanceof OreChunk) {
