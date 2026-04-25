@@ -34,15 +34,15 @@ public class SkeletonBoss extends Entity {
         projectile.speed = 10;
 
         drawSize = gh.tileSize * DRAW_SIZE_MULTIPLIER;
-        horizontalDrawOffset = (drawSize - gh.tileSize) / 2;
-        verticalDrawOffset = drawSize - gh.tileSize;
+        horizontalDrawOffset = (drawSize - gh.tileSize - 74);
+        verticalDrawOffset = drawSize - gh.tileSize * 3;
 
         getImage();
 
-        solidArea.x = 0;
-        solidArea.y = gh.tileSize;
-        solidArea.width = gh.tileSize;
-        solidArea.height = gh.tileSize;
+        solidArea.x = 10;
+        solidArea.y = 10;
+        solidArea.width = 80;
+        solidArea.height = 120;
         solidAreaDefaultX = solidArea.x;
         solidAreaDefaultY = solidArea.y;
     }
