@@ -1,10 +1,10 @@
 package com.nanocraft.game.core;
 
 import com.nanocraft.game.entity.Elder;
+import com.nanocraft.game.monster.GreenSlime;
+import com.nanocraft.game.monster.Skeleton;
+import com.nanocraft.game.monster.Zombie;
 import com.nanocraft.game.object.Key;
-import com.nanocraft.monster.GreenSlime;
-import com.nanocraft.monster.Skeleton;
-import com.nanocraft.monster.Zombie;
 
 public class AssetHandler {
     public static final String SPAWN_MAP_PATH = "/map/village.tmj";
