@@ -67,7 +67,7 @@ public class Ui {
         }
 
         else if (gh.gameState == gh.pause) {
-            drawPauseScreen();
+            drawPauseMenu();
         }
 
         else if (gh.gameState == gh.dialogue) {
@@ -252,45 +252,45 @@ public class Ui {
         }
     }
 
-    private void drawPauseScreen() {
+    private void drawPauseMenu() {
         if (inSettings) {
             drawSettingsMenu();
         } else {
-            g2d.setColor(new Color(0, 0, 0, 170));
+            g2d.setColor(new Color(0, 0, 0, 220));
             g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
-
-            int frameWidth = gh.tileSize * 7;
-            int frameHeight = gh.tileSize * 8;
-            int frameX = (gh.screenWidth - frameWidth) / 2;
-            int frameY = (gh.screenHeight - frameHeight) / 2;
-            u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
 
             g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
             String title = "PAUSED";
-            g2d.drawString(title, u.getXforCenteredText(title, g2d), frameY + gh.tileSize + 12);
+            int titleY = gh.tileSize + 20;
+            g2d.setColor(Color.white);
+            g2d.drawString(title, u.getXforCenteredText(title, g2d), titleY);
 
-            String[] options = { "CONTINUE", "SAVE", "LOAD", "SETTINGS", "EXIT" };
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
+            int lineH = 60;
+            int startY = titleY + gh.tileSize + 65;
 
-            int optionY = frameY + (gh.tileSize * 2) + 20;
-            
-            for (int i = 0; i < options.length; i++) {
-                String option = options[i];
-                int optionX = u.getXforCenteredText(option, g2d);
+            String[] options = {"Continue", "Save", "Load", "Settings", "Quit"};
 
-                if (pauseMenuIndex == i) {
-                    g2d.setColor(new Color(240, 190, 90));
-                    g2d.drawString(">", optionX - gh.tileSize, optionY);
+            for (int row = 0; row < options.length; row++) {
+                String label = options[row];
+
+                g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+                int y = startY + row * lineH;
+                int labelX = u.getXforCenteredText(label, g2d);
+
+                boolean selected = pauseMenuIndex == row;
+                g2d.setColor(selected ? new Color(240, 190, 90) : Color.white);
+
+                if (selected) {
+                    g2d.drawString(">", labelX - gh.tileSize, y);
                 }
 
-                g2d.setColor(Color.white);
-                g2d.drawString(option, optionX, optionY);
-                optionY += gh.tileSize - 2;
+                g2d.drawString(label, labelX, y);
             }
-
+            
+            g2d.setColor(Color.white);
             g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
             String help = "ESC: Resume   ENTER/SPACE: Select";
-            g2d.drawString(help, u.getXforCenteredText(help, g2d), frameY + frameHeight - 18);
+            g2d.drawString(help, u.getXforCenteredText(help, g2d), gh.screenHeight - gh.tileSize);
         }
 
         if (pauseExitConfirmationVisible && !inSettings) {
