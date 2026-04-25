@@ -156,6 +156,18 @@ public class KeyHandler implements KeyListener {
             return;
         }
 
+        if (gh.ui.isControlMenuVisible()) {
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                gh.ui.closeControlMenu();
+            }
+            return;
+        }
+
+        if (gh.ui.isInSettings()) {
+            pauseSettingsState(code);
+            return;
+        }
+
         if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_P) {
             gh.closePauseMenu();
             return;
@@ -173,6 +185,37 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
             gh.activatePauseMenuSelection();
+        }
+    }
+
+    private void pauseSettingsState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.ui.closeSettings();
+            return;
+        }
+
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.moveSettingsIndex(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.moveSettingsIndex(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            gh.selectSetting(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            gh.selectSetting(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.enterSettings();
         }
     }
 

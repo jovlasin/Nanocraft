@@ -25,6 +25,9 @@ public class Ui {
     private int pauseMenuIndex;
     private boolean pauseExitConfirmationVisible;
     private int pauseExitConfirmationIndex;
+    private boolean inSettings;
+    private int settingsIndex;
+    private boolean controlMenu;
     private int chestSlotCol;
     private int chestSlotRow;
     private int playerChestSlotCol;
@@ -93,6 +96,9 @@ public class Ui {
         pauseMenuIndex = 0;
         pauseExitConfirmationVisible = false;
         pauseExitConfirmationIndex = 1;
+        inSettings = false;
+        settingsIndex = 0;
+        controlMenu = false;
     }
 
     public void movePauseMenuSelection(int delta) {
@@ -123,6 +129,42 @@ public class Ui {
 
     public boolean shouldExitFromPauseConfirmation() {
         return pauseExitConfirmationIndex == 1;
+    }
+
+    public void openSettings() {
+        inSettings = true;
+        settingsIndex = 0;
+        controlMenu = false;
+    }
+
+    public void closeSettings() {
+        inSettings = false;
+        settingsIndex = 0;
+        controlMenu = false;
+    }
+
+    public boolean isInSettings() {
+        return inSettings;
+    }
+
+    public void moveSettingsIndex(int delta) {
+        settingsIndex = clamp(settingsIndex + delta, 0, 4);
+    }
+
+    public int getSettingsIndex() {
+        return settingsIndex;
+    }
+
+    public void openControlMenu() {
+        controlMenu = true;
+    }
+
+    public void closeControlMenu() {
+        controlMenu = false;
+    }
+
+    public boolean isControlMenuVisible() {
+        return controlMenu;
     }
 
     public void resetChestUi() {
@@ -211,44 +253,174 @@ public class Ui {
     }
 
     private void drawPauseScreen() {
-        g2d.setColor(new Color(0, 0, 0, 170));
-        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+        if (inSettings) {
+            drawSettingsMenu();
+        } else {
+            g2d.setColor(new Color(0, 0, 0, 170));
+            g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
 
-        int frameWidth = gh.tileSize * 7;
-        int frameHeight = gh.tileSize * 7;
-        int frameX = (gh.screenWidth - frameWidth) / 2;
-        int frameY = (gh.screenHeight - frameHeight) / 2;
-        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+            int frameWidth = gh.tileSize * 7;
+            int frameHeight = gh.tileSize * 8;
+            int frameX = (gh.screenWidth - frameWidth) / 2;
+            int frameY = (gh.screenHeight - frameHeight) / 2;
+            u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
 
-        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
-        String title = "PAUSED";
-        g2d.drawString(title, u.getXforCenteredText(title, g2d), frameY + gh.tileSize + 8);
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+            String title = "PAUSED";
+            g2d.drawString(title, u.getXforCenteredText(title, g2d), frameY + gh.tileSize + 12);
 
-        String[] options = { "CONTINUE", "SAVE", "LOAD", "EXIT" };
-        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
+            String[] options = { "CONTINUE", "SAVE", "LOAD", "SETTINGS", "EXIT" };
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
 
-        int optionY = frameY + (gh.tileSize * 2) + 12;
-        for (int i = 0; i < options.length; i++) {
-            String option = options[i];
-            int optionX = u.getXforCenteredText(option, g2d);
+            int optionY = frameY + (gh.tileSize * 2) + 20;
+            
+            for (int i = 0; i < options.length; i++) {
+                String option = options[i];
+                int optionX = u.getXforCenteredText(option, g2d);
 
-            if (pauseMenuIndex == i) {
-                g2d.setColor(new Color(240, 190, 90));
-                g2d.drawString(">", optionX - gh.tileSize, optionY);
+                if (pauseMenuIndex == i) {
+                    g2d.setColor(new Color(240, 190, 90));
+                    g2d.drawString(">", optionX - gh.tileSize, optionY);
+                }
+
+                g2d.setColor(Color.white);
+                g2d.drawString(option, optionX, optionY);
+                optionY += gh.tileSize - 2;
             }
 
-            g2d.setColor(Color.white);
-            g2d.drawString(option, optionX, optionY);
-            optionY += gh.tileSize - 2;
+            g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+            String help = "ESC: Resume   ENTER/SPACE: Select";
+            g2d.drawString(help, u.getXforCenteredText(help, g2d), frameY + frameHeight - 18);
         }
 
-        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
-        String help = "ESC: Resume   ENTER/SPACE: Select";
-        g2d.drawString(help, u.getXforCenteredText(help, g2d), frameY + frameHeight - 18);
-
-        if (pauseExitConfirmationVisible) {
+        if (pauseExitConfirmationVisible && !inSettings) {
             drawPauseExitConfirmation();
         }
+
+        if (controlMenu) {
+            drawControlsMenu();
+        }
+    }
+
+    private void drawSettingsMenu() {
+        g2d.setColor(new Color(0, 0, 0, 220));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+        String head = "SETTINGS";
+        int titleY = gh.tileSize + 24;
+        g2d.setColor(Color.white);
+        g2d.drawString(head, u.getXforCenteredText(head, g2d), titleY);
+
+        int lineH = 60;
+        int startY = titleY + gh.tileSize + 80;
+        int centerX = gh.screenWidth / 2;
+        int label = centerX - gh.tileSize * 5;
+
+        for (int row = 0; row < 5; row++) {
+            g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+            int y = startY + row * lineH;
+            boolean sel = settingsIndex == row;
+            g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+
+            if (row == 0) {
+                if (sel) {
+                    g2d.drawString(">", label - gh.tileSize, y);
+                }
+                g2d.drawString("Full screen", label, y);
+                String box = gh.isFullScreen() ? "[X]" : "[  ]";
+                g2d.drawString(box, centerX + gh.tileSize, y);
+            } else if (row == 1) {
+                if (sel) {
+                    g2d.drawString(">", label - gh.tileSize, y);
+                }
+                g2d.setColor(Color.white);
+                g2d.drawString("Music volume", label, y);
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                drawVolumeSlider(centerX - 40, y - 18, gh.getMusicVolume());
+            } else if (row == 2) {
+                if (sel) {
+                    g2d.drawString(">", label - gh.tileSize, y);
+                }
+                g2d.setColor(Color.white);
+                g2d.drawString("Sound effects", label, y);
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                drawVolumeSlider(centerX - 40, y - 18, gh.getSfxVolume());
+            } else if (row == 3) {
+                int scX = u.getXforCenteredText("SHOW CONTROLS", g2d);
+                if (sel) {
+                    g2d.setColor(new Color(240, 190, 90));
+                    g2d.drawString(">", scX - gh.tileSize, y);
+                }
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                g2d.drawString("SHOW CONTROLS", scX, y);
+            } else {
+                int backX = u.getXforCenteredText("BACK", g2d);
+                if (sel) {
+                    g2d.setColor(new Color(240, 190, 90));
+                    g2d.drawString(">", backX - gh.tileSize, y);
+                }
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                g2d.drawString("BACK", backX, y);
+            }
+        }
+
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+        String help = "UP/DOWN: Move   LEFT/RIGHT: Adjust sliders   ENTER: Choose   ESC: Back";
+        g2d.drawString(help, u.getXforCenteredText(help, g2d), gh.screenHeight - gh.tileSize);
+    }
+
+    private void drawVolumeSlider(int x, int y, int percent) {
+        Font before = g2d.getFont();
+        int w = gh.tileSize * 5;
+        int h = 16;
+        g2d.setColor(new Color(50, 50, 55));
+        g2d.fillRoundRect(x, y, w, h, 6, 6);
+        int fill = (w - 4) * percent / 100;
+        g2d.setColor(new Color(200, 160, 70));
+        g2d.fillRoundRect(x + 2, y + 2, Math.max(0, fill), h - 4, 4, 4);
+        g2d.setColor(Color.white);
+        g2d.setFont(text.deriveFont(Font.PLAIN, 20F));
+        g2d.drawString(percent + "%", x + w + 10, y + 14);
+        g2d.setFont(before);
+    }
+
+    private void drawControlsMenu() {
+        g2d.setColor(new Color(0, 0, 0, 210));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+
+        int frameW = Math.min(gh.screenWidth - gh.tileSize * 2, gh.tileSize * 14);
+        int frameH = gh.tileSize * 10;
+        int frameX = (gh.screenWidth - frameW) / 2;
+        int frameY = (gh.screenHeight - frameH) / 2;
+        u.drawSubWindow(frameX, frameY, frameW, frameH, g2d);
+
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 36F));
+        String t = "CONTROLS";
+        g2d.drawString(t, u.getXforCenteredText(t, g2d), frameY + 44);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 22F));
+        int tx = frameX + 32;
+        int ty = frameY + 90;
+        String[] lines = {
+            "Move:  W A S D  or  Arrow keys",
+            "Interact:  SPACE",
+            "Shoot:  F",
+            "Stats & inventory:  TAB",
+            "Pause:  ESC",
+            "Dialogue:  SPACE to continue",
+        };
+
+        for (String line : lines) {
+            g2d.drawString(line, tx, ty);
+            ty += 32;
+        }
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.ITALIC, 20F));
+        String closeHint = "ESC or ENTER: Close";
+        g2d.drawString(closeHint, u.getXforCenteredText(closeHint, g2d), frameY + frameH - 28);
     }
 
     private void drawPauseExitConfirmation() {
