@@ -22,6 +22,7 @@ import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Apple;
+import com.nanocraft.game.object.ArrowItem;
 import com.nanocraft.game.object.Diamond;
 import com.nanocraft.game.object.Emerald;
 import com.nanocraft.game.object.Key;
@@ -372,6 +373,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         String normalized = itemType.trim().toLowerCase();
         switch (normalized) {
+            case "arrow":
+            case "arrows":
+                return new ArrowItem(this);
+
             case "apple":
                 return new Apple(this);
 
@@ -418,6 +423,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         if (item instanceof Apple) {
             return "apple";
+        }
+
+        if (item instanceof ArrowItem) {
+            return "arrow";
         }
 
         if (item instanceof Diamond) {
