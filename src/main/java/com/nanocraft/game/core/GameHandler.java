@@ -72,29 +72,16 @@ public class GameHandler extends JPanel implements Runnable {
         long time = System.nanoTime();
         long currentTime;
 
-        // FPS tracking variables
-        long timer = 0;
-        int drawCount = 0;
-
         while (gameThread != null) {
             currentTime = System.nanoTime();
 
             delta += (currentTime - time) / drawInterval;
-            timer += (currentTime - time); // accumulate time for FPS
             time = currentTime;
 
             while (delta >= 1) {
                 update();
                 repaint();
                 delta--;
-                drawCount++; // count frames
-            }
-
-            // Every 1 second, print FPS
-            if (timer >= 1000000000) {
-                System.out.println("FPS: " + drawCount);
-                drawCount = 0;
-                timer = 0;
             }
         }
     }
