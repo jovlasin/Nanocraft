@@ -20,6 +20,8 @@ public class TileHandler {
     private static final Set<String> FALLBACK_CHEST_TILE_TYPES = Set.of("034", "035");
     private static final Set<String> MARKER_MAP_CHEST_TILE_TYPES = Set.of("035");
     private static final int MAX_RANDOM_CHEST_LOOT_ITEMS = 3;
+    private static final int MIN_ARROW_CHEST_STACK = 5;
+    private static final int MAX_ARROW_CHEST_STACK = 10;
     private static final List<String> RANDOM_CHEST_LOOT_POOL = List.of(
         "arrow",
         "apple",
@@ -695,20 +697,40 @@ public class TileHandler {
     }
 
     private void addLootItems(ChestState chestState, List<String> lootItemIds, String chestKey) {
+        boolean hasArrowStack = false;
+
         for (String itemId : lootItemIds) {
+            if ("arrow".equalsIgnoreCase(itemId) && hasArrowStack) {
+                continue;
+            }
+
             if (chestState.isFull()) {
                 System.out.println("Chest at " + chestKey + " exceeded capacity. Extra items were ignored.");
                 break;
             }
 
-            Entity item = gh.createItemEntity(itemId);
+            Entity item = createChestLootItem(itemId);
             if (item == null) {
                 System.out.println("Unknown chest item type '" + itemId + "' at " + chestKey + ".");
                 continue;
             }
 
             chestState.addItem(item);
+            hasArrowStack = hasArrowStack || "arrow".equalsIgnoreCase(item.itemId);
         }
+    }
+
+    Entity createChestLootItem(String itemId) {
+        Entity item = gh.createItemEntity(itemId);
+        if (item == null) {
+            return null;
+        }
+
+        if ("arrow".equalsIgnoreCase(item.itemId)) {
+            item.stackCount = MIN_ARROW_CHEST_STACK + random.nextInt(MAX_ARROW_CHEST_STACK - MIN_ARROW_CHEST_STACK + 1);
+        }
+
+        return item;
     }
 
     private boolean isVillageFallbackMap() {

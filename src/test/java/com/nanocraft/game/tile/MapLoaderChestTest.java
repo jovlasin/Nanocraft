@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -192,6 +193,45 @@ public class MapLoaderChestTest {
         return chestTiles;
     }
 
+    @Test
+    public void createsArrowChestLootAsRandomStackBetweenFiveAndTen() {
+        GameHandler gh = new GameHandler();
+
+        for (int i = 0; i < 25; i++) {
+            Entity arrows = gh.th.createChestLootItem("arrow");
+            assertNotNull(arrows);
+            assertEquals("arrow", arrows.itemId);
+            assertTrue(arrows.stackCount >= 5);
+            assertTrue(arrows.stackCount <= 10);
+        }
+    }
+
+    @Test
+    public void createsNonArrowChestLootWithDefaultSingleItemStack() {
+        GameHandler gh = new GameHandler();
+
+        Entity apple = gh.th.createChestLootItem("apple");
+        assertNotNull(apple);
+        assertEquals("apple", apple.itemId);
+        assertEquals(1, apple.stackCount);
+    }
+
+    @Test
+    public void duplicateArrowLootEntriesStillCreateOneArrowStackPerChest() throws Exception {
+        GameHandler gh = new GameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+        Method addLootItems = TileHandler.class.getDeclaredMethod("addLootItems", ChestState.class, List.class, String.class);
+        addLootItems.setAccessible(true);
+
+        addLootItems.invoke(gh.th, chest, List.of("arrow", "arrow", "apple"), chest.getKey());
+
+        assertEquals(1, countItemStacks(chest, "arrow"));
+        int arrowCount = getItemCount(chest.items, "arrow");
+        assertTrue(arrowCount >= 5);
+        assertTrue(arrowCount <= 10);
+        assertEquals(1, getItemCount(chest.items, "apple"));
+    }
+
     private boolean hasChestTileAt(MapLoader.MapData mapData, int col, int row) {
         return hasTileTypeAt(mapData, col, row, "034") || hasTileTypeAt(mapData, col, row, "035");
     }
@@ -226,6 +266,30 @@ public class MapLoaderChestTest {
         return itemNames;
     }
 
+    private int countItemStacks(ChestState chest, String itemId) {
+        int count = 0;
+
+        for (Entity item : chest.items) {
+            if (item != null && itemId.equalsIgnoreCase(item.itemId)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private int getItemCount(Iterable<Entity> items, String itemId) {
+        int total = 0;
+
+        for (Entity item : items) {
+            if (item != null && itemId.equalsIgnoreCase(item.itemId)) {
+                total += item.stackCount;
+            }
+        }
+
+        return total;
+    }
+
     private void assertLootIsInitialized(ChestState chest) {
         assertFalse(chest.items.isEmpty());
         assertTrue(chest.items.size() <= 3);
@@ -234,6 +298,10 @@ public class MapLoaderChestTest {
             assertNotNull(item);
             assertNotNull(item.name);
             assertNotNull(item.down1);
+            if ("arrow".equalsIgnoreCase(item.itemId)) {
+                assertTrue(item.stackCount >= 5);
+                assertTrue(item.stackCount <= 10);
+            }
         }
     }
 }
