@@ -75,6 +75,13 @@ public class GameHandler extends JPanel implements Runnable {
     public final int chest = 5;
     public int gameState = 999;
     private BufferedImage lightingFilter;
+    private int musicVolume = 100;
+    private int sfxVolume = 100;
+
+    // /** For unit tests; fullscreen is a no-op without a window. */
+    // public GameHandler() {
+    //     this(null);
+    // }
 
     public GameHandler() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -361,6 +368,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void closePauseMenu() {
         ui.closePauseExitConfirmation();
+        ui.closeSettings();
         gameState = play;
     }
 
@@ -383,11 +391,48 @@ public class GameHandler extends JPanel implements Runnable {
                 break;
 
             case 3:
+                ui.openSettings();
+                break;
+
+            case 4:
                 ui.openPauseExitConfirmation();
                 break;
 
             default:
                 break;
+        }
+    }
+
+    public void enterSettings() {
+        switch (ui.getSettingsIndex()) {
+            case 0:
+                setFullScreen(!isFullScreen());
+                break;
+
+            case 3:
+                ui.openControlMenu();
+                break;
+
+            case 4:
+                ui.closeSettings();
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    public void selectSetting(int direction) {
+        if (direction == 0) {
+            return;
+        }
+        int index = ui.getSettingsIndex();
+        if (index == 0) {
+            setFullScreen(direction > 0);
+        } else if (index == 1) {
+            setMusicVolume(musicVolume + direction * 5);
+        } else if (index == 2) {
+            setSfxVolume(sfxVolume + direction * 5);
         }
     }
 
@@ -562,13 +607,44 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void playMusic() {
+        if (musicVolume == 0) {
+            return;
+        }
         // TODO Auto-generated method stub
         // throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
     }
 
     public void playSound(int i) {
+        if (sfxVolume == 0) {
+            return;
+        }
         // TODO Auto-generated method stub
         // throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+    }
+
+    public boolean isFullScreen() {
+        // TODO
+        return false;
+    }
+
+    public void setFullScreen(boolean bool) {
+        // TODO
+    }
+
+    public int getMusicVolume() {
+        return musicVolume;
+    }
+
+    public void setMusicVolume(int percent) {
+        musicVolume = Math.max(0, Math.min(100, percent));
+    }
+
+    public int getSfxVolume() {
+        return sfxVolume;
+    }
+
+    public void setSfxVolume(int percent) {
+        sfxVolume = Math.max(0, Math.min(100, percent));
     }
 
     public void cycleTimeOfDay() {
