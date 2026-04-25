@@ -101,6 +101,14 @@ public class DayNightCycle {
         return String.format("%02d:%02d", hours, minutes);
     }
 
+    public int getCurrentTick() {
+        return currentTick;
+    }
+
+    public void setCurrentTick(int currentTick) {
+        this.currentTick = Math.floorMod(currentTick, cycleTicks);
+    }
+
     public double getProgress() {
         return (double) currentTick / cycleTicks;
     }
