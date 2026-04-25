@@ -45,7 +45,7 @@ public class BronzeDragon extends Entity {
         life = maxLife;
         attack = 5;
         defense = 0;
-        exp = 20;
+        exp = 40;
         direction = "left";
 
         solidArea.x = gh.tileSize / 2;

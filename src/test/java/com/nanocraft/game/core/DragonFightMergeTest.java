@@ -25,6 +25,7 @@ public class DragonFightMergeTest {
         assertTrue(gh.monsters[0] instanceof BronzeDragon);
         assertEquals(36, gh.monsters[0].maxLife);
         assertEquals(36, gh.monsters[0].life);
+        assertEquals(40, gh.monsters[0].exp);
         assertEquals(marker.col * gh.tileSize, gh.monsters[0].worldX);
         assertEquals(marker.row * gh.tileSize, gh.monsters[0].worldY);
     }
