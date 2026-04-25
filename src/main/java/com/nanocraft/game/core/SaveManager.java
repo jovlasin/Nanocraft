@@ -29,6 +29,8 @@ public class SaveManager {
         saveData.chests = gh.th.createChestSaveData();
         saveData.mapStates = gh.th.createMapStateSaveData();
         saveData.objectStates = gh.createObjectSaveData();
+        saveData.bronzeDragonDefeated = gh.isBronzeDragonDefeated();
+        saveData.dayNightTick = gh.dayNightCycle.getCurrentTick();
 
         try (Writer writer = Files.newBufferedWriter(SAVE_FILE_PATH)) {
             gson.toJson(saveData, writer);
@@ -60,6 +62,8 @@ public class SaveManager {
         public List<ChestData> chests = new ArrayList<>();
         public List<MapStateData> mapStates = new ArrayList<>();
         public List<ObjectMapData> objectStates = new ArrayList<>();
+        public boolean bronzeDragonDefeated;
+        public int dayNightTick = -1;
     }
 
     public static class PlayerData {

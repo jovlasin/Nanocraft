@@ -58,6 +58,7 @@ public class GameHandler extends JPanel implements Runnable {
     public ChestState activeChest;
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
+    private boolean bronzeDragonDefeated;
     private final SaveManager saveManager = new SaveManager();
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
@@ -120,15 +121,28 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
-            for (int i = 0; i < projectileList.size(); i++) {
-                if (projectileList.get(i) != null) {
-                    if (projectileList.get(i).alive == true) {
-                        projectileList.get(i).update();
-                    }
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    monsters[i].update();
 
-                    if (projectileList.get(i).alive == false) {
-                        projectileList.remove(i);
+                    if (monsters[i].alive == false) {
+                        monsters[i] = null;
                     }
+                }
+            }
+
+            for (int i = projectileList.size() - 1; i >= 0; i--) {
+                Entity projectile = projectileList.get(i);
+
+                if (projectile == null || projectile.alive == false) {
+                    projectileList.remove(i);
+                    continue;
+                }
+
+                projectile.update();
+
+                if (projectile.alive == false) {
+                    projectileList.remove(i);
                 }
             }
         }
@@ -210,6 +224,8 @@ public class GameHandler extends JPanel implements Runnable {
     public void refreshCurrentMapState() {
         restoreCurrentMapObjects();
         ah.setNPCS();
+        ah.setMonsters();
+        ah.applyMapProgression();
     }
 
     public void beforeMapChange() {
@@ -258,6 +274,11 @@ public class GameHandler extends JPanel implements Runnable {
             }
         }
 
+        bronzeDragonDefeated = saveData.bronzeDragonDefeated;
+        if (saveData.dayNightTick >= 0) {
+            dayNightCycle.setCurrentTick(saveData.dayNightTick);
+        }
+
         th.restoreChestSaveData(saveData.chests);
         th.restoreMapStateSaveData(saveData.mapStates);
         th.loadMap(saveData.currentMapPath);
@@ -283,7 +304,9 @@ public class GameHandler extends JPanel implements Runnable {
         try {
             if (!saveManager.load(this)) {
                 ui.addMessage("No save file found.");
-                closePauseMenu();
+                if (gameState == pause) {
+                    closePauseMenu();
+                }
                 return false;
             }
 
@@ -465,6 +488,12 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    entityList.add(monsters[i]);
+                }
+            }
+
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null) {
                     entityList.add(objs[i]);
@@ -480,7 +509,9 @@ public class GameHandler extends JPanel implements Runnable {
             Collections.sort(entityList, new Comparator<Entity>() {
                 @Override
                 public int compare(Entity e1, Entity e2) {
-                    int result = Integer.compare(e1.worldY, e2.worldY);
+                    int e1Depth = e1.worldY + e1.solidArea.y + e1.solidArea.height;
+                    int e2Depth = e2.worldY + e2.solidArea.y + e2.solidArea.height;
+                    int result = Integer.compare(e1Depth, e2Depth);
                     return result;
                 }
             });
@@ -505,6 +536,32 @@ public class GameHandler extends JPanel implements Runnable {
     public void playSound(int i) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+    }
+
+    public void clearProjectiles() {
+        projectileList.clear();
+    }
+
+    public void handleBronzeDragonDefeat() {
+        if (bronzeDragonDefeated) {
+            return;
+        }
+
+        bronzeDragonDefeated = true;
+        clearProjectiles();
+        ui.addMessage("The bronze dragon collapses into ash.");
+
+        if (ah.applyMapProgression()) {
+            ui.addMessage("A portal back to the village appears.");
+        }
+    }
+
+    public boolean isBronzeDragonDefeated() {
+        return bronzeDragonDefeated;
+    }
+
+    public void setBronzeDragonDefeated(boolean bronzeDragonDefeated) {
+        this.bronzeDragonDefeated = bronzeDragonDefeated;
     }
 
     public void cycleTimeOfDay() {
@@ -582,7 +639,7 @@ public class GameHandler extends JPanel implements Runnable {
 
         g2d.drawImage(lightingFilter, 0, 0, null);
     }
-  
+
     private void transferChestItemToPlayer() {
         if (activeChest == null) {
             return;
