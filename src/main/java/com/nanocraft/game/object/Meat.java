@@ -21,11 +21,11 @@ public class Meat extends Entity {
     public boolean use(Player player) {
         int restoredLife = restoreLife(player, HEAL_AMOUNT);
         if (restoredLife <= 0) {
-            gh.ui.addMessage("Health is full.");
+            gh.ui.addMessage("Health is full. " + healthStatus(player));
             return false;
         }
 
-        gh.ui.addMessage("Meat restored " + restoredLife + " life.");
+        gh.ui.addMessage("You ate Meat. " + healthStatus(player));
         return true;
     }
 }

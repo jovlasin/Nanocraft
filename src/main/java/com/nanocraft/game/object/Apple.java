@@ -21,11 +21,11 @@ public class Apple extends Entity {
     public boolean use(Player player) {
         int restoredLife = restoreLife(player, HEAL_AMOUNT);
         if (restoredLife <= 0) {
-            gh.ui.addMessage("Health is full.");
+            gh.ui.addMessage("Health is full. " + healthStatus(player));
             return false;
         }
 
-        gh.ui.addMessage("Apple restored " + restoredLife + " life.");
+        gh.ui.addMessage("You ate an Apple. " + healthStatus(player));
         return true;
     }
 }
