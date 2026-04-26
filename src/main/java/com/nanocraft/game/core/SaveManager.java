@@ -30,6 +30,9 @@ public class SaveManager {
         saveData.mapStates = gh.th.createMapStateSaveData();
         saveData.objectStates = gh.createObjectSaveData();
         saveData.monsterStates = gh.createMonsterSaveData();
+        saveData.skeletonKingDefeated = gh.isSkeletonKingDefeated();
+        saveData.bronzeDragonDefeated = gh.isBronzeDragonDefeated();
+        saveData.dayNightTick = gh.dayNightCycle.getCurrentTick();
 
         try (Writer writer = Files.newBufferedWriter(SAVE_FILE_PATH)) {
             gson.toJson(saveData, writer);
@@ -62,6 +65,9 @@ public class SaveManager {
         public List<MapStateData> mapStates = new ArrayList<>();
         public List<ObjectMapData> objectStates = new ArrayList<>();
         public List<MonsterMapData> monsterStates = new ArrayList<>();
+        public boolean skeletonKingDefeated;
+        public boolean bronzeDragonDefeated;
+        public int dayNightTick = -1;
     }
 
     public static class PlayerData {
