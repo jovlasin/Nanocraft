@@ -338,6 +338,7 @@ public class GameHandler extends JPanel implements Runnable {
         th.restoreChestSaveData(saveData.chests);
         th.restoreMapStateSaveData(saveData.mapStates);
         th.loadMap(saveData.currentMapPath);
+        syncDayNightState();
         refreshCurrentMapState();
         player.applySaveData(saveData.player);
         gameState = play;
@@ -913,6 +914,12 @@ public class GameHandler extends JPanel implements Runnable {
 
         monsterSpawnWindowOpen = spawnWindowOpenNow;
         ah.setMonsters();
+    }
+
+    private void syncDayNightState() {
+        wasNightPhase = dayNightCycle.isNight();
+        monsterSpawnWindowOpen = isNightForMonsterSpawns();
+        lightingFilter = null;
     }
 
     private void clearKilledMonstersForNightRespawn() {
