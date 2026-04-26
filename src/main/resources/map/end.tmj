@@ -29,9 +29,54 @@
          "width":20,
          "x":0,
          "y":0
+        },
+        {
+         "data":[],
+         "height":20,
+         "id":4,
+         "name":"Portal",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":20,
+         "x":0,
+         "y":0
+        },
+        {
+         "draworder":"topdown",
+         "id":3,
+         "name":"Markers",
+         "objects":[
+                {
+                 "height":16,
+                 "id":1,
+                 "name":"bronze_dragon_spawn",
+                 "rotation":0,
+                 "type":"spawn",
+                 "visible":true,
+                 "width":16,
+                 "x":128,
+                 "y":144
+                },
+                {
+                 "height":16,
+                 "id":2,
+                 "name":"end_return_portal_spawn",
+                 "rotation":0,
+                 "type":"spawn",
+                 "visible":true,
+                 "width":16,
+                 "x":144,
+                 "y":208
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":3,
- "nextobjectid":1,
+ "nextlayerid":5,
+ "nextobjectid":3,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.1",
@@ -101,6 +146,44 @@
                          "name":"collision",
                          "type":"bool",
                          "value":true
+                        }]
+                }],
+         "tilewidth":16
+        },
+        {
+         "columns":1,
+         "firstgid":105,
+         "image":"..\/tile\/portal.png",
+         "imageheight":16,
+         "imagewidth":16,
+         "margin":0,
+         "name":"end_return_portal",
+         "spacing":0,
+         "tilecount":1,
+         "tileheight":16,
+         "tiles":[
+                {
+                 "id":0,
+                 "properties":[
+                        {
+                         "name":"targetCol",
+                         "type":"int",
+                         "value":25
+                        },
+                        {
+                         "name":"targetMap",
+                         "type":"string",
+                         "value":"village.tmj"
+                        },
+                        {
+                         "name":"targetRow",
+                         "type":"int",
+                         "value":6
+                        },
+                        {
+                         "name":"targetDirection",
+                         "type":"string",
+                         "value":"down"
                         }]
                 }],
          "tilewidth":16

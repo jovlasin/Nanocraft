@@ -15,12 +15,17 @@ import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
     private static final String DEFAULT_MAP_PATH = "/map/village.tmj";
+    private static final String END_MAP_PATH = "/map/end.tmj";
+    private static final String END_MAP_REQUIRED_ITEM_ID = "eye_of_ender";
     private static final String VILLAGE_MAP_PATH = "/map/village.tmj";
     private static final String CHEST_INTERACTION_TYPE = "chest";
     private static final Set<String> FALLBACK_CHEST_TILE_TYPES = Set.of("034", "035");
     private static final Set<String> MARKER_MAP_CHEST_TILE_TYPES = Set.of("035");
     private static final int MAX_RANDOM_CHEST_LOOT_ITEMS = 3;
+    private static final int MIN_ARROW_CHEST_STACK = 5;
+    private static final int MAX_ARROW_CHEST_STACK = 10;
     private static final List<String> RANDOM_CHEST_LOOT_POOL = List.of(
+        "arrow",
         "apple",
         "meat",
         "medkit",
@@ -34,6 +39,7 @@ public class TileHandler {
     private final List<int[][]> layers;
     private final List<int[][]> layerHealth;
     private final List<String> layerNames;
+    private final List<MapMarker> markers;
     private final Map<String, ChestState> chestRegistry;
     private final Map<String, StoredMapState> storedMapStates;
 
@@ -42,6 +48,7 @@ public class TileHandler {
     private int belowPlayerLayerCount;
     private boolean zeroMeansEmpty;
     private boolean currentMapHasChestDefinitions;
+    private int blockedTransitionMessageCooldown;
     private String currentMapPath;
     private final List<MapTransition> transitions;
     private final Random random;
@@ -57,6 +64,7 @@ public class TileHandler {
         this.chestRegistry = new HashMap<>();
         this.storedMapStates = new HashMap<>();
         this.transitions = new ArrayList<>();
+        this.markers = new ArrayList<>();
         this.random = new Random();
         loadMap(DEFAULT_MAP_PATH);
     }
@@ -150,16 +158,19 @@ public class TileHandler {
         tileRegistry.clear();
         layers.clear();
         layerNames.clear();
+        markers.clear();
 
         tileRegistry.putAll(mapData.tileRegistry);
         layers.addAll(mapData.layers);
         layerNames.addAll(mapData.layerNames);
         transitions.clear();
         transitions.addAll(mapData.transitions);
+        markers.addAll(mapData.markers);
         mapWidth = mapData.mapWidth;
         mapHeight = mapData.mapHeight;
         zeroMeansEmpty = mapData.zeroMeansEmpty;
         currentMapHasChestDefinitions = mapData.chestDefinitions != null && !mapData.chestDefinitions.isEmpty();
+        blockedTransitionMessageCooldown = 0;
         currentMapPath = mapPath;
         registerChestDefinitions(mapData.chestDefinitions);
         registerChestTiles();
@@ -270,6 +281,53 @@ public class TileHandler {
         return currentMapPath;
     }
 
+    public MapMarker getMarker(String markerName) {
+        if (markerName == null || markerName.isBlank()) {
+            return null;
+        }
+
+        for (MapMarker marker : markers) {
+            if (marker != null && marker.name != null && marker.name.equalsIgnoreCase(markerName)) {
+                return marker;
+            }
+        }
+
+        return null;
+    }
+
+    public boolean placeTileAtMarker(String layerName, String markerName, String tileType) {
+        MapMarker marker = getMarker(markerName);
+        if (marker == null) {
+            return false;
+        }
+
+        int tileId = findTileIdByType(tileType);
+        if (tileId < 0) {
+            return false;
+        }
+
+        return setTileAt(layerName, marker.col, marker.row, tileId);
+    }
+
+    public boolean setTileAt(String layerName, int col, int row, int tileId) {
+        int layerIndex = findLayerIndex(layerName);
+        if (layerIndex < 0 || !isInsideMap(col, row)) {
+            return false;
+        }
+
+        if (tileId < 0 || !tileRegistry.containsKey(tileId)) {
+            return false;
+        }
+
+        int[][] layer = layers.get(layerIndex);
+        if (layer[col][row] == tileId) {
+            return false;
+        }
+
+        replaceTile(layerIndex, col, row, tileId);
+        return true;
+    }
+
     public MapTransition getTransitionAt(int col, int row) {
         for (MapTransition transition : transitions) {
             if (transition != null && transition.contains(col, row)) {
@@ -311,11 +369,51 @@ public class TileHandler {
         return null;
     }
 
+    public int[] findNearestOpenTile(int preferredCol, int preferredRow) {
+        if (mapWidth <= 0 || mapHeight <= 0) {
+            return null;
+        }
+
+        int clampedCol = Math.max(0, Math.min(mapWidth - 1, preferredCol));
+        int clampedRow = Math.max(0, Math.min(mapHeight - 1, preferredRow));
+        int maxRadius = Math.max(mapWidth, mapHeight);
+
+        for (int radius = 0; radius < maxRadius; radius++) {
+            int minCol = Math.max(0, clampedCol - radius);
+            int maxCol = Math.min(mapWidth - 1, clampedCol + radius);
+            int minRow = Math.max(0, clampedRow - radius);
+            int maxRow = Math.min(mapHeight - 1, clampedRow + radius);
+
+            for (int row = minRow; row <= maxRow; row++) {
+                for (int col = minCol; col <= maxCol; col++) {
+                    boolean onPerimeter = radius == 0 || col == minCol || col == maxCol || row == minRow || row == maxRow;
+                    if (onPerimeter == false) {
+                        continue;
+                    }
+
+                    if (isCollisionAt(col, row) == false) {
+                        return new int[] { col, row };
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     public void checkMapTransition() {
+        if (blockedTransitionMessageCooldown > 0) {
+            blockedTransitionMessageCooldown--;
+        }
+
         int playerCol = (gh.player.worldX + gh.player.solidArea.x + (gh.player.solidArea.width / 2)) / gh.tileSize;
         int playerRow = (gh.player.worldY + gh.player.solidArea.y + (gh.player.solidArea.height / 2)) / gh.tileSize;
         MapTransition transition = getTransitionAt(playerCol, playerRow);
         if (transition != null) {
+            if (isBlockedEndTransition(transition)) {
+                return;
+            }
+            consumeEndTransitionItem(transition);
             swapMap(transition.targetMapPath, transition.targetCol, transition.targetRow, transition.targetDirection);
         }
     }
@@ -326,7 +424,52 @@ public class TileHandler {
         gh.player.worldX = playerCol * gh.tileSize;
         gh.player.worldY = playerRow * gh.tileSize;
         gh.player.direction = direction;
+        gh.clearProjectiles();
         gh.refreshCurrentMapState();
+    }
+
+    private boolean isBlockedEndTransition(MapTransition transition) {
+        if (transition == null || END_MAP_PATH.equals(transition.targetMapPath) == false) {
+            return false;
+        }
+
+        if (gh.isBronzeDragonDefeated()) {
+            return false;
+        }
+
+        if (gh.player.hasItem(END_MAP_REQUIRED_ITEM_ID)) {
+            return false;
+        }
+
+        if (blockedTransitionMessageCooldown == 0) {
+            gh.ui.addMessage("Need Eye of Ender to enter the End!");
+            blockedTransitionMessageCooldown = 30;
+        }
+
+        return true;
+    }
+
+    private void consumeEndTransitionItem(MapTransition transition) {
+        if (transition == null || END_MAP_PATH.equals(transition.targetMapPath) == false) {
+            return;
+        }
+
+        if (gh.isBronzeDragonDefeated()) {
+            return;
+        }
+
+        for (int i = 0; i < gh.player.inventory.size(); i++) {
+            Entity item = gh.player.inventory.get(i);
+            if (item == null || END_MAP_REQUIRED_ITEM_ID.equalsIgnoreCase(item.itemId) == false) {
+                continue;
+            }
+
+            item.stackCount--;
+            if (item.stackCount <= 0) {
+                gh.player.inventory.remove(i);
+            }
+            return;
+        }
     }
 
     public Tile getTopBreakableTileAt(int col, int row) {
@@ -512,6 +655,42 @@ public class TileHandler {
         return tileRegistry.get(globalId);
     }
 
+    private int findLayerIndex(String layerName) {
+        if (layerName == null || layerName.isBlank()) {
+            return -1;
+        }
+
+        for (int i = 0; i < layerNames.size(); i++) {
+            String currentLayerName = layerNames.get(i);
+            if (currentLayerName != null && currentLayerName.equalsIgnoreCase(layerName)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private int findTileIdByType(String tileType) {
+        if (tileType == null || tileType.isBlank()) {
+            return -1;
+        }
+
+        int matchingTileId = -1;
+
+        for (Map.Entry<Integer, Tile> entry : tileRegistry.entrySet()) {
+            Tile tile = entry.getValue();
+            if (tile == null || tile.type == null || !tile.type.equalsIgnoreCase(tileType)) {
+                continue;
+            }
+
+            if (matchingTileId < 0 || entry.getKey() < matchingTileId) {
+                matchingTileId = entry.getKey();
+            }
+        }
+
+        return matchingTileId;
+    }
+
     private void initializeLayerHealth() {
         layerHealth.clear();
 
@@ -694,20 +873,40 @@ public class TileHandler {
     }
 
     private void addLootItems(ChestState chestState, List<String> lootItemIds, String chestKey) {
+        boolean hasArrowStack = false;
+
         for (String itemId : lootItemIds) {
+            if ("arrow".equalsIgnoreCase(itemId) && hasArrowStack) {
+                continue;
+            }
+
             if (chestState.isFull()) {
                 System.out.println("Chest at " + chestKey + " exceeded capacity. Extra items were ignored.");
                 break;
             }
 
-            Entity item = gh.createItemEntity(itemId);
+            Entity item = createChestLootItem(itemId);
             if (item == null) {
                 System.out.println("Unknown chest item type '" + itemId + "' at " + chestKey + ".");
                 continue;
             }
 
             chestState.addItem(item);
+            hasArrowStack = hasArrowStack || "arrow".equalsIgnoreCase(item.itemId);
         }
+    }
+
+    Entity createChestLootItem(String itemId) {
+        Entity item = gh.createItemEntity(itemId);
+        if (item == null) {
+            return null;
+        }
+
+        if ("arrow".equalsIgnoreCase(item.itemId)) {
+            item.stackCount = MIN_ARROW_CHEST_STACK + random.nextInt(MAX_ARROW_CHEST_STACK - MIN_ARROW_CHEST_STACK + 1);
+        }
+
+        return item;
     }
 
     private boolean isVillageFallbackMap() {

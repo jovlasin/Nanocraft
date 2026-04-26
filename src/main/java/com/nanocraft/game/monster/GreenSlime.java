@@ -1,4 +1,4 @@
-package com.nanocraft.monster;
+package com.nanocraft.game.monster;
 
 import java.util.Random;
 
