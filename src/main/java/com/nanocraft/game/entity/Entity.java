@@ -188,7 +188,7 @@ public class Entity {
     public void aggro() {}
     public void setAction() {}
 
-    public void onDefeated() {
+    public void onDefeat() {
         alive = false;
     }
 
