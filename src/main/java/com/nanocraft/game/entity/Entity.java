@@ -50,6 +50,7 @@ public class Entity {
     public boolean alive;
     public boolean attacking;
     public int attackValue;
+    public String dropItemType;
     public boolean stackable;
     public int stackCount;
     public int maxStackSize;
@@ -187,6 +188,10 @@ public class Entity {
     public void aggro() {}
     public void setAction() {}
 
+    public void onDefeated() {
+        alive = false;
+    }
+
     public void update() {
         setAction();
 
@@ -218,6 +223,15 @@ public class Entity {
                 case "right":
                     worldX += speed;
                 break;
+            }
+        }
+
+        if (invincible == true) {
+            invincibleCounter++;
+
+            if (invincibleCounter > 20) {
+                invincible = false;
+                invincibleCounter = 0;
             }
         }
         

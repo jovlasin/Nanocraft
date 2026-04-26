@@ -20,6 +20,8 @@ import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.Tile;
 
 public class Player extends Entity {
+    private static final String ARROW_ITEM_ID = "arrow";
+    private static final int ARROW_COOLDOWN_SECONDS = 2;
     private static final int MINE_COOLDOWN_TICKS = 8;
     private static final int TOOL_SWING_TOTAL_TICKS = 8;
     private static final int TOOL_SWING_FRAME_SWITCH_TICK = 4;
@@ -147,13 +149,7 @@ public class Player extends Entity {
         }
 
         updateToolSwingAnimation();
-
-        if (gh.kh.shoot == true && projectile.alive == false && shotCounter == 30) {
-            projectile.set(worldX, worldY, direction, true, this);
-            gh.projectileList.add(projectile);
-            shotCounter = 0;
-            // gh.playSound(10);
-        }
+        handleShootRequest();
 
         if (invincible == true) {
             invincibleCounter++;
@@ -164,7 +160,7 @@ public class Player extends Entity {
             }
         }
 
-        if (shotCounter < 30) {
+        if (shotCounter < getArrowCooldownTicks()) {
             shotCounter++;
         }
     }
@@ -317,6 +313,7 @@ public class Player extends Entity {
         coin = 0;
         currentWeapon = new Sword(gh);
         projectile = new Arrow(gh);
+        shotCounter = getArrowCooldownTicks();
         attack = getAttack();
         defense = getDefense();
     }
@@ -356,15 +353,8 @@ public class Player extends Entity {
 
     private void interactMonster(int i) {
         if (i != 999) {
-            if (invincible == false && gh.monsters[i].dying == false) {
-                // gh.playSound(6);
-                int damage = gh.monsters[i].attack - defense;
-
-                if (damage < 0) {
-                    damage = 0;
-                }
-                life -= damage;
-                invincible = true;
+            if (gh.monsters[i].dying == false) {
+                receiveDamage(gh.monsters[i].attack);
             }
         }
     }
@@ -452,6 +442,10 @@ public class Player extends Entity {
 
     public void damage(int i, int attack) {
         if (i != 999) {
+            if (gh.monsters[i].dying == true || gh.monsters[i].alive == false) {
+                return;
+            }
+
             if (gh.monsters[i].invincible == false) {
                 int damage = attack - gh.monsters[i].defense;
 
@@ -468,10 +462,28 @@ public class Player extends Entity {
                     gh.ui.addMessage("You killed a " + gh.monsters[i].name + "!");
                     gh.ui.addMessage("Exp + " + gh.monsters[i].exp);
                     exp += gh.monsters[i].exp;
+                    gh.monsters[i].onDefeated();
+                    if (gh.monsters[i].alive == false) {
+                        gh.monsters[i] = null;
+                    }
                     checkLevelUp();
                 }
             }
         }
+    }
+
+    public void receiveDamage(int incomingAttack) {
+        if (invincible == true) {
+            return;
+        }
+
+        int damage = incomingAttack - defense;
+        if (damage < 0) {
+            damage = 0;
+        }
+
+        life = Math.max(0, life - damage);
+        invincible = true;
     }
 
     private void checkLevelUp() {
@@ -603,7 +615,7 @@ public class Player extends Entity {
         collisionOn = false;
         invincible = false;
         invincibleCounter = 0;
-        shotCounter = 30;
+        shotCounter = getArrowCooldownTicks();
         spriteCounter = 0;
         spriteNum = 1;
         projectile = new Arrow(gh);
@@ -702,6 +714,60 @@ public class Player extends Entity {
         }
 
         return null;
+    }
+
+    private void handleShootRequest() {
+        if (!gh.kh.shoot) {
+            return;
+        }
+
+        gh.kh.shoot = false;
+
+        if (!hasItem(ARROW_ITEM_ID)) {
+            gh.ui.addMessage("Need an Arrow!");
+            return;
+        }
+
+        if (projectile.alive || shotCounter < getArrowCooldownTicks()) {
+            return;
+        }
+
+        if (!consumeInventoryItem(ARROW_ITEM_ID)) {
+            gh.ui.addMessage("Need an Arrow!");
+            return;
+        }
+
+        projectile.set(worldX, worldY, direction, true, this);
+        gh.projectileList.add(projectile);
+        shotCounter = 0;
+        // gh.playSound(10);
+    }
+
+    private boolean consumeInventoryItem(String itemId) {
+        if (itemId == null || itemId.isBlank()) {
+            return false;
+        }
+
+        for (int i = 0; i < inventory.size(); i++) {
+            Entity item = inventory.get(i);
+            if (item == null || !itemId.equalsIgnoreCase(item.itemId)) {
+                continue;
+            }
+
+            item.stackCount--;
+            if (item.stackCount <= 0) {
+                Entity removedItem = inventory.remove(i);
+                handleRemovedInventoryItem(removedItem);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private int getArrowCooldownTicks() {
+        return Math.max(1, (int) Math.round(gh.fps * ARROW_COOLDOWN_SECONDS));
     }
 
     private boolean canStoreMinedDrop(String itemType) {
