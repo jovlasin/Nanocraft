@@ -15,7 +15,7 @@ import com.nanocraft.game.object.Heart;
 
 public class Ui {
     private static final int INVENTORY_COLUMNS = 10;
-    private static final int INVENTORY_ROWS = 4;
+    private static final int INVENTORY_ROWS = 3;
     private GameHandler gh;
     private Font text;
     public Graphics2D g2d;
@@ -186,13 +186,13 @@ public class Ui {
 
     public void moveChestCursor(int deltaCol, int deltaRow) {
         if (chestPanelActive) {
-            chestSlotCol = clamp(chestSlotCol + deltaCol, 0, 4);
-            chestSlotRow = clamp(chestSlotRow + deltaRow, 0, 3);
+            chestSlotCol = clamp(chestSlotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
+            chestSlotRow = clamp(chestSlotRow + deltaRow, 0, INVENTORY_ROWS - 1);
             return;
         }
 
-        playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, 4);
-        playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, 3);
+        playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
+        playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, INVENTORY_ROWS - 1);
     }
 
     public void moveInventoryCursor(int deltaCol, int deltaRow) {
@@ -648,59 +648,50 @@ public class Ui {
     }
 
     private void drawChestScreen() {
-        int panelY = gh.tileSize / 2;
-        int panelWidth = gh.tileSize * 6;
-        int panelHeight = gh.tileSize * 6;
-        int leftPanelX = gh.tileSize / 2;
-        int rightPanelX = gh.screenWidth - panelWidth - (gh.tileSize / 2);
-        int infoY = panelY + panelHeight + (gh.tileSize / 4);
+        drawOverlayBackdrop();
 
-        drawGridPanel(leftPanelX, panelY, panelWidth, panelHeight, "Chest", gh.activeChest == null ? List.of() : gh.activeChest.items,
-            chestSlotCol, chestSlotRow, chestPanelActive);
-        drawGridPanel(rightPanelX, panelY, panelWidth, panelHeight, "Inventory", gh.player.inventory,
-            playerChestSlotCol, playerChestSlotRow, !chestPanelActive);
+        int outerX = gh.tileSize;
+        int outerY = gh.tileSize / 2;
+        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerHeight = gh.screenHeight - gh.tileSize;
+        u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
 
-        int infoWidth = gh.screenWidth - gh.tileSize;
-        int infoHeight = gh.tileSize * 3;
-        int infoX = gh.tileSize / 2;
-        u.drawSubWindow(infoX, infoY, infoWidth, infoHeight, g2d);
+        drawScreenHeader("Chest", "TAB: Switch panel   SPACE/ENTER: Transfer item   ESC: Close", outerX, outerY, outerWidth);
 
-        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
-        int textX = infoX + 20;
-        int textY = infoY + 36;
-        g2d.drawString("TAB: Switch panel   SPACE/ENTER: Transfer item   ESC: Close chest", textX, textY);
-        textY += 36;
+        int panelX = outerX + 24;
+        int panelWidth = outerWidth - 48;
+        int slotGap = 10;
+        int horizontalPadding = (panelWidth - (INVENTORY_COLUMNS * gh.tileSize) - ((INVENTORY_COLUMNS - 1) * slotGap)) / 2;
+        int panelHeight = (INVENTORY_ROWS * gh.tileSize) + ((INVENTORY_ROWS - 1) * slotGap) + (horizontalPadding * 2);
+        int topPanelY = outerY + 74;
+        int bottomPanelY = outerY + outerHeight - panelHeight - 20;
 
-        Entity selectedItem = getSelectedChestScreenItem();
-        if (selectedItem != null) {
-            for (String line : selectedItem.description.split("\n")) {
-                g2d.drawString(line, textX, textY);
-                textY += 28;
-            }
-            return;
-        }
-
-        g2d.drawString("Select an item to move it between the chest and your inventory.", textX, textY);
+        drawGridPanel(panelX, topPanelY, panelWidth, panelHeight, "", gh.activeChest == null ? List.of() : gh.activeChest.items, chestSlotCol, chestSlotRow, chestPanelActive, false, horizontalPadding, slotGap);
+        drawGridPanel(panelX, bottomPanelY, panelWidth, panelHeight, "", gh.player.inventory, playerChestSlotCol, playerChestSlotRow, !chestPanelActive, true, horizontalPadding, slotGap);
     }
 
     private void drawGridPanel(int frameX, int frameY, int frameWidth, int frameHeight, String title, List<Entity> items,
-        int cursorCol, int cursorRow, boolean active) {
+        int cursorCol, int cursorRow, boolean active, boolean highlightEquippedWeapon, int horizontalPadding, int slotGap) {
         u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
         g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
         g2d.drawString(title, frameX + 20, frameY + 34);
 
-        int slotXstart = frameX + 20;
-        int slotYstart = frameY + 52;
+        int slotXstart = frameX + horizontalPadding;
+        int slotYstart = frameY + horizontalPadding;
         int slotX = slotXstart;
         int slotY = slotYstart;
-        int slotSize = gh.tileSize + 3;
+        int slotSize = gh.tileSize + slotGap;
 
         for (int i = 0; i < items.size(); i++) {
             Entity item = items.get(i);
+            if (highlightEquippedWeapon && item == gh.player.currentWeapon) {
+                g2d.setColor(new Color(240, 190, 90));
+                g2d.fillRoundRect(slotX - 3, slotY - 3, gh.tileSize + 6, gh.tileSize + 6, 12, 12);
+            }
             drawItemSlot(item, slotX, slotY);
 
             slotX += slotSize;
-            if (i == 4 || i == 9 || i == 14) {
+            if ((i + 1) % INVENTORY_COLUMNS == 0) {
                 slotX = slotXstart;
                 slotY += slotSize;
             }
@@ -710,29 +701,8 @@ public class Ui {
         int cursorY = slotYstart + (slotSize * cursorRow);
         g2d.setColor(active ? new Color(240, 190, 90) : Color.white);
         g2d.setStroke(new BasicStroke(3));
-        g2d.drawRoundRect(cursorX, cursorY, gh.tileSize, gh.tileSize, 10, 10);
+        g2d.drawRoundRect(cursorX - 4, cursorY - 4, gh.tileSize + 8, gh.tileSize + 8, 12, 12);
         g2d.setColor(Color.white);
-    }
-
-    private Entity getSelectedChestScreenItem() {
-        if (chestPanelActive) {
-            if (gh.activeChest == null) {
-                return null;
-            }
-
-            int itemIndex = getSelectedChestSlotIndex();
-            if (itemIndex < gh.activeChest.items.size()) {
-                return gh.activeChest.items.get(itemIndex);
-            }
-            return null;
-        }
-
-        int itemIndex = getSelectedPlayerChestSlotIndex();
-        if (itemIndex < gh.player.inventory.size()) {
-            return gh.player.inventory.get(itemIndex);
-        }
-
-        return null;
     }
 
     public int getItemIndexOnSlot() {
@@ -740,7 +710,7 @@ public class Ui {
     }
 
     private int getItemIndexOnSlot(int slotCol, int slotRow) {
-        return slotCol + (slotRow * 5);
+        return slotCol + (slotRow * INVENTORY_COLUMNS);
     }
 
     private int clamp(int value, int min, int max) {

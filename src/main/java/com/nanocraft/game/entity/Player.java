@@ -35,7 +35,7 @@ public class Player extends Entity {
     private Entity toolSwingSource;
     private KeyHandler kh;
     public ArrayList<Entity> inventory = new ArrayList<>();
-    public final int inventorySize = 40;
+    public final int inventorySize = 30;
     public boolean cancelAttack;
 
     public Player(GameHandler gh, KeyHandler kh) {
