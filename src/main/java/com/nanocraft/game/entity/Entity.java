@@ -266,6 +266,14 @@ public class Entity {
         return restoredLife;
     }
 
+    protected String healthStatus(Player player) {
+        if (player == null) {
+            return "Health: 0/0";
+        }
+
+        return "Health: " + player.life + "/" + player.maxLife;
+    }
+
     public String getStackKey() {
         return getClass().getName();
     }

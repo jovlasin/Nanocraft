@@ -255,6 +255,7 @@ public class PlayerInteractionTest {
 
         assertEquals(gh.player.maxLife, gh.player.life);
         assertEquals(2, gh.player.inventory.size());
+        assertEquals("You ate an Apple. Health: 6/6", latestMessage(gh));
     }
 
     @Test
@@ -271,10 +272,29 @@ public class PlayerInteractionTest {
         assertEquals(gh.player.maxLife, gh.player.life);
         assertEquals(3, gh.player.inventory.size());
         assertSame(meat, gh.player.inventory.get(2));
+        assertEquals(1, meat.stackCount);
+        assertEquals("Health is full. Health: 6/6", latestMessage(gh));
     }
 
     @Test
-    public void usingStackedMedkitConsumesOnlyOneItem() {
+    public void usingStackedMeatConsumesOnlyOneItem() {
+        GameHandler gh = new GameHandler();
+        assertTrue(gh.player.addToInventory(new Meat(gh)));
+        assertTrue(gh.player.addToInventory(new Meat(gh)));
+        gh.player.life = gh.player.maxLife - 2;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals("You ate Meat. Health: 6/6", latestMessage(gh));
+    }
+
+    @Test
+    public void usingStackedMedkitConsumesOnlyOneItemAndCapsAtMaxHealth() {
         GameHandler gh = new GameHandler();
         assertTrue(gh.player.addToInventory(new Medkit(gh)));
         assertTrue(gh.player.addToInventory(new Medkit(gh)));
@@ -287,6 +307,7 @@ public class PlayerInteractionTest {
         assertEquals(gh.player.maxLife, gh.player.life);
         assertEquals(3, gh.player.inventory.size());
         assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals("You used a Medkit. Health: 6/6", latestMessage(gh));
     }
 
     @Test
@@ -515,6 +536,10 @@ public class PlayerInteractionTest {
 
         assertSame(sword.attackUp1, gh.player.resolveCurrentAttackSprite());
         assertNotEquals(sword.attackUp1, gh.player.up1);
+    }
+
+    private String latestMessage(GameHandler gh) {
+        return gh.ui.message.get(gh.ui.message.size() - 1);
     }
 
     private ChestPlacement findOpenableChestPlacement(GameHandler gh) {
