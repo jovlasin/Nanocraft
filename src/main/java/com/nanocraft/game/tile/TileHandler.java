@@ -277,6 +277,52 @@ public class TileHandler {
         return null;
     }
 
+    public int getContactDamageForArea(int worldX, int worldY, java.awt.Rectangle solidArea) {
+        if (solidArea == null) {
+            return 0;
+        }
+
+        int leftWorldX = worldX + solidArea.x;
+        int rightWorldX = worldX + solidArea.x + solidArea.width - 1;
+        int topWorldY = worldY + solidArea.y;
+        int bottomWorldY = worldY + solidArea.y + solidArea.height - 1;
+
+        int startCol = Math.floorDiv(leftWorldX, gh.tileSize);
+        int endCol = Math.floorDiv(rightWorldX, gh.tileSize);
+        int startRow = Math.floorDiv(topWorldY, gh.tileSize);
+        int endRow = Math.floorDiv(bottomWorldY, gh.tileSize);
+        int contactDamage = 0;
+
+        for (int row = startRow; row <= endRow; row++) {
+            for (int col = startCol; col <= endCol; col++) {
+                contactDamage = Math.max(contactDamage, getContactDamageAt(col, row));
+            }
+        }
+
+        return contactDamage;
+    }
+
+    public int getContactDamageAt(int col, int row) {
+        if (!isInsideMap(col, row)) {
+            return 0;
+        }
+
+        int contactDamage = 0;
+        for (int[][] layer : layers) {
+            int tileId = layer[col][row];
+            if (zeroMeansEmpty && tileId == 0) {
+                continue;
+            }
+
+            Tile currentTile = getTile(tileId);
+            if (currentTile != null) {
+                contactDamage = Math.max(contactDamage, currentTile.contactDamage);
+            }
+        }
+
+        return contactDamage;
+    }
+
     public String getCurrentMapPath() {
         return currentMapPath;
     }

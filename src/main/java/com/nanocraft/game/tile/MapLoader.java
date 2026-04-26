@@ -26,6 +26,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 
 public final class MapLoader {
+    private static final int DEFAULT_LAVA_CONTACT_DAMAGE = 1;
+
     public static final class MapData {
         final Map<Integer, Tile> tileRegistry;
         final List<int[][]> layers;
@@ -173,6 +175,7 @@ public final class MapLoader {
                 tile.requiredItemType = getStringProperty(tileData.properties, "requiredItemType", null);
                 tile.type = resolveTileType(tileset.name, tileData.image);
                 tile.interactionType = getInteractionType(tileData.properties);
+                applyContactDamageProperties(tile, tileData.properties, tileset.properties);
                 applyTransitionProperties(tile, mapFilePath, tileData.properties);
 
                 int globalId = tileset.firstgid + tileData.id;
@@ -236,6 +239,15 @@ public final class MapLoader {
             tile.requiredItemType = requiredItemByTileId.get(0);
             tile.type = resolveTileType(tileset.name, tileset.image);
             tile.interactionType = interactionByTileId.get(0);
+            applyContactDamageProperties(
+                tile,
+                tileset.tiles == null ? null : tileset.tiles.stream()
+                    .filter(tileData -> tileData != null && tileData.id == 0)
+                    .findFirst()
+                    .map(tileData -> tileData.properties)
+                    .orElse(null),
+                tileset.properties
+            );
             applyTransitionProperties(tile, mapFilePath, tileset.tiles == null ? null : tileset.tiles.stream()
                 .filter(tileData -> tileData != null && tileData.id == 0)
                 .findFirst()
@@ -265,6 +277,7 @@ public final class MapLoader {
             tile.requiredItemType = requiredItemByTileId.get(localId);
             tile.type = resolveTileType(tileset.name, tileset.image);
             tile.interactionType = interactionByTileId.get(localId);
+            applyContactDamageProperties(tile, findTileProperties(tileset.tiles, localId), tileset.properties);
             applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(tileset.firstgid + localId, tile);
         }
@@ -323,6 +336,7 @@ public final class MapLoader {
             tile.requiredItemType = requiredItemByTileId.get(localId);
             tile.type = resolveTileType(tileset.name, imagePath);
             tile.interactionType = interactionByTileId.get(localId);
+            applyContactDamageProperties(tile, findTileProperties(tileset.tiles, localId), tileset.properties);
             applyTransitionProperties(tile, mapFilePath, findTileProperties(tileset.tiles, localId));
             tileRegistry.put(gid, tile);
         }
@@ -578,6 +592,48 @@ public final class MapLoader {
         tile.targetCol = targetCol;
         tile.targetRow = targetRow;
         tile.targetDirection = getStringProperty(properties, "targetDirection", "down");
+    }
+
+    private void applyContactDamageProperties(
+        Tile tile,
+        List<TiledPropertyData> tileProperties,
+        List<TiledPropertyData> tilesetProperties
+    ) {
+        if (tile == null) {
+            return;
+        }
+
+        int contactDamage = getContactDamage(tileProperties);
+        if (contactDamage <= 0) {
+            contactDamage = getContactDamage(tilesetProperties);
+        }
+
+        if (contactDamage <= 0 && isLavaTile(tile)) {
+            contactDamage = DEFAULT_LAVA_CONTACT_DAMAGE;
+        }
+
+        tile.contactDamage = Math.max(0, contactDamage);
+        if (tile.contactDamage > 0) {
+            tile.collision = false;
+        }
+    }
+
+    private int getContactDamage(List<TiledPropertyData> properties) {
+        int contactDamage = getIntProperty(properties, "contactDamage", 0);
+        if (contactDamage > 0) {
+            return contactDamage;
+        }
+
+        contactDamage = getIntProperty(properties, "damage_Lava", 0);
+        if (contactDamage > 0) {
+            return contactDamage;
+        }
+
+        return getIntProperty(properties, "damage", 0);
+    }
+
+    private boolean isLavaTile(Tile tile) {
+        return tile.type != null && "lava".equalsIgnoreCase(tile.type.trim());
     }
 
     private boolean hasCollisionProperty(List<TiledPropertyData> properties) {
