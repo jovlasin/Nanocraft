@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.nanocraft.game.entity.BronzeDragon;
+import com.nanocraft.game.monster.Dragon;
 import com.nanocraft.game.tile.MapMarker;
 import com.nanocraft.game.tile.MapTransition;
 
@@ -22,7 +22,7 @@ public class DragonFightMergeTest {
         assertNotNull(marker);
         assertEquals(8, marker.col);
         assertEquals(9, marker.row);
-        assertTrue(gh.monsters[0] instanceof BronzeDragon);
+        assertTrue(gh.monsters[0] instanceof Dragon);
         assertEquals(36, gh.monsters[0].maxLife);
         assertEquals(36, gh.monsters[0].life);
         assertEquals(40, gh.monsters[0].exp);

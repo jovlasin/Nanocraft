@@ -66,8 +66,8 @@
                  "type":"spawn",
                  "visible":true,
                  "width":16,
-                 "x":128,
-                 "y":144
+                 "x":144,
+                 "y":208
                 }],
          "opacity":1,
          "type":"objectgroup",

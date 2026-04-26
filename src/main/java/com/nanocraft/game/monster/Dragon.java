@@ -1,4 +1,4 @@
-package com.nanocraft.game.entity;
+package com.nanocraft.game.monster;
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
@@ -8,9 +8,11 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.entity.Entity;
+import com.nanocraft.game.object.Fireball;
 import com.nanocraft.game.tile.ResourceLoader;
 
-public class BronzeDragon extends Entity {
+public class Dragon extends Entity {
     private static final int MAX_LIFE = 36;
     private static final int FRAME_COUNT = 4;
     private static final int SOURCE_FRAME_SIZE = 16;
@@ -31,7 +33,7 @@ public class BronzeDragon extends Entity {
     private int dyingCounter;
     private boolean defeatHandled;
 
-    public BronzeDragon(GameHandler gh) {
+    public Dragon(GameHandler gh) {
         super(gh);
 
         this.frames = new BufferedImage[FRAME_COUNT];
@@ -110,7 +112,7 @@ public class BronzeDragon extends Entity {
 
     private void loadFrames() {
         try {
-            BufferedImage spriteSheet = ImageIO.read(getClass().getResourceAsStream("/boss/MatureBronzeDragon.png"));
+            BufferedImage spriteSheet = ImageIO.read(getClass().getResourceAsStream("/monster/Dragon.png"));
             if (spriteSheet == null) {
                 throw new IOException("Missing bronze dragon sprite sheet");
             }
@@ -150,11 +152,11 @@ public class BronzeDragon extends Entity {
         }
 
         shootCounter = 0;
-        DragonFireball fireball = new DragonFireball(gh);
-        int startX = worldX + (drawWidth / 2) - (DragonFireball.SIZE / 2);
+        Fireball fireball = new Fireball(gh);
+        int startX = worldX + (drawWidth / 2) - (Fireball.SIZE / 2);
         int startY = worldY + gh.tileSize + (gh.tileSize / 4);
-        int targetX = gh.player.worldX + gh.player.solidArea.x + (gh.player.solidArea.width / 2) - (DragonFireball.SIZE / 2);
-        int targetY = gh.player.worldY + gh.player.solidArea.y + (gh.player.solidArea.height / 2) - (DragonFireball.SIZE / 2);
+        int targetX = gh.player.worldX + gh.player.solidArea.x + (gh.player.solidArea.width / 2) - (Fireball.SIZE / 2);
+        int targetY = gh.player.worldY + gh.player.solidArea.y + (gh.player.solidArea.height / 2) - (Fireball.SIZE / 2);
 
         fireball.setTrajectory(startX, startY, targetX, targetY, attack);
         gh.projectileList.add(fireball);
@@ -182,5 +184,15 @@ public class BronzeDragon extends Entity {
         if (dyingCounter > DYING_DURATION_TICKS) {
             alive = false;
         }
+    }
+
+    @Override
+    public void onDefeat() {
+        if (defeatHandled == false) {
+            defeatHandled = true;
+            gh.handleBronzeDragonDefeat();
+        }
+
+        alive = false;
     }
 }

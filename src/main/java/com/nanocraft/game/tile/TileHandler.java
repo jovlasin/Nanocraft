@@ -433,6 +433,10 @@ public class TileHandler {
             return false;
         }
 
+        if (gh.isBronzeDragonDefeated()) {
+            return false;
+        }
+
         if (gh.player.hasItem(END_MAP_REQUIRED_ITEM_ID)) {
             return false;
         }
@@ -447,6 +451,10 @@ public class TileHandler {
 
     private void consumeEndTransitionItem(MapTransition transition) {
         if (transition == null || END_MAP_PATH.equals(transition.targetMapPath) == false) {
+            return;
+        }
+
+        if (gh.isBronzeDragonDefeated()) {
             return;
         }
 

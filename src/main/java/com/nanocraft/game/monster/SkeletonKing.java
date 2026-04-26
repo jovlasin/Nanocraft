@@ -1,12 +1,13 @@
-package com.nanocraft.game.entity;
+package com.nanocraft.game.monster;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.object.Arrow;
 
-public class SkeletonBoss extends Entity {
+public class SkeletonKing extends Entity {
     private static final int DRAW_SIZE_MULTIPLIER = 3;
     private static final int CHASE_SPEED = 3;
     private static final int SHOOT_RANGE_TILES = 14;
@@ -17,7 +18,7 @@ public class SkeletonBoss extends Entity {
     private final int verticalDrawOffset;
     private boolean defeatHandled;
 
-    public SkeletonBoss(GameHandler gh) {
+    public SkeletonKing(GameHandler gh) {
         super(gh);
 
         type = TYPE_MONSTER;
@@ -122,7 +123,9 @@ public class SkeletonBoss extends Entity {
     }
 
     @Override
-    public void onDefeated() {
+    public void onDefeat() {
+        gh.setSkeletonKingDefeated(true);
+
         if (defeatHandled == false && dropItemType != null && dropItemType.isBlank() == false) {
             gh.spawnDroppedItem(worldX, worldY, dropItemType);
             defeatHandled = true;
