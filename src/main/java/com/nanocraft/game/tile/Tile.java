@@ -11,6 +11,7 @@ public class Tile {
     public String requiredItemType;
     public String type;
     public String interactionType;
+    public int contactDamage;
     public String targetMapPath;
     public int targetCol = -1;
     public int targetRow = -1;

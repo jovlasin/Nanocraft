@@ -25,12 +25,14 @@ public class Player extends Entity {
     private static final int MINE_COOLDOWN_TICKS = 8;
     private static final int TOOL_SWING_TOTAL_TICKS = 8;
     private static final int TOOL_SWING_FRAME_SWITCH_TICK = 4;
+    private static final int LAVA_MESSAGE_COOLDOWN_TICKS = 20;
     public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
     public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     private int standCounter;
     private int mineCooldownTicks;
     private int toolSwingTicks;
     private int toolSwingSpriteNum = 1;
+    private int lavaMessageCooldownTicks;
     private boolean interactRequested;
     private Entity toolSwingSource;
     private KeyHandler kh;
@@ -150,6 +152,11 @@ public class Player extends Entity {
 
         updateToolSwingAnimation();
         handleShootRequest();
+        applyContactTileDamage();
+
+        if (lavaMessageCooldownTicks > 0) {
+            lavaMessageCooldownTicks--;
+        }
 
         if (invincible == true) {
             invincibleCounter++;
@@ -485,6 +492,29 @@ public class Player extends Entity {
 
         life = Math.max(0, life - damage);
         invincible = true;
+    }
+
+    private void applyContactTileDamage() {
+        int contactDamage = gh.th.getContactDamageForArea(worldX, worldY, solidArea);
+        if (contactDamage <= 0) {
+            return;
+        }
+
+        if (receiveEnvironmentalDamage(contactDamage) && lavaMessageCooldownTicks == 0) {
+            gh.ui.addMessage("Lava burns!");
+            lavaMessageCooldownTicks = LAVA_MESSAGE_COOLDOWN_TICKS;
+        }
+    }
+
+    private boolean receiveEnvironmentalDamage(int damage) {
+        if (invincible == true || damage <= 0) {
+            return false;
+        }
+
+        int previousLife = life;
+        life = Math.max(0, life - damage);
+        invincible = true;
+        return life < previousLife;
     }
 
     private void checkLevelUp() {
