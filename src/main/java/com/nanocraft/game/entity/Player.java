@@ -511,7 +511,8 @@ public class Player extends Entity {
 
             item.stackCount--;
             if (item.stackCount <= 0) {
-                inventory.remove(itemIndex);
+                Entity removedItem = inventory.remove(itemIndex);
+                handleRemovedInventoryItem(removedItem);
             }
             return;
         }
