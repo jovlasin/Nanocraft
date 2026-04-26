@@ -14,6 +14,8 @@ import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.object.Heart;
 
 public class Ui {
+    private static final int INVENTORY_COLUMNS = 10;
+    private static final int INVENTORY_ROWS = 3;
     private GameHandler gh;
     private Font text;
     public Graphics2D g2d;
@@ -25,6 +27,9 @@ public class Ui {
     private int pauseMenuIndex;
     private boolean pauseExitConfirmationVisible;
     private int pauseExitConfirmationIndex;
+    private boolean inSettings;
+    private int settingsIndex;
+    private boolean controlMenu;
     private int chestSlotCol;
     private int chestSlotRow;
     private int playerChestSlotCol;
@@ -64,7 +69,7 @@ public class Ui {
         }
 
         else if (gh.gameState == gh.pause) {
-            drawPauseScreen();
+            drawPauseMenu();
         }
 
         else if (gh.gameState == gh.dialogue) {
@@ -72,9 +77,12 @@ public class Ui {
             drawDialogue();
         }
 
+        else if (gh.gameState == gh.inventory) {
+            drawInventoryScreen();
+        }
+
         else if (gh.gameState == gh.stats) {
-            drawStats();
-            drawInventory();
+            drawStatsScreen();
         }
 
         else if (gh.gameState == gh.chest) {
@@ -93,6 +101,9 @@ public class Ui {
         pauseMenuIndex = 0;
         pauseExitConfirmationVisible = false;
         pauseExitConfirmationIndex = 1;
+        inSettings = false;
+        settingsIndex = 0;
+        controlMenu = false;
     }
 
     public void movePauseMenuSelection(int delta) {
@@ -125,6 +136,42 @@ public class Ui {
         return pauseExitConfirmationIndex == 1;
     }
 
+    public void openSettings() {
+        inSettings = true;
+        settingsIndex = 0;
+        controlMenu = false;
+    }
+
+    public void closeSettings() {
+        inSettings = false;
+        settingsIndex = 0;
+        controlMenu = false;
+    }
+
+    public boolean isInSettings() {
+        return inSettings;
+    }
+
+    public void moveSettingsIndex(int delta) {
+        settingsIndex = clamp(settingsIndex + delta, 0, 4);
+    }
+
+    public int getSettingsIndex() {
+        return settingsIndex;
+    }
+
+    public void openControlMenu() {
+        controlMenu = true;
+    }
+
+    public void closeControlMenu() {
+        controlMenu = false;
+    }
+
+    public boolean isControlMenuVisible() {
+        return controlMenu;
+    }
+
     public void resetChestUi() {
         chestSlotCol = 0;
         chestSlotRow = 0;
@@ -139,13 +186,18 @@ public class Ui {
 
     public void moveChestCursor(int deltaCol, int deltaRow) {
         if (chestPanelActive) {
-            chestSlotCol = clamp(chestSlotCol + deltaCol, 0, 4);
-            chestSlotRow = clamp(chestSlotRow + deltaRow, 0, 3);
+            chestSlotCol = clamp(chestSlotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
+            chestSlotRow = clamp(chestSlotRow + deltaRow, 0, INVENTORY_ROWS - 1);
             return;
         }
 
-        playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, 4);
-        playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, 3);
+        playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
+        playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, INVENTORY_ROWS - 1);
+    }
+
+    public void moveInventoryCursor(int deltaCol, int deltaRow) {
+        slotCol = clamp(slotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
+        slotRow = clamp(slotRow + deltaRow, 0, INVENTORY_ROWS - 1);
     }
 
     public boolean isChestPanelActive() {
@@ -164,91 +216,205 @@ public class Ui {
         if (titleScreen == 0) {
             g2d.setColor(new Color(0, 0, 0));
             g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 96F));
-            String text = "NanoCraft";
-            int x = u.getXforCenteredText(text, g2d);
-            int y = gh.tileSize * 3;
+            int h = gh.tileSize * 4;
+            int y = gh.tileSize;
 
-            g2d.setColor(Color.darkGray);
-            g2d.drawString(text, x + 5, y + 5);
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 18F));
+            g2d.setColor(new Color(240, 190, 90));
+            String line = "SURVIVE. MINE. FIGHT.";
+            g2d.drawString(line, u.getXforCenteredText(line, g2d), y + 25);
 
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 58F));
             g2d.setColor(Color.white);
-            g2d.drawString(text, x, y);
+            String title = "NanoCraft";
+            g2d.drawString(title, u.getXforCenteredText(title, g2d), y + 94);
 
-            x = gh.screenWidth / 2 - (gh.tileSize * 2) / 2;
-            y += gh.tileSize * 2;
-            g2d.drawImage(gh.player.down1, x, y, gh.tileSize * 2, gh.tileSize * 2, null);
+            g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
+            g2d.setColor(new Color(190, 190, 190));
+            String subtitle = "A compact adventure awaits.";
+            g2d.drawString(subtitle, u.getXforCenteredText(subtitle, g2d), y + 145);
 
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 40F));
+            int menuY = y + h + gh.tileSize;
 
-            text = "NEW GAME";
-            x = u.getXforCenteredText(text, g2d);
-            y += gh.tileSize * 3.5;
-            g2d.drawString(text, x, y);
+            String[] options = {"NEW GAME", "LOAD GAME", "QUIT"};
+            int optionStartY = menuY + 40;
+            int optionHeight = 70;
 
-            if (commandNum == 0) {
-                g2d.drawString(">", x - gh.tileSize, y);
-            }
-
-            text = "LOAD GAME";
-            x = u.getXforCenteredText(text, g2d);
-            y += gh.tileSize;
-            g2d.drawString(text, x, y);
-
-            if (commandNum == 1) {
-                g2d.drawString(">", x - gh.tileSize, y);
-            }
-
-            text = "QUIT";
-            x = u.getXforCenteredText(text, g2d);
-            y += gh.tileSize;
-            g2d.drawString(text, x, y);
-
-            if (commandNum == 2) {
-                g2d.drawString(">", x - gh.tileSize, y);
+            for (int i = 0; i < options.length; i++) {
+                drawCenteredMenuOption(options[i], optionStartY + (i * optionHeight), commandNum == i);
             }
         }
     }
 
-    private void drawPauseScreen() {
-        g2d.setColor(new Color(0, 0, 0, 170));
-        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+    private void drawPauseMenu() {
+        if (inSettings) {
+            drawSettingsMenu();
+        } else {
+            g2d.setColor(new Color(0, 0, 0, 220));
+            g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
 
-        int frameWidth = gh.tileSize * 7;
-        int frameHeight = gh.tileSize * 7;
-        int frameX = (gh.screenWidth - frameWidth) / 2;
-        int frameY = (gh.screenHeight - frameHeight) / 2;
-        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
-
-        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
-        String title = "PAUSED";
-        g2d.drawString(title, u.getXforCenteredText(title, g2d), frameY + gh.tileSize + 8);
-
-        String[] options = { "CONTINUE", "SAVE", "LOAD", "EXIT" };
-        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 32F));
-
-        int optionY = frameY + (gh.tileSize * 2) + 12;
-        for (int i = 0; i < options.length; i++) {
-            String option = options[i];
-            int optionX = u.getXforCenteredText(option, g2d);
-
-            if (pauseMenuIndex == i) {
-                g2d.setColor(new Color(240, 190, 90));
-                g2d.drawString(">", optionX - gh.tileSize, optionY);
-            }
-
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+            String title = "PAUSED";
+            int titleY = gh.tileSize + 20;
             g2d.setColor(Color.white);
-            g2d.drawString(option, optionX, optionY);
-            optionY += gh.tileSize - 2;
+            g2d.drawString(title, u.getXforCenteredText(title, g2d), titleY);
+
+            int lineH = 60;
+            int startY = titleY + gh.tileSize + 65;
+
+            String[] options = {"Continue", "Save", "Load", "Settings", "Quit"};
+
+            for (int row = 0; row < options.length; row++) {
+                String label = options[row];
+
+                g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+                int y = startY + row * lineH;
+                int labelX = u.getXforCenteredText(label, g2d);
+
+                boolean selected = pauseMenuIndex == row;
+                g2d.setColor(selected ? new Color(240, 190, 90) : Color.white);
+
+                if (selected) {
+                    g2d.drawString(">", labelX - gh.tileSize, y);
+                }
+
+                g2d.drawString(label, labelX, y);
+            }
+            
+            g2d.setColor(Color.white);
+            g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+            String help = "ESC: Resume   ENTER/SPACE: Select";
+            g2d.drawString(help, u.getXforCenteredText(help, g2d), gh.screenHeight - gh.tileSize);
         }
 
-        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
-        String help = "ESC: Resume   ENTER/SPACE: Select";
-        g2d.drawString(help, u.getXforCenteredText(help, g2d), frameY + frameHeight - 18);
-
-        if (pauseExitConfirmationVisible) {
+        if (pauseExitConfirmationVisible && !inSettings) {
             drawPauseExitConfirmation();
         }
+
+        if (controlMenu) {
+            drawControlsMenu();
+        }
+    }
+
+    private void drawSettingsMenu() {
+        g2d.setColor(new Color(0, 0, 0, 220));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+        String head = "SETTINGS";
+        int titleY = gh.tileSize + 24;
+        g2d.setColor(Color.white);
+        g2d.drawString(head, u.getXforCenteredText(head, g2d), titleY);
+
+        int lineH = 60;
+        int startY = titleY + gh.tileSize + 80;
+        int centerX = gh.screenWidth / 2;
+        int label = centerX - gh.tileSize * 5;
+
+        for (int row = 0; row < 5; row++) {
+            g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+            int y = startY + row * lineH;
+            boolean sel = settingsIndex == row;
+            g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+
+            if (row == 0) {
+                if (sel) {
+                    g2d.drawString(">", label - gh.tileSize, y);
+                }
+                g2d.drawString("Full screen", label, y);
+                String box = gh.isFullScreen() ? "[X]" : "[  ]";
+                g2d.drawString(box, centerX + gh.tileSize, y);
+            } else if (row == 1) {
+                if (sel) {
+                    g2d.drawString(">", label - gh.tileSize, y);
+                }
+                g2d.setColor(Color.white);
+                g2d.drawString("Music volume", label, y);
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                drawVolumeSlider(centerX - 40, y - 18, gh.getMusicVolume());
+            } else if (row == 2) {
+                if (sel) {
+                    g2d.drawString(">", label - gh.tileSize, y);
+                }
+                g2d.setColor(Color.white);
+                g2d.drawString("Sound effects", label, y);
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                drawVolumeSlider(centerX - 40, y - 18, gh.getSfxVolume());
+            } else if (row == 3) {
+                int scX = u.getXforCenteredText("SHOW CONTROLS", g2d);
+                if (sel) {
+                    g2d.setColor(new Color(240, 190, 90));
+                    g2d.drawString(">", scX - gh.tileSize, y);
+                }
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                g2d.drawString("SHOW CONTROLS", scX, y);
+            } else {
+                int backX = u.getXforCenteredText("BACK", g2d);
+                if (sel) {
+                    g2d.setColor(new Color(240, 190, 90));
+                    g2d.drawString(">", backX - gh.tileSize, y);
+                }
+                g2d.setColor(sel ? new Color(240, 190, 90) : Color.white);
+                g2d.drawString("BACK", backX, y);
+            }
+        }
+
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+        String help = "UP/DOWN: Move   LEFT/RIGHT: Adjust sliders   ENTER: Choose   ESC: Back";
+        g2d.drawString(help, u.getXforCenteredText(help, g2d), gh.screenHeight - gh.tileSize);
+    }
+
+    private void drawVolumeSlider(int x, int y, int percent) {
+        Font before = g2d.getFont();
+        int w = gh.tileSize * 5;
+        int h = 16;
+        g2d.setColor(new Color(50, 50, 55));
+        g2d.fillRoundRect(x, y, w, h, 6, 6);
+        int fill = (w - 4) * percent / 100;
+        g2d.setColor(new Color(200, 160, 70));
+        g2d.fillRoundRect(x + 2, y + 2, Math.max(0, fill), h - 4, 4, 4);
+        g2d.setColor(Color.white);
+        g2d.setFont(text.deriveFont(Font.PLAIN, 20F));
+        g2d.drawString(percent + "%", x + w + 10, y + 14);
+        g2d.setFont(before);
+    }
+
+    private void drawControlsMenu() {
+        g2d.setColor(new Color(0, 0, 0, 210));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+
+        int frameW = Math.min(gh.screenWidth - gh.tileSize * 2, gh.tileSize * 14);
+        int frameH = gh.tileSize * 10;
+        int frameX = (gh.screenWidth - frameW) / 2;
+        int frameY = (gh.screenHeight - frameH) / 2;
+        u.drawSubWindow(frameX, frameY, frameW, frameH, g2d);
+
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 36F));
+        String t = "CONTROLS";
+        g2d.drawString(t, u.getXforCenteredText(t, g2d), frameY + 44);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 22F));
+        int tx = frameX + 32;
+        int ty = frameY + 90;
+        String[] lines = {
+            "Move:  W A S D  or  Arrow keys",
+            "Interact:  SPACE",
+            "Shoot:  F",
+            "Inventory / stats:  TAB",
+            "Pause:  ESC",
+            "Dialogue:  SPACE to continue",
+        };
+
+        for (String line : lines) {
+            g2d.drawString(line, tx, ty);
+            ty += 32;
+        }
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.ITALIC, 20F));
+        String closeHint = "ESC or ENTER: Close";
+        g2d.drawString(closeHint, u.getXforCenteredText(closeHint, g2d), frameY + frameH - 28);
     }
 
     private void drawPauseExitConfirmation() {
@@ -309,29 +475,44 @@ public class Ui {
         }
     }
 
-    private void drawInventory() {
-        final int frameX = gh.tileSize * 9;
-        final int frameY = gh.tileSize;
-        final int frameWidth = gh.tileSize * 6;
-        final int frameHeight = gh.tileSize * 5;
-        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+    private void drawInventoryScreen() {
+        drawOverlayBackdrop();
 
-        final int slotXstart = frameX + 20;
-        final int slotYstart = frameY + 20;
+        int outerX = gh.tileSize;
+        int outerY = gh.tileSize / 2;
+        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerHeight = gh.screenHeight - gh.tileSize;
+        u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
+
+        drawScreenHeader("INVENTORY", "TAB: Stats   ESC: Close   ENTER/SPACE: Equip or use", outerX, outerY, outerWidth);
+
+        int panelX = outerX + 24;
+        int panelY = outerY + 74;
+        int panelWidth = outerWidth - 48;
+        int slotGap = 10;
+        int horizontalPadding = (panelWidth - (INVENTORY_COLUMNS * gh.tileSize) - ((INVENTORY_COLUMNS - 1) * slotGap)) / 2;
+        int panelHeight = (INVENTORY_ROWS * gh.tileSize) + ((INVENTORY_ROWS - 1) * slotGap) + (horizontalPadding * 2);
+        int descriptionX = panelX;
+        int descriptionY = panelY + panelHeight + 20;
+
+        u.drawSubWindow(panelX, panelY, panelWidth, panelHeight, g2d);
+
+        int slotXstart = panelX + horizontalPadding;
+        int slotYstart = panelY + horizontalPadding;
+        int slotSize = gh.tileSize + slotGap;
         int slotX = slotXstart;
         int slotY = slotYstart;
-        int slotSize = gh.tileSize + 3;
 
         for (int i = 0; i < gh.player.inventory.size(); i++) {
             Entity item = gh.player.inventory.get(i);
             if (item == gh.player.currentWeapon) {
                 g2d.setColor(new Color(240, 190, 90));
-                g2d.fillRoundRect(slotX, slotY, gh.tileSize, gh.tileSize, 10, 10);
+                g2d.fillRoundRect(slotX - 3, slotY - 3, gh.tileSize + 6, gh.tileSize + 6, 12, 12);
             }
             drawItemSlot(item, slotX, slotY);
 
             slotX += slotSize;
-            if (i == 4 || i == 9 || i == 14) {
+            if ((i + 1) % INVENTORY_COLUMNS == 0) {
                 slotX = slotXstart;
                 slotY += slotSize;
             }
@@ -339,120 +520,88 @@ public class Ui {
 
         int cursorX = slotXstart + (slotSize * slotCol);
         int cursorY = slotYstart + (slotSize * slotRow);
-        int cursorWidth = gh.tileSize;
-        int cursorHeight = gh.tileSize;
-
         g2d.setColor(Color.white);
         g2d.setStroke(new BasicStroke(3));
-        g2d.drawRoundRect(cursorX, cursorY, cursorWidth, cursorHeight, 10, 10);
-        
-        int dframeX = frameX;
-        int dframeY = frameY + frameHeight;
-        int dframeWidth = frameWidth;
-        int dframeHeight = gh.tileSize * 3;
-
-        int textX = dframeX + 20;
-        int textY = dframeY + gh.tileSize;
-        g2d.setFont(g2d.getFont().deriveFont(28F));
+        g2d.drawRoundRect(cursorX - 4, cursorY - 4, gh.tileSize + 8, gh.tileSize + 8, 12, 12);
 
         int itemIndex = getItemIndexOnSlot();
+        Entity selectedItem = itemIndex < gh.player.inventory.size() ? gh.player.inventory.get(itemIndex) : null;
 
-        if (itemIndex < gh.player.inventory.size()) {
-            u.drawSubWindow(dframeX, dframeY, dframeWidth, dframeHeight, g2d);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
+        g2d.drawString("Description", descriptionX + 20, descriptionY + 34);
 
-            for (String line: gh.player.inventory.get(itemIndex).description.split("\n")) {
-                g2d.drawString(line, textX, textY);
-                textY += 32;
+        int detailX = descriptionX + 20;
+        int detailY = descriptionY + 72;
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 26F));
+
+        if (selectedItem != null) {
+            for (String line : selectedItem.description.split("\n")) {
+                g2d.drawString(line, detailX, detailY);
+                detailY += 30;
             }
+        } else {
+            g2d.drawString("Move the cursor over an item to inspect it.", detailX, detailY);
         }
     }
 
-    private void drawStats() {
-        final int frameX = gh.tileSize;
-        final int frameY = gh.tileSize;
-        final int frameWidth = gh.tileSize * 5;
-        final int frameHeight = gh.tileSize * 9;
-        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+    private void drawStatsScreen() {
+        drawOverlayBackdrop();
+
+        int outerX = gh.tileSize;
+        int outerY = gh.tileSize / 2;
+        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerHeight = gh.screenHeight - gh.tileSize;
+        u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
+
+        drawScreenHeader("STATS", "TAB: Inventory   ESC: Close", outerX, outerY, outerWidth);
+
+        int leftX = outerX + 24;
+        int leftY = outerY + 74;
+        int leftPanelWidth = gh.tileSize * 6 + 18;
+        int rightPanelX = leftX + leftPanelWidth + 24;
+        int rightPanelY = leftY;
+        int rightPanelWidth = outerX + outerWidth - rightPanelX - 24;
 
         g2d.setColor(Color.white);
-        g2d.setFont(g2d.getFont().deriveFont(32F));
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
+        g2d.drawString("Character", leftX + 20, leftY + 34);
+        g2d.drawString("Combat", rightPanelX + 20, rightPanelY + 34);
 
-        int textX = frameX + 20;
-        int textY = frameY + gh.tileSize;
-        final int lineHeight = 35;
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 28F));
+        int labelX = leftX + 20;
+        int valueX = leftX + leftPanelWidth - 24;
+        int textY = leftY + 78;
+        int lineHeight = 38;
 
-        g2d.drawString("Level", textX, textY);
+        drawLabeledValue("Level", String.valueOf(gh.player.level), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Life", textX, textY);
+        drawLabeledValue("Life", gh.player.life + " / " + gh.player.maxLife, labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Strength", textX, textY);
+        drawLabeledValue("Strength", String.valueOf(gh.player.strength), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Dexterity", textX, textY);
+        drawLabeledValue("Dexterity", String.valueOf(gh.player.dexterity), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Attack", textX, textY);
+        drawLabeledValue("Exp", String.valueOf(gh.player.exp), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Defense", textX, textY);
+        drawLabeledValue("Next Level", String.valueOf(gh.player.nextLevelExp), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Exp", textX, textY);
-        textY += lineHeight;
-        g2d.drawString("Next Level", textX, textY);
-        textY += lineHeight;
-        g2d.drawString("Coin", textX, textY);
-        textY += lineHeight + 35;
-        g2d.drawString("Weapon", textX, textY);
+        drawLabeledValue("Coins", String.valueOf(gh.player.coin), labelX, valueX, textY);
 
-        int tailX = (frameX + frameWidth) - 30;
-        textY = frameY + gh.tileSize;
-        String value;
-
-        value = String.valueOf(gh.player.level);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.life + "/" + gh.player.maxLife);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.strength);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.dexterity);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.attack);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.defense);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.exp);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.nextLevelExp);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.coin);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
+        int combatLabelX = rightPanelX + 20;
+        int combatValueX = rightPanelX + rightPanelWidth - 24;
+        int combatY = rightPanelY + 78;
+        drawLabeledValue("Attack", String.valueOf(gh.player.attack), combatLabelX, combatValueX, combatY);
+        combatY += lineHeight;
+        drawLabeledValue("Defense", String.valueOf(gh.player.defense), combatLabelX, combatValueX, combatY);
+        combatY += lineHeight + 12;
+        drawLabeledValue("Weapon", getEquippedWeaponName(), combatLabelX, combatValueX, combatY);
 
         if (gh.player.currentWeapon != null && gh.player.currentWeapon.down1 != null) {
-            g2d.drawImage(gh.player.currentWeapon.down1, tailX - gh.tileSize, textY , null);
-            textY += gh.tileSize;
+            int weaponBoxY = combatY + 28;
+            int weaponBoxSize = gh.tileSize + 24;
+            g2d.setColor(new Color(255, 255, 255, 30));
+            g2d.fillRoundRect(combatLabelX, weaponBoxY, weaponBoxSize, weaponBoxSize, 12, 12);
+            g2d.drawImage(gh.player.currentWeapon.down1, combatLabelX + 12, weaponBoxY + 12, null);
         }
     }
 
@@ -499,59 +648,50 @@ public class Ui {
     }
 
     private void drawChestScreen() {
-        int panelY = gh.tileSize / 2;
-        int panelWidth = gh.tileSize * 6;
-        int panelHeight = gh.tileSize * 6;
-        int leftPanelX = gh.tileSize / 2;
-        int rightPanelX = gh.screenWidth - panelWidth - (gh.tileSize / 2);
-        int infoY = panelY + panelHeight + (gh.tileSize / 4);
+        drawOverlayBackdrop();
 
-        drawGridPanel(leftPanelX, panelY, panelWidth, panelHeight, "Chest", gh.activeChest == null ? List.of() : gh.activeChest.items,
-            chestSlotCol, chestSlotRow, chestPanelActive);
-        drawGridPanel(rightPanelX, panelY, panelWidth, panelHeight, "Inventory", gh.player.inventory,
-            playerChestSlotCol, playerChestSlotRow, !chestPanelActive);
+        int outerX = gh.tileSize;
+        int outerY = gh.tileSize / 2;
+        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerHeight = gh.screenHeight - gh.tileSize;
+        u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
 
-        int infoWidth = gh.screenWidth - gh.tileSize;
-        int infoHeight = gh.tileSize * 3;
-        int infoX = gh.tileSize / 2;
-        u.drawSubWindow(infoX, infoY, infoWidth, infoHeight, g2d);
+        drawScreenHeader("Chest", "TAB: Switch panel   SPACE/ENTER: Transfer item   ESC: Close", outerX, outerY, outerWidth);
 
-        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
-        int textX = infoX + 20;
-        int textY = infoY + 36;
-        g2d.drawString("TAB: Switch panel   SPACE/ENTER: Transfer item   ESC: Close chest", textX, textY);
-        textY += 36;
+        int panelX = outerX + 24;
+        int panelWidth = outerWidth - 48;
+        int slotGap = 10;
+        int horizontalPadding = (panelWidth - (INVENTORY_COLUMNS * gh.tileSize) - ((INVENTORY_COLUMNS - 1) * slotGap)) / 2;
+        int panelHeight = (INVENTORY_ROWS * gh.tileSize) + ((INVENTORY_ROWS - 1) * slotGap) + (horizontalPadding * 2);
+        int topPanelY = outerY + 74;
+        int bottomPanelY = outerY + outerHeight - panelHeight - 20;
 
-        Entity selectedItem = getSelectedChestScreenItem();
-        if (selectedItem != null) {
-            for (String line : selectedItem.description.split("\n")) {
-                g2d.drawString(line, textX, textY);
-                textY += 28;
-            }
-            return;
-        }
-
-        g2d.drawString("Select an item to move it between the chest and your inventory.", textX, textY);
+        drawGridPanel(panelX, topPanelY, panelWidth, panelHeight, "", gh.activeChest == null ? List.of() : gh.activeChest.items, chestSlotCol, chestSlotRow, chestPanelActive, false, horizontalPadding, slotGap);
+        drawGridPanel(panelX, bottomPanelY, panelWidth, panelHeight, "", gh.player.inventory, playerChestSlotCol, playerChestSlotRow, !chestPanelActive, true, horizontalPadding, slotGap);
     }
 
     private void drawGridPanel(int frameX, int frameY, int frameWidth, int frameHeight, String title, List<Entity> items,
-        int cursorCol, int cursorRow, boolean active) {
+        int cursorCol, int cursorRow, boolean active, boolean highlightEquippedWeapon, int horizontalPadding, int slotGap) {
         u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
         g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
         g2d.drawString(title, frameX + 20, frameY + 34);
 
-        int slotXstart = frameX + 20;
-        int slotYstart = frameY + 52;
+        int slotXstart = frameX + horizontalPadding;
+        int slotYstart = frameY + horizontalPadding;
         int slotX = slotXstart;
         int slotY = slotYstart;
-        int slotSize = gh.tileSize + 3;
+        int slotSize = gh.tileSize + slotGap;
 
         for (int i = 0; i < items.size(); i++) {
             Entity item = items.get(i);
+            if (highlightEquippedWeapon && item == gh.player.currentWeapon) {
+                g2d.setColor(new Color(240, 190, 90));
+                g2d.fillRoundRect(slotX - 3, slotY - 3, gh.tileSize + 6, gh.tileSize + 6, 12, 12);
+            }
             drawItemSlot(item, slotX, slotY);
 
             slotX += slotSize;
-            if (i == 4 || i == 9 || i == 14) {
+            if ((i + 1) % INVENTORY_COLUMNS == 0) {
                 slotX = slotXstart;
                 slotY += slotSize;
             }
@@ -561,37 +701,16 @@ public class Ui {
         int cursorY = slotYstart + (slotSize * cursorRow);
         g2d.setColor(active ? new Color(240, 190, 90) : Color.white);
         g2d.setStroke(new BasicStroke(3));
-        g2d.drawRoundRect(cursorX, cursorY, gh.tileSize, gh.tileSize, 10, 10);
+        g2d.drawRoundRect(cursorX - 4, cursorY - 4, gh.tileSize + 8, gh.tileSize + 8, 12, 12);
         g2d.setColor(Color.white);
     }
 
-    private Entity getSelectedChestScreenItem() {
-        if (chestPanelActive) {
-            if (gh.activeChest == null) {
-                return null;
-            }
-
-            int itemIndex = getSelectedChestSlotIndex();
-            if (itemIndex < gh.activeChest.items.size()) {
-                return gh.activeChest.items.get(itemIndex);
-            }
-            return null;
-        }
-
-        int itemIndex = getSelectedPlayerChestSlotIndex();
-        if (itemIndex < gh.player.inventory.size()) {
-            return gh.player.inventory.get(itemIndex);
-        }
-
-        return null;
-    }
-
     public int getItemIndexOnSlot() {
-        return getItemIndexOnSlot(slotCol, slotRow);
+        return slotCol + (slotRow * INVENTORY_COLUMNS);
     }
 
     private int getItemIndexOnSlot(int slotCol, int slotRow) {
-        return slotCol + (slotRow * 5);
+        return slotCol + (slotRow * INVENTORY_COLUMNS);
     }
 
     private int clamp(int value, int min, int max) {
@@ -635,5 +754,45 @@ public class Ui {
         g2d.setFont(originalFont);
         g2d.setColor(Color.white);
     }
-}
 
+    private void drawCenteredMenuOption(String label, int y, boolean selected) {
+        g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+        int labelX = u.getXforCenteredText(label, g2d);
+        g2d.setColor(selected ? new Color(240, 190, 90) : Color.white);
+
+        if (selected) {
+            g2d.drawString(">", labelX - gh.tileSize, y);
+        }
+
+        g2d.drawString(label, labelX, y);
+    }
+
+    private void drawOverlayBackdrop() {
+        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+    }
+
+    private void drawScreenHeader(String title, String hint, int frameX, int frameY, int frameWidth) {
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 38F));
+        g2d.drawString(title, frameX + 20, frameY + 42);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 22F));
+        int hintX = u.getXforRightText(hint, frameX + frameWidth - 20, g2d);
+        g2d.drawString(hint, hintX, frameY + 38);
+    }
+
+    private void drawLabeledValue(String label, String value, int labelX, int valueX, int y) {
+        g2d.drawString(label, labelX, y);
+        int alignedValueX = u.getXforRightText(value, valueX, g2d);
+        g2d.drawString(value, alignedValueX, y);
+    }
+
+    private String getEquippedWeaponName() {
+        if (gh.player.currentWeapon == null || gh.player.currentWeapon.name == null) {
+            return "None";
+        }
+
+        return gh.player.currentWeapon.name;
+    }
+}

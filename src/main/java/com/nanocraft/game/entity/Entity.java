@@ -1,5 +1,7 @@
 package com.nanocraft.game.entity;
 
+import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -20,15 +22,18 @@ public class Entity {
     public static final int TYPE_WEAPON = 3;
     public static final int TYPE_TOOL = 4;
     public static final int TYPE_CONSUMABLE = 6;
+    public static final int VIEW_DISTANCE_TILES = 6;
+    public static final int VIEW_WIDTH_TILES = 2;
+    public static final int AGGRO_LOST_DISTANCE_TILES = 10;
 
     public GameHandler gh;
     public int worldX, worldY;
     public String direction;
-    public int spriteCounter, actionCounter, spriteNum, invincibleCounter, shotCounter;
+    public int spriteCounter, hpBarCounter,  actionCounter, spriteNum, invincibleCounter, shotCounter, deathCounter;
     public int speed, maxLife, maxMana, mana, life, level, strength, dexterity, attack, defense, exp, nextLevelExp, coin;
     public Entity currentWeapon, currentShield;
     public Projectile projectile;
-    public boolean collisionOn, collision;
+    public boolean collisionOn, collision, hpBarOn;
     public String name;
     public String itemId;
     public String description;
@@ -45,6 +50,7 @@ public class Entity {
     public boolean alive;
     public boolean attacking;
     public int attackValue;
+    public String dropItemType;
     public boolean stackable;
     public int stackCount;
     public int maxStackSize;
@@ -56,6 +62,7 @@ public class Entity {
     public final int tool = TYPE_TOOL;
     public final int consumable = TYPE_CONSUMABLE;
     public int type;
+    public boolean aggroed;
 
     public Entity(GameHandler gh) {
         this.gh = gh;
@@ -114,7 +121,7 @@ public class Entity {
         }
     }
 
-    public void draw(Graphics2D g2) {
+    public void draw(Graphics2D g2d) {
         BufferedImage image = null;
         int screenX = worldX - gh.player.worldX + gh.player.screenX;
         int screenY = worldY - gh.player.worldY + gh.player.screenY;
@@ -146,11 +153,44 @@ public class Entity {
                 break;
             }
 
-            g2.drawImage(image, screenX, screenY, null);
+            if (type == monster && hpBarOn == true) {
+                double oneScale = (double) gh.tileSize / maxLife;
+                double hpValue = oneScale * life;
+
+                g2d.setColor(new Color(35, 35, 35));
+                g2d.fillRect(screenX - 1, screenY - 16, gh.tileSize + 2, 12);
+
+                g2d.setColor(new Color(255, 0, 30));
+                g2d.fillRect(screenX, screenY - 15, (int) hpValue, 10);
+                hpBarCounter++;
+
+                if (hpBarCounter > 600) {
+                    hpBarCounter = 0;
+                    hpBarOn = false;
+                }
+            }
+
+            if (invincible == true) {
+                hpBarOn = true;
+                hpBarCounter = 0;
+                changeAlpha(g2d, 0.4f);
+            }
+
+            if (dying == true) {
+                deathEffect(g2d);
+            }
+
+            g2d.drawImage(image, screenX, screenY, null);
+            changeAlpha(g2d, 1f);
         }
     }
 
+    public void aggro() {}
     public void setAction() {}
+
+    public void onDefeat() {
+        alive = false;
+    }
 
     public void update() {
         setAction();
@@ -163,7 +203,7 @@ public class Entity {
         boolean contact = gh.ch.checkPlayer(this);
 
         if (type == monster && contact == true) {
-            // damage(attack);
+            damage(attack);
         }
 
         if (collisionOn == false) {
@@ -185,6 +225,15 @@ public class Entity {
                 break;
             }
         }
+
+        if (invincible == true) {
+            invincibleCounter++;
+
+            if (invincibleCounter > 20) {
+                invincible = false;
+                invincibleCounter = 0;
+            }
+        }
         
         spriteCounter++;
 
@@ -197,6 +246,19 @@ public class Entity {
                 spriteNum = 1;
             }
             spriteCounter = 0;
+        }
+
+        if (invincible == true) {
+            invincibleCounter++;
+
+            if (invincibleCounter > 40) {
+                invincible = false;
+                invincibleCounter = 0;
+            }
+        }
+        
+        if (shotCounter < 30) {
+            shotCounter++;
         }
     }
 
@@ -226,6 +288,54 @@ public class Entity {
             break;
         }
     }
+
+    public void damage(int attack) {
+        if (gh.player.invincible == false) {
+                gh.playSound(6);
+                int damage = attack - gh.player.defense;
+
+                if (damage < 0) {
+                    damage = 0;
+                }
+
+                gh.player.life -= damage;
+                gh.player.invincible = true;
+        }
+    }
+
+    public void deathEffect(Graphics2D g2d) {
+        deathCounter++;
+        int i = 5;
+
+        if (deathCounter <= i) {
+            changeAlpha(g2d, 0f);
+        }
+        else if (deathCounter > i && deathCounter <= i * 2) {
+            changeAlpha(g2d, 1f);
+        }
+        else if (deathCounter > i * 2 && deathCounter <= i * 3) {
+            changeAlpha(g2d, 0f);
+        }
+        else if (deathCounter > i * 3 && deathCounter <= i * 4) {
+            changeAlpha(g2d, 1f);
+        }
+        else if (deathCounter > i * 4 && deathCounter <= i * 5) {
+            changeAlpha(g2d, 0f);
+        }
+        else if (deathCounter > i * 5 && deathCounter <= i * 6) {
+            changeAlpha(g2d, 1f);
+        }
+        else if (deathCounter > i * 6 && deathCounter <= i * 7) {
+            changeAlpha(g2d, 0f);
+        }
+        else if (deathCounter > i * 7 && deathCounter <= i * 8) {
+            changeAlpha(g2d, 1f);
+        }
+        else if (deathCounter > i * 8) {
+            alive = false;
+        }
+    }
+
     public BufferedImage getAttackSprite(String facingDirection, int attackFrame) {
         boolean useFirstFrame = attackFrame == 1;
 
@@ -305,5 +415,9 @@ public class Entity {
         this.stackable = stackable;
         this.maxStackSize = stackable ? Math.max(1, maxStackSize) : 1;
         this.stackCount = 1;
+    }
+
+    private void changeAlpha(Graphics2D g2d, float alpha) {
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
     }
 }
