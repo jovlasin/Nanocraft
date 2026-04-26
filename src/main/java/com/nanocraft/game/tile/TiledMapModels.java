@@ -33,6 +33,7 @@ class TiledTilesetData {
     int tileheight;
     int tilecount;
     int columns;
+    List<TiledPropertyData> properties;
     List<TiledTileData> tiles;
 }
 
