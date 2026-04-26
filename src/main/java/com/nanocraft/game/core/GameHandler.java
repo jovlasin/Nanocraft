@@ -63,6 +63,7 @@ public class GameHandler extends JPanel implements Runnable {
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
     private boolean bronzeDragonDefeated;
+    private boolean skeletonBossDefeated;
     private final SaveManager saveManager = new SaveManager();
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
     private final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
@@ -327,6 +328,7 @@ public class GameHandler extends JPanel implements Runnable {
             }
         }
 
+        skeletonBossDefeated = saveData.skeletonBossDefeated;
         bronzeDragonDefeated = saveData.bronzeDragonDefeated;
           
         if (saveData.dayNightTick >= 0) {
@@ -631,6 +633,14 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setBronzeDragonDefeated(boolean bronzeDragonDefeated) {
         this.bronzeDragonDefeated = bronzeDragonDefeated;
+    }
+
+    public boolean isSkeletonBossDefeated() {
+        return skeletonBossDefeated;
+    }
+
+    public void setSkeletonBossDefeated(boolean skeletonBossDefeated) {
+        this.skeletonBossDefeated = skeletonBossDefeated;
     }
 
     public void cycleTimeOfDay() {

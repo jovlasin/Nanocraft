@@ -123,6 +123,8 @@ public class SkeletonBoss extends Entity {
 
     @Override
     public void onDefeat() {
+        gh.setSkeletonBossDefeated(true);
+
         if (defeatHandled == false && dropItemType != null && dropItemType.isBlank() == false) {
             gh.spawnDroppedItem(worldX, worldY, dropItemType);
             defeatHandled = true;

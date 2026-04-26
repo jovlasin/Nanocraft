@@ -47,7 +47,7 @@ public class AssetHandler {
     public void setMonsters() {
         clearMonsters();
 
-        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath()) && !gh.isSkeletonBossDefeated()) {
             drawSkeletonBoss(0, 25, 25);
         }
       
