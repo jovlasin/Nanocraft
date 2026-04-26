@@ -206,48 +206,32 @@ public class Ui {
         if (titleScreen == 0) {
             g2d.setColor(new Color(0, 0, 0));
             g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 96F));
-            String text = "NanoCraft";
-            int x = u.getXforCenteredText(text, g2d);
-            int y = gh.tileSize * 3;
+            int h = gh.tileSize * 4;
+            int y = gh.tileSize;
 
-            g2d.setColor(Color.darkGray);
-            g2d.drawString(text, x + 5, y + 5);
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 18F));
+            g2d.setColor(new Color(240, 190, 90));
+            String line = "SURVIVE. MINE. FIGHT.";
+            g2d.drawString(line, u.getXforCenteredText(line, g2d), y + 25);
 
+            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 58F));
             g2d.setColor(Color.white);
-            g2d.drawString(text, x, y);
+            String title = "NanoCraft";
+            g2d.drawString(title, u.getXforCenteredText(title, g2d), y + 94);
 
-            x = gh.screenWidth / 2 - (gh.tileSize * 2) / 2;
-            y += gh.tileSize * 2;
-            g2d.drawImage(gh.player.down1, x, y, gh.tileSize * 2, gh.tileSize * 2, null);
+            g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
+            g2d.setColor(new Color(190, 190, 190));
+            String subtitle = "A compact adventure awaits.";
+            g2d.drawString(subtitle, u.getXforCenteredText(subtitle, g2d), y + 145);
 
-            g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 40F));
+            int menuY = y + h + gh.tileSize;
 
-            text = "NEW GAME";
-            x = u.getXforCenteredText(text, g2d);
-            y += gh.tileSize * 3.5;
-            g2d.drawString(text, x, y);
+            String[] options = {"NEW GAME", "LOAD GAME", "QUIT"};
+            int optionStartY = menuY + 40;
+            int optionHeight = 70;
 
-            if (commandNum == 0) {
-                g2d.drawString(">", x - gh.tileSize, y);
-            }
-
-            text = "LOAD GAME";
-            x = u.getXforCenteredText(text, g2d);
-            y += gh.tileSize;
-            g2d.drawString(text, x, y);
-
-            if (commandNum == 1) {
-                g2d.drawString(">", x - gh.tileSize, y);
-            }
-
-            text = "QUIT";
-            x = u.getXforCenteredText(text, g2d);
-            y += gh.tileSize;
-            g2d.drawString(text, x, y);
-
-            if (commandNum == 2) {
-                g2d.drawString(">", x - gh.tileSize, y);
+            for (int i = 0; i < options.length; i++) {
+                drawCenteredMenuOption(options[i], optionStartY + (i * optionHeight), commandNum == i);
             }
         }
     }
@@ -807,5 +791,16 @@ public class Ui {
         g2d.setFont(originalFont);
         g2d.setColor(Color.white);
     }
-}
 
+    private void drawCenteredMenuOption(String label, int y, boolean selected) {
+        g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+        int labelX = u.getXforCenteredText(label, g2d);
+        g2d.setColor(selected ? new Color(240, 190, 90) : Color.white);
+
+        if (selected) {
+            g2d.drawString(">", labelX - gh.tileSize, y);
+        }
+
+        g2d.drawString(label, labelX, y);
+    }
+}
