@@ -94,6 +94,11 @@ public class DayNightCycle {
         return "Dusk";
     }
 
+    public boolean isNight() {
+        double progress = getProgress();
+        return progress < dayStartProgress() || progress >= nightStartProgress();
+    }
+
     public String getClockText() {
         int totalMinutes = (int) Math.round(getProgress() * 24 * 60) % (24 * 60);
         int hours = totalMinutes / 60;
