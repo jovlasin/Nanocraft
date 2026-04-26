@@ -30,7 +30,7 @@ public class SaveManager {
         saveData.mapStates = gh.th.createMapStateSaveData();
         saveData.objectStates = gh.createObjectSaveData();
         saveData.monsterStates = gh.createMonsterSaveData();
-        saveData.skeletonBossDefeated = gh.isSkeletonBossDefeated();
+        saveData.skeletonKingDefeated = gh.isSkeletonKingDefeated();
         saveData.bronzeDragonDefeated = gh.isBronzeDragonDefeated();
         saveData.dayNightTick = gh.dayNightCycle.getCurrentTick();
 
@@ -65,7 +65,7 @@ public class SaveManager {
         public List<MapStateData> mapStates = new ArrayList<>();
         public List<ObjectMapData> objectStates = new ArrayList<>();
         public List<MonsterMapData> monsterStates = new ArrayList<>();
-        public boolean skeletonBossDefeated;
+        public boolean skeletonKingDefeated;
         public boolean bronzeDragonDefeated;
         public int dayNightTick = -1;
     }

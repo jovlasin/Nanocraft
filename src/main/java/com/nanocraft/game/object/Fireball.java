@@ -1,4 +1,4 @@
-package com.nanocraft.game.entity;
+package com.nanocraft.game.object;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -6,8 +6,9 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.entity.Projectile;
 
-public class DragonFireball extends Projectile {
+public class Fireball extends Projectile {
     public static final int SIZE = 24;
     private static final double FIREBALL_SPEED = 4.5;
 
@@ -16,7 +17,7 @@ public class DragonFireball extends Projectile {
     private double velocityX;
     private double velocityY;
 
-    public DragonFireball(GameHandler gh) {
+    public Fireball(GameHandler gh) {
         super(gh);
 
         name = "Dragon Fireball";

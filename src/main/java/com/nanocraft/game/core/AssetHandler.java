@@ -1,11 +1,11 @@
 package com.nanocraft.game.core;
 
-import com.nanocraft.game.entity.BronzeDragon;
 import com.nanocraft.game.entity.Elder;
+import com.nanocraft.game.monster.Dragon;
 import com.nanocraft.game.monster.GreenSlime;
 import com.nanocraft.game.monster.Skeleton;
+import com.nanocraft.game.monster.SkeletonKing;
 import com.nanocraft.game.monster.Zombie;
-import com.nanocraft.game.entity.SkeletonBoss;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.tile.MapMarker;
 
@@ -47,8 +47,8 @@ public class AssetHandler {
     public void setMonsters() {
         clearMonsters();
 
-        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath()) && !gh.isSkeletonBossDefeated()) {
-            drawSkeletonBoss(0, 25, 25);
+        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath()) && !gh.isSkeletonKingDefeated()) {
+            drawSkeletonKing(0, 25, 25);
         }
       
         if (END_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
@@ -263,8 +263,8 @@ public class AssetHandler {
         gh.monsters[i].worldY = gh.tileSize * y;
     }
   
-    private void drawSkeletonBoss(int i, int x, int y) {
-        gh.monsters[i] = new SkeletonBoss(gh);
+    private void drawSkeletonKing(int i, int x, int y) {
+        gh.monsters[i] = new SkeletonKing(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
     }
@@ -280,7 +280,7 @@ public class AssetHandler {
     }
   
     private void drawBronzeDragon(int i, int x, int y) {
-        gh.monsters[i] = new BronzeDragon(gh);
+        gh.monsters[i] = new Dragon(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
     }

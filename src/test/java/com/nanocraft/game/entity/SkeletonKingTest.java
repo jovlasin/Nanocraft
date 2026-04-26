@@ -1,6 +1,7 @@
 package com.nanocraft.game.entity;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -9,32 +10,33 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.monster.SkeletonKing;
 
-public class NetherSkeletonBossTest {
+public class SkeletonKingTest {
     @Test
-    public void skeletonBossSpawnsOnlyOnNetherMap() {
+    public void SkeletonKingSpawnsOnlyOnNetherMap() {
         GameHandler gh = new GameHandler();
 
         gh.th.loadMap("/map/nether.tmj");
         gh.refreshCurrentMapState();
 
-        assertTrue(gh.monsters[0] instanceof SkeletonBoss);
+        assertTrue(gh.monsters[0] instanceof SkeletonKing);
 
         gh.th.loadMap("/map/village.tmj");
         gh.refreshCurrentMapState();
 
-        assertNull(gh.monsters[0]);
+         assertFalse(gh.monsters[0] instanceof SkeletonKing);
     }
 
     @Test
-    public void skeletonBossShootsArrowAtNearbyPlayer() {
+    public void SkeletonKingShootsArrowAtNearbyPlayer() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/nether.tmj");
 
         int[] spawnTile = gh.th.findNearestOpenTile(25, 25);
         assertNotNull(spawnTile);
 
-        SkeletonBoss boss = new SkeletonBoss(gh);
+        SkeletonKing boss = new SkeletonKing(gh);
         boss.worldX = spawnTile[0] * gh.tileSize;
         boss.worldY = spawnTile[1] * gh.tileSize;
         boss.shotCounter = 74;
@@ -52,13 +54,13 @@ public class NetherSkeletonBossTest {
     }
 
     @Test
-    public void skeletonBossDropsEyeOfEnderWhenDefeated() {
+    public void SkeletonKingDropsEyeOfEnderWhenDefeated() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/nether.tmj");
         gh.refreshCurrentMapState();
         gh.gameState = gh.play;
 
-        assertTrue(gh.monsters[0] instanceof SkeletonBoss);
+        assertTrue(gh.monsters[0] instanceof SkeletonKing);
 
         gh.monsters[0].life = 1;
         gh.player.damage(0, 99);
@@ -69,9 +71,9 @@ public class NetherSkeletonBossTest {
     }
 
     @Test
-    public void starterSwordDamagesSkeletonBoss() {
+    public void starterSwordDamagesSkeletonKing() {
         GameHandler gh = new GameHandler();
-        SkeletonBoss boss = new SkeletonBoss(gh);
+        SkeletonKing boss = new SkeletonKing(gh);
         boss.life = boss.maxLife;
         gh.monsters[0] = boss;
 
