@@ -1,10 +1,13 @@
 package com.nanocraft.game.core;
 
+import com.nanocraft.game.entity.BronzeDragon;
 import com.nanocraft.game.entity.Elder;
 import com.nanocraft.game.monster.GreenSlime;
 import com.nanocraft.game.monster.Skeleton;
 import com.nanocraft.game.monster.Zombie;
+import com.nanocraft.game.entity.SkeletonBoss;
 import com.nanocraft.game.object.Key;
+import com.nanocraft.game.tile.MapMarker;
 
 public class AssetHandler {
     public static final String SPAWN_MAP_PATH = "/map/village.tmj";
@@ -12,6 +15,9 @@ public class AssetHandler {
     public static final String NETHER_MAP_PATH = "/map/nether.tmj";
     public static final String END_MAP_PATH = "/map/end.tmj";
     public static final String DESERT_MAP_PATH = "/map/desert.tmj";
+    private static final String END_RETURN_PORTAL_MARKER = "end_return_portal_spawn";
+    private static final String END_RETURN_PORTAL_LAYER = "Portal";
+    private static final String END_RETURN_PORTAL_TILE_TYPE = "end_return_portal";
     private GameHandler gh;
 
     public AssetHandler(GameHandler gh) {
@@ -21,7 +27,7 @@ public class AssetHandler {
     public void setObjects() {
         clearObjects();
 
-        if (CAVE_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+        if (!shouldPlaceVillageAssets()) {
             return;
         }
 
@@ -31,7 +37,7 @@ public class AssetHandler {
     public void setNPCS() {
         clearNPCs();
 
-        if (CAVE_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+        if (!shouldPlaceVillageAssets()) {
             return;
         }
 
@@ -41,8 +47,20 @@ public class AssetHandler {
     public void setMonsters() {
         clearMonsters();
 
-        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath()) || END_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
-            return;
+        if (NETHER_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+            drawSkeletonBoss(0, 25, 25);
+        }
+      
+        if (END_MAP_PATH.equals(gh.th.getCurrentMapPath()) || END_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+            if (gh.isBronzeDragonDefeated()) {
+              return;
+            }
+            
+            MapMarker marker = gh.th.getMarker("bronze_dragon_spawn");
+            int spawnCol = marker == null ? 8 : marker.col;
+            int spawnRow = marker == null ? 9 : marker.row;
+            drawBronzeDragon(0, spawnCol, spawnRow);
+            gh.ui.addMessage("A bronze dragon guards the End.");
         }
 
         if (!CAVE_MAP_PATH.equals(gh.th.getCurrentMapPath()) && !gh.isNightForMonsterSpawns()) {
@@ -197,6 +215,14 @@ public class AssetHandler {
         }
     }
 
+    public boolean applyMapProgression() {
+        if (!END_MAP_PATH.equals(gh.th.getCurrentMapPath()) || !gh.isBronzeDragonDefeated()) {
+            return false;
+        }
+
+        return gh.th.placeTileAtMarker(END_RETURN_PORTAL_LAYER, END_RETURN_PORTAL_MARKER, END_RETURN_PORTAL_TILE_TYPE);
+    }
+
     private void clearObjects() {
         for (int i = 0; i < gh.objs.length; i++) {
             gh.objs[i] = null;
@@ -236,6 +262,12 @@ public class AssetHandler {
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
     }
+  
+    private void drawSkeletonBoss(int i, int x, int y) {
+        gh.monsters[i] = new SkeletonBoss(gh);
+        gh.monsters[i].worldX = gh.tileSize * x;
+        gh.monsters[i].worldY = gh.tileSize * y;
+    }
 
     private void drawZombies(int i, int x, int y) {
         if (gh.isMonsterKilledOnCurrentMap(i)) {
@@ -243,6 +275,12 @@ public class AssetHandler {
         }
 
         gh.monsters[i] = new Zombie(gh);
+        gh.monsters[i].worldX = gh.tileSize * x;
+        gh.monsters[i].worldY = gh.tileSize * y;
+    }
+  
+    private void drawBronzeDragon(int i, int x, int y) {
+        gh.monsters[i] = new BronzeDragon(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
     }
@@ -255,5 +293,12 @@ public class AssetHandler {
         gh.monsters[i] = new Skeleton(gh);
         gh.monsters[i].worldX = gh.tileSize * x;
         gh.monsters[i].worldY = gh.tileSize * y;
+    }
+  
+    private boolean shouldPlaceVillageAssets() {
+        String currentMapPath = gh.th.getCurrentMapPath();
+        return !CAVE_MAP_PATH.equals(currentMapPath)
+            && !NETHER_MAP_PATH.equals(currentMapPath)
+            && !END_MAP_PATH.equals(currentMapPath);
     }
 }

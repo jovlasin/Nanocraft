@@ -7,6 +7,7 @@ import com.nanocraft.game.core.GameHandler;
 
 public class KeyHandler implements KeyListener {
     public boolean up, down, left, right, space, shoot;
+    private boolean shootHeld;
     private GameHandler gh;
 
     public KeyHandler(GameHandler gh) {
@@ -70,6 +71,7 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_F) {
+            shootHeld = false;
             shoot = false;
         }
     }
@@ -146,7 +148,10 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_F) {
-            shoot = true;
+            if (!shootHeld) {
+                shoot = true;
+            }
+            shootHeld = true;
         }
     }
 
@@ -274,4 +279,3 @@ public class KeyHandler implements KeyListener {
         }
     }
 }
-
