@@ -680,7 +680,11 @@ public class Player extends Entity {
     }
   
     private boolean attemptMineIfPossible() {
-        int[] targetTileCoordinates = getPrimaryInteractionTile();
+        int[] targetTileCoordinates = gh.th.findBreakableTileNear(worldX, worldY, solidArea, gh.tileSize);
+        if (targetTileCoordinates == null) {
+            return false;
+        }
+
         Tile targetTile = gh.th.getTopBreakableTileAt(targetTileCoordinates[0], targetTileCoordinates[1]);
         if (targetTile == null) {
             return false;

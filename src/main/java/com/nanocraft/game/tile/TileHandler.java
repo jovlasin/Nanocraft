@@ -233,6 +233,44 @@ public class TileHandler {
         return null;
     }
 
+    public int[] findBreakableTileNear(int worldX, int worldY, java.awt.Rectangle solidArea, int padding) {
+        if (solidArea == null) {
+            return null;
+        }
+
+        int leftWorldX = worldX + solidArea.x - padding;
+        int rightWorldX = worldX + solidArea.x + solidArea.width - 1 + padding;
+        int topWorldY = worldY + solidArea.y - padding;
+        int bottomWorldY = worldY + solidArea.y + solidArea.height - 1 + padding;
+
+        int startCol = Math.floorDiv(leftWorldX, gh.tileSize);
+        int endCol = Math.floorDiv(rightWorldX, gh.tileSize);
+        int startRow = Math.floorDiv(topWorldY, gh.tileSize);
+        int endRow = Math.floorDiv(bottomWorldY, gh.tileSize);
+
+        int playerCenterCol = Math.floorDiv(worldX + solidArea.x + (solidArea.width / 2), gh.tileSize);
+        int playerCenterRow = Math.floorDiv(worldY + solidArea.y + (solidArea.height / 2), gh.tileSize);
+        int[] nearestTile = null;
+        int nearestDistance = Integer.MAX_VALUE;
+
+        for (int row = startRow; row <= endRow; row++) {
+            for (int col = startCol; col <= endCol; col++) {
+                Tile tile = getTopBreakableTileAt(col, row);
+                if (tile == null) {
+                    continue;
+                }
+
+                int distance = Math.abs(col - playerCenterCol) + Math.abs(row - playerCenterRow);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestTile = new int[] { col, row };
+                }
+            }
+        }
+
+        return nearestTile;
+    }
+
     public boolean hasTileTypeAt(int col, int row, String tileType) {
         if (!isInsideMap(col, row) || tileType == null || tileType.isBlank()) {
             return false;
