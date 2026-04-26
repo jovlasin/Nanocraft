@@ -14,6 +14,8 @@ import com.nanocraft.game.entity.Entity;
 import com.nanocraft.game.object.Heart;
 
 public class Ui {
+    private static final int INVENTORY_COLUMNS = 10;
+    private static final int INVENTORY_ROWS = 4;
     private GameHandler gh;
     private Font text;
     public Graphics2D g2d;
@@ -75,9 +77,12 @@ public class Ui {
             drawDialogue();
         }
 
+        else if (gh.gameState == gh.inventory) {
+            drawInventoryScreen();
+        }
+
         else if (gh.gameState == gh.stats) {
-            drawStats();
-            drawInventory();
+            drawStatsScreen();
         }
 
         else if (gh.gameState == gh.chest) {
@@ -188,6 +193,11 @@ public class Ui {
 
         playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, 4);
         playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, 3);
+    }
+
+    public void moveInventoryCursor(int deltaCol, int deltaRow) {
+        slotCol = clamp(slotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
+        slotRow = clamp(slotRow + deltaRow, 0, INVENTORY_ROWS - 1);
     }
 
     public boolean isChestPanelActive() {
@@ -392,7 +402,7 @@ public class Ui {
             "Move:  W A S D  or  Arrow keys",
             "Interact:  SPACE",
             "Shoot:  F",
-            "Stats & inventory:  TAB",
+            "Inventory / stats:  TAB",
             "Pause:  ESC",
             "Dialogue:  SPACE to continue",
         };
@@ -465,29 +475,44 @@ public class Ui {
         }
     }
 
-    private void drawInventory() {
-        final int frameX = gh.tileSize * 9;
-        final int frameY = gh.tileSize;
-        final int frameWidth = gh.tileSize * 6;
-        final int frameHeight = gh.tileSize * 5;
-        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+    private void drawInventoryScreen() {
+        drawOverlayBackdrop();
 
-        final int slotXstart = frameX + 20;
-        final int slotYstart = frameY + 20;
+        int outerX = gh.tileSize;
+        int outerY = gh.tileSize / 2;
+        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerHeight = gh.screenHeight - gh.tileSize;
+        u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
+
+        drawScreenHeader("INVENTORY", "TAB: Stats   ESC: Close   ENTER/SPACE: Equip or use", outerX, outerY, outerWidth);
+
+        int panelX = outerX + 24;
+        int panelY = outerY + 74;
+        int panelWidth = outerWidth - 48;
+        int slotGap = 10;
+        int horizontalPadding = (panelWidth - (INVENTORY_COLUMNS * gh.tileSize) - ((INVENTORY_COLUMNS - 1) * slotGap)) / 2;
+        int panelHeight = (INVENTORY_ROWS * gh.tileSize) + ((INVENTORY_ROWS - 1) * slotGap) + (horizontalPadding * 2);
+        int descriptionX = panelX;
+        int descriptionY = panelY + panelHeight + 20;
+
+        u.drawSubWindow(panelX, panelY, panelWidth, panelHeight, g2d);
+
+        int slotXstart = panelX + horizontalPadding;
+        int slotYstart = panelY + horizontalPadding;
+        int slotSize = gh.tileSize + slotGap;
         int slotX = slotXstart;
         int slotY = slotYstart;
-        int slotSize = gh.tileSize + 3;
 
         for (int i = 0; i < gh.player.inventory.size(); i++) {
             Entity item = gh.player.inventory.get(i);
             if (item == gh.player.currentWeapon) {
                 g2d.setColor(new Color(240, 190, 90));
-                g2d.fillRoundRect(slotX, slotY, gh.tileSize, gh.tileSize, 10, 10);
+                g2d.fillRoundRect(slotX - 3, slotY - 3, gh.tileSize + 6, gh.tileSize + 6, 12, 12);
             }
             drawItemSlot(item, slotX, slotY);
 
             slotX += slotSize;
-            if (i == 4 || i == 9 || i == 14) {
+            if ((i + 1) % INVENTORY_COLUMNS == 0) {
                 slotX = slotXstart;
                 slotY += slotSize;
             }
@@ -495,120 +520,88 @@ public class Ui {
 
         int cursorX = slotXstart + (slotSize * slotCol);
         int cursorY = slotYstart + (slotSize * slotRow);
-        int cursorWidth = gh.tileSize;
-        int cursorHeight = gh.tileSize;
-
         g2d.setColor(Color.white);
         g2d.setStroke(new BasicStroke(3));
-        g2d.drawRoundRect(cursorX, cursorY, cursorWidth, cursorHeight, 10, 10);
-        
-        int dframeX = frameX;
-        int dframeY = frameY + frameHeight;
-        int dframeWidth = frameWidth;
-        int dframeHeight = gh.tileSize * 3;
-
-        int textX = dframeX + 20;
-        int textY = dframeY + gh.tileSize;
-        g2d.setFont(g2d.getFont().deriveFont(28F));
+        g2d.drawRoundRect(cursorX - 4, cursorY - 4, gh.tileSize + 8, gh.tileSize + 8, 12, 12);
 
         int itemIndex = getItemIndexOnSlot();
+        Entity selectedItem = itemIndex < gh.player.inventory.size() ? gh.player.inventory.get(itemIndex) : null;
 
-        if (itemIndex < gh.player.inventory.size()) {
-            u.drawSubWindow(dframeX, dframeY, dframeWidth, dframeHeight, g2d);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
+        g2d.drawString("Description", descriptionX + 20, descriptionY + 34);
 
-            for (String line: gh.player.inventory.get(itemIndex).description.split("\n")) {
-                g2d.drawString(line, textX, textY);
-                textY += 32;
+        int detailX = descriptionX + 20;
+        int detailY = descriptionY + 72;
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 26F));
+
+        if (selectedItem != null) {
+            for (String line : selectedItem.description.split("\n")) {
+                g2d.drawString(line, detailX, detailY);
+                detailY += 30;
             }
+        } else {
+            g2d.drawString("Move the cursor over an item to inspect it.", detailX, detailY);
         }
     }
 
-    private void drawStats() {
-        final int frameX = gh.tileSize;
-        final int frameY = gh.tileSize;
-        final int frameWidth = gh.tileSize * 5;
-        final int frameHeight = gh.tileSize * 9;
-        u.drawSubWindow(frameX, frameY, frameWidth, frameHeight, g2d);
+    private void drawStatsScreen() {
+        drawOverlayBackdrop();
+
+        int outerX = gh.tileSize;
+        int outerY = gh.tileSize / 2;
+        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerHeight = gh.screenHeight - gh.tileSize;
+        u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
+
+        drawScreenHeader("STATS", "TAB: Inventory   ESC: Close", outerX, outerY, outerWidth);
+
+        int leftX = outerX + 24;
+        int leftY = outerY + 74;
+        int leftPanelWidth = gh.tileSize * 6 + 18;
+        int rightPanelX = leftX + leftPanelWidth + 24;
+        int rightPanelY = leftY;
+        int rightPanelWidth = outerX + outerWidth - rightPanelX - 24;
 
         g2d.setColor(Color.white);
-        g2d.setFont(g2d.getFont().deriveFont(32F));
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 28F));
+        g2d.drawString("Character", leftX + 20, leftY + 34);
+        g2d.drawString("Combat", rightPanelX + 20, rightPanelY + 34);
 
-        int textX = frameX + 20;
-        int textY = frameY + gh.tileSize;
-        final int lineHeight = 35;
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 28F));
+        int labelX = leftX + 20;
+        int valueX = leftX + leftPanelWidth - 24;
+        int textY = leftY + 78;
+        int lineHeight = 38;
 
-        g2d.drawString("Level", textX, textY);
+        drawLabeledValue("Level", String.valueOf(gh.player.level), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Life", textX, textY);
+        drawLabeledValue("Life", gh.player.life + " / " + gh.player.maxLife, labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Strength", textX, textY);
+        drawLabeledValue("Strength", String.valueOf(gh.player.strength), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Dexterity", textX, textY);
+        drawLabeledValue("Dexterity", String.valueOf(gh.player.dexterity), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Attack", textX, textY);
+        drawLabeledValue("Exp", String.valueOf(gh.player.exp), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Defense", textX, textY);
+        drawLabeledValue("Next Level", String.valueOf(gh.player.nextLevelExp), labelX, valueX, textY);
         textY += lineHeight;
-        g2d.drawString("Exp", textX, textY);
-        textY += lineHeight;
-        g2d.drawString("Next Level", textX, textY);
-        textY += lineHeight;
-        g2d.drawString("Coin", textX, textY);
-        textY += lineHeight + 35;
-        g2d.drawString("Weapon", textX, textY);
+        drawLabeledValue("Coins", String.valueOf(gh.player.coin), labelX, valueX, textY);
 
-        int tailX = (frameX + frameWidth) - 30;
-        textY = frameY + gh.tileSize;
-        String value;
-
-        value = String.valueOf(gh.player.level);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.life + "/" + gh.player.maxLife);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.strength);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.dexterity);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.attack);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.defense);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.exp);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.nextLevelExp);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
-
-        value = String.valueOf(gh.player.coin);
-        textX = u.getXforRightText(value, tailX, g2d);
-        g2d.drawString(value, textX, textY);
-        textY += lineHeight;
+        int combatLabelX = rightPanelX + 20;
+        int combatValueX = rightPanelX + rightPanelWidth - 24;
+        int combatY = rightPanelY + 78;
+        drawLabeledValue("Attack", String.valueOf(gh.player.attack), combatLabelX, combatValueX, combatY);
+        combatY += lineHeight;
+        drawLabeledValue("Defense", String.valueOf(gh.player.defense), combatLabelX, combatValueX, combatY);
+        combatY += lineHeight + 12;
+        drawLabeledValue("Weapon", getEquippedWeaponName(), combatLabelX, combatValueX, combatY);
 
         if (gh.player.currentWeapon != null && gh.player.currentWeapon.down1 != null) {
-            g2d.drawImage(gh.player.currentWeapon.down1, tailX - gh.tileSize, textY , null);
-            textY += gh.tileSize;
+            int weaponBoxY = combatY + 28;
+            int weaponBoxSize = gh.tileSize + 24;
+            g2d.setColor(new Color(255, 255, 255, 30));
+            g2d.fillRoundRect(combatLabelX, weaponBoxY, weaponBoxSize, weaponBoxSize, 12, 12);
+            g2d.drawImage(gh.player.currentWeapon.down1, combatLabelX + 12, weaponBoxY + 12, null);
         }
     }
 
@@ -743,7 +736,7 @@ public class Ui {
     }
 
     public int getItemIndexOnSlot() {
-        return getItemIndexOnSlot(slotCol, slotRow);
+        return slotCol + (slotRow * INVENTORY_COLUMNS);
     }
 
     private int getItemIndexOnSlot(int slotCol, int slotRow) {
@@ -802,5 +795,34 @@ public class Ui {
         }
 
         g2d.drawString(label, labelX, y);
+    }
+
+    private void drawOverlayBackdrop() {
+        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+    }
+
+    private void drawScreenHeader(String title, String hint, int frameX, int frameY, int frameWidth) {
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 38F));
+        g2d.drawString(title, frameX + 20, frameY + 42);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 22F));
+        int hintX = u.getXforRightText(hint, frameX + frameWidth - 20, g2d);
+        g2d.drawString(hint, hintX, frameY + 38);
+    }
+
+    private void drawLabeledValue(String label, String value, int labelX, int valueX, int y) {
+        g2d.drawString(label, labelX, y);
+        int alignedValueX = u.getXforRightText(value, valueX, g2d);
+        g2d.drawString(value, alignedValueX, y);
+    }
+
+    private String getEquippedWeaponName() {
+        if (gh.player.currentWeapon == null || gh.player.currentWeapon.name == null) {
+            return "None";
+        }
+
+        return gh.player.currentWeapon.name;
     }
 }

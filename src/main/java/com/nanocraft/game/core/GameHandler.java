@@ -75,8 +75,9 @@ public class GameHandler extends JPanel implements Runnable {
     public final int pause = 1;
     public final int play = 2;
     public final int dialogue = 3;
-    public final int stats = 4;
-    public final int chest = 5;
+    public final int inventory = 4;
+    public final int stats = 5;
+    public final int chest = 6;
     public int gameState = 999;
     private BufferedImage lightingFilter;
     private int musicVolume = 100;
