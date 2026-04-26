@@ -11,6 +11,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 import org.junit.Test;
@@ -538,6 +539,67 @@ public class PlayerInteractionTest {
         assertNotEquals(sword.attackUp1, gh.player.up1);
     }
 
+    @Test
+    public void shootingRequiresArrowInInventoryAndConsumesOnePerShot() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertTrue(gh.projectileList.isEmpty());
+        assertFalse(gh.player.hasItem("arrow"));
+
+        Entity arrows = gh.createItemEntity("arrow");
+        assertNotNull(arrows);
+        arrows.stackCount = 2;
+        assertTrue(gh.player.addToInventory(arrows));
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+    }
+
+    @Test
+    public void shootingNeedsANewKeyPressAndRespectsTwoSecondCooldown() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        Entity arrows = gh.createItemEntity("arrow");
+        assertNotNull(arrows);
+        arrows.stackCount = 2;
+        assertTrue(gh.player.addToInventory(arrows));
+
+        pressShootKey(gh);
+        gh.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+
+        releaseShootKey(gh);
+        pressShootKey(gh);
+        gh.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+
+        releaseShootKey(gh);
+        for (int i = 0; i < 130; i++) {
+            gh.update();
+        }
+
+        assertTrue(gh.projectileList.isEmpty());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+
+        pressShootKey(gh);
+        gh.update();
+
+        assertEquals(0, getItemCount(gh.player.inventory, "arrow"));
+        assertEquals(1, gh.projectileList.size());
+    }
+
     private String latestMessage(GameHandler gh) {
         return gh.ui.message.get(gh.ui.message.size() - 1);
     }
@@ -559,6 +621,14 @@ public class PlayerInteractionTest {
 
         fail("Expected to find at least one openable chest in the map.");
         return null;
+    }
+
+    private void pressShootKey(GameHandler gh) {
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_F, 'F'));
+    }
+
+    private void releaseShootKey(GameHandler gh) {
+        gh.kh.keyReleased(new KeyEvent(gh, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, KeyEvent.VK_F, 'F'));
     }
 
     private OrePlacement findMineableOrePlacement(GameHandler gh) {
@@ -703,6 +773,16 @@ public class PlayerInteractionTest {
             }
         }
         return count;
+    }
+
+    private int getItemCount(Iterable<Entity> items, String itemId) {
+        int total = 0;
+        for (Entity item : items) {
+            if (item != null && itemId.equalsIgnoreCase(item.itemId)) {
+                total += item.stackCount;
+            }
+        }
+        return total;
     }
 
     private static final class ChestPlacement {

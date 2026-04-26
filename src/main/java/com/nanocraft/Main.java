@@ -1,4 +1,4 @@
-package com.nanocraft.game;
+package com.nanocraft;
 
 import com.nanocraft.game.core.Game;
 
