@@ -133,14 +133,8 @@ public class GameHandler extends JPanel implements Runnable {
 
             for (int i = 0; i < monsters.length; i++) {
                 if (monsters[i] != null) {
-
                     if (monsters[i].alive == true && monsters[i].dying == false) {
                         monsters[i].update();
-                    }
-
-                    if (monsters[i].alive == false) {
-                        markMonsterKilled(i);
-                        monsters[i] = null;
                     }
                 }
             }
@@ -882,7 +876,7 @@ public class GameHandler extends JPanel implements Runnable {
         return killedSlots != null && killedSlots.contains(slotIndex);
     }
 
-    private void markMonsterKilled(int slotIndex) {
+    public void markMonsterKilled(int slotIndex) {
         if (slotIndex < 0) {
             return;
         }
