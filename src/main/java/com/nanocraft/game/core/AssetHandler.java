@@ -51,7 +51,7 @@ public class AssetHandler {
             drawSkeletonBoss(0, 25, 25);
         }
       
-        if (END_MAP_PATH.equals(gh.th.getCurrentMapPath()) || END_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+        if (END_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
             if (gh.isBronzeDragonDefeated()) {
               return;
             }

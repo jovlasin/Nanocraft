@@ -183,4 +183,14 @@ public class BronzeDragon extends Entity {
             alive = false;
         }
     }
+
+    @Override
+    public void onDefeat() {
+        if (defeatHandled == false) {
+            defeatHandled = true;
+            gh.handleBronzeDragonDefeat();
+        }
+
+        alive = false;
+    }
 }
