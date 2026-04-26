@@ -195,6 +195,37 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void miningUsesCollisionProximityForReachableOre() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.gameState = gh.play;
+
+        OrePlacement placement = findCollisionReachableOrePlacement(gh, "emerald");
+        assertNotNull(placement);
+
+        Pickaxe pickaxe = new Pickaxe(gh);
+        assertTrue(gh.player.addToInventory(pickaxe));
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+        assertTrue(gh.player.hasEquippedItem("diamond_pickaxe"));
+
+        Tile oreTile = gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow);
+        assertNotNull(oreTile);
+        assertEquals("emerald", oreTile.dropItemType);
+
+        int inventoryBeforeDrop = gh.player.inventory.size();
+        for (int i = 0; i < oreTile.maxHealth; i++) {
+            performMineInteraction(gh, placement);
+        }
+
+        assertEquals(inventoryBeforeDrop + 1, gh.player.inventory.size());
+        Entity minedItem = gh.player.inventory.get(gh.player.inventory.size() - 1);
+        assertEquals("emerald", minedItem.itemId);
+        assertNull(gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow));
+    }
+
+    @Test
     public void unequipsPlayerWhenEquippedSwordLeavesInventory() {
         GameHandler gh = new GameHandler();
         Entity equippedSword = gh.player.currentWeapon;
@@ -625,6 +656,43 @@ public class PlayerInteractionTest {
         return buildOrePlacement(gh, oreCol, oreRow, oreCol - 1, oreRow, "right");
     }
 
+    private OrePlacement findCollisionReachableOrePlacement(GameHandler gh, String dropItemType) {
+        for (int col = 0; col < 200; col++) {
+            for (int row = 0; row < 200; row++) {
+                Tile oreTile = gh.th.getTopBreakableTileAt(col, row);
+                if (oreTile == null || !dropItemType.equalsIgnoreCase(oreTile.dropItemType)) {
+                    continue;
+                }
+
+                OrePlacement placement = findCollisionReachablePlacementAroundOre(gh, col, row);
+                if (placement != null) {
+                    return placement;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private OrePlacement findCollisionReachablePlacementAroundOre(GameHandler gh, int oreCol, int oreRow) {
+        OrePlacement placement = buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol, oreRow + 1, "up");
+        if (placement != null) {
+            return placement;
+        }
+
+        placement = buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol + 1, oreRow, "left");
+        if (placement != null) {
+            return placement;
+        }
+
+        placement = buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol, oreRow - 1, "down");
+        if (placement != null) {
+            return placement;
+        }
+
+        return buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol - 1, oreRow, "right");
+    }
+
     private OrePlacement buildOrePlacement(
         GameHandler gh,
         int oreCol,
@@ -645,6 +713,35 @@ public class PlayerInteractionTest {
         }
 
         return new OrePlacement(oreCol, oreRow, worldX, worldY, direction);
+    }
+
+    private OrePlacement buildCollisionReachableOrePlacement(
+        GameHandler gh,
+        int oreCol,
+        int oreRow,
+        int standCol,
+        int standRow,
+        String direction
+    ) {
+        if (gh.th.isCollisionAt(standCol, standRow)) {
+            return null;
+        }
+
+        int worldX = standCol * gh.tileSize - gh.player.solidArea.x;
+        int worldY = standRow * gh.tileSize - gh.player.solidArea.y;
+        int[][] targetTiles = Player.resolveInteractionTiles(worldX, worldY, gh.player.solidArea, gh.tileSize, direction);
+        for (int[] targetTile : targetTiles) {
+            if (targetTile[0] == oreCol && targetTile[1] == oreRow) {
+                return null;
+            }
+        }
+
+        int[] targetTile = gh.th.findBreakableTileNear(worldX, worldY, gh.player.solidArea, gh.tileSize);
+        if (targetTile != null && targetTile[0] == oreCol && targetTile[1] == oreRow) {
+            return new OrePlacement(oreCol, oreRow, worldX, worldY, direction);
+        }
+
+        return null;
     }
 
     private void performMineInteraction(GameHandler gh, OrePlacement placement) {
