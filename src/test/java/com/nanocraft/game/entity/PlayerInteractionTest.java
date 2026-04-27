@@ -597,6 +597,62 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void lethalDamageOpensGameOverMenu() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.player.life = 1;
+
+        gh.player.receiveDamage(gh.player.defense + 1);
+
+        assertEquals(0, gh.player.life);
+        assertEquals(gh.gameOver, gh.gameState);
+        assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void legacyEntityDamageAlsoClampsToZeroAndOpensGameOver() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.player.life = 1;
+
+        Entity attacker = new Entity(gh);
+        attacker.damage(gh.player.defense + 2);
+
+        assertEquals(0, gh.player.life);
+        assertEquals(gh.gameOver, gh.gameState);
+    }
+
+    @Test
+    public void gameOverMenuRespondsToKeyboardNavigation() {
+        GameHandler gh = new GameHandler();
+        gh.openGameOverMenu();
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_S, 'S'));
+        assertEquals(1, gh.ui.getGameOverSelection());
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_W, 'W'));
+        assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void startingNewGameResetsPlayerAndReturnsToPlay() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.gameOver;
+        gh.player.life = 1;
+        gh.player.coin = 99;
+        gh.player.inventory.clear();
+
+        gh.sm.startNewGame();
+
+        assertEquals(gh.play, gh.gameState);
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(0, gh.player.coin);
+        assertEquals(2, gh.player.inventory.size());
+        assertEquals(gh.tileSize * 25, gh.player.worldX);
+        assertEquals(gh.tileSize * 6, gh.player.worldY);
+    }
+
+    @Test
     public void shootingRequiresArrowInInventoryAndConsumesOnePerShot() {
         GameHandler gh = new GameHandler();
         gh.gameState = gh.play;
