@@ -229,12 +229,12 @@ public class Entity {
         if (invincible == true) {
             invincibleCounter++;
 
-            if (invincibleCounter > 20) {
+            if (invincibleCounter > 50) {
                 invincible = false;
                 invincibleCounter = 0;
             }
         }
-        
+
         spriteCounter++;
 
         if (spriteCounter > 14) {
@@ -246,15 +246,6 @@ public class Entity {
                 spriteNum = 1;
             }
             spriteCounter = 0;
-        }
-
-        if (invincible == true) {
-            invincibleCounter++;
-
-            if (invincibleCounter > 40) {
-                invincible = false;
-                invincibleCounter = 0;
-            }
         }
         
         if (shotCounter < 30) {
