@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.monster.Dragon;
 import com.nanocraft.game.monster.GreenSlime;
 import com.nanocraft.game.monster.Zombie;
 import com.nanocraft.game.object.Apple;
@@ -620,6 +621,26 @@ public class PlayerInteractionTest {
 
         assertEquals(1, slime.life);
         assertFalse(slime.dying);
+    }
+
+    @Test
+    public void swordSwingCanOnlyDamageDragonOnce() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        Dragon dragon = new Dragon(gh);
+        dragon.worldX = gh.player.worldX;
+        dragon.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = dragon;
+
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        for (int i = 0; i < 30; i++) {
+            gh.update();
+        }
+
+        assertEquals(dragon.maxLife - Math.min(gh.player.attack, dragon.maxLife - 1), dragon.life);
     }
 
     @Test
