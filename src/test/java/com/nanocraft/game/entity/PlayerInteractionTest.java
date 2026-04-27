@@ -249,6 +249,7 @@ public class PlayerInteractionTest {
         Apple apple = new Apple(gh);
         assertTrue(gh.player.addToInventory(apple));
         gh.player.life = gh.player.maxLife - 1;
+        gh.gameState = gh.inventory;
 
         gh.ui.slotCol = 2;
         gh.ui.slotRow = 0;
@@ -257,6 +258,7 @@ public class PlayerInteractionTest {
         assertEquals(gh.player.maxLife, gh.player.life);
         assertEquals(2, gh.player.inventory.size());
         assertEquals("You ate an Apple. Health: 6/6", latestMessage(gh));
+        assertEquals(gh.play, gh.gameState);
     }
 
     @Test
@@ -265,6 +267,7 @@ public class PlayerInteractionTest {
         Meat meat = new Meat(gh);
         assertTrue(gh.player.addToInventory(meat));
         gh.player.life = gh.player.maxLife;
+        gh.gameState = gh.inventory;
 
         gh.ui.slotCol = 2;
         gh.ui.slotRow = 0;
@@ -275,6 +278,7 @@ public class PlayerInteractionTest {
         assertSame(meat, gh.player.inventory.get(2));
         assertEquals(1, meat.stackCount);
         assertEquals("Health is full. Health: 6/6", latestMessage(gh));
+        assertEquals(gh.play, gh.gameState);
     }
 
     @Test

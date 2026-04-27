@@ -518,7 +518,10 @@ public class Player extends Entity {
         }
 
         if (item.type == consumable) {
-            if (!item.use(this)) {
+            boolean itemWasUsed = item.use(this);
+            closeInventoryAfterItemUse();
+
+            if (!itemWasUsed) {
                 return;
             }
 
@@ -531,6 +534,12 @@ public class Player extends Entity {
         }
 
         gh.ui.addMessage(item.name + " can't be used.");
+    }
+
+    private void closeInventoryAfterItemUse() {
+        if (gh.gameState == gh.inventory) {
+            gh.gameState = gh.play;
+        }
     }
 
     private Entity findFirstWeaponInInventory() {
