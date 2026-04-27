@@ -623,6 +623,27 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void hittingMonsterAppliesKnockbackInAttackDirection() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        GreenSlime slime = new GreenSlime(gh);
+        slime.worldX = gh.player.worldX;
+        slime.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = slime;
+        gh.player.direction = "up";
+        int startY = slime.worldY;
+
+        gh.player.damage(0, gh.player.attack);
+        assertEquals(startY, slime.worldY);
+
+        for (int i = 0; i < 4; i++) {
+            gh.update();
+        }
+
+        assertTrue(slime.worldY <= startY - (gh.tileSize / 2));
+    }
+
+    @Test
     public void lethalDamageOpensGameOverMenu() {
         GameHandler gh = new GameHandler();
         gh.gameState = gh.play;
