@@ -535,20 +535,40 @@ public class Player extends Entity {
     public void selectItem() {
         int itemIndex = gh.ui.getItemIndexOnSlot();
 
-        if (itemIndex < inventory.size()) {
-            Entity item = inventory.get(itemIndex);
+        if (itemIndex >= inventory.size()) {
+            return;
+        }
 
-            if (item.type == TYPE_WEAPON) {
-                currentWeapon = item;
-                attack = getAttack();
+        Entity item = inventory.get(itemIndex);
+
+        if (item.type == TYPE_WEAPON) {
+            currentWeapon = item;
+            attack = getAttack();
+            return;
+        }
+
+        if (item.type == consumable) {
+            boolean itemWasUsed = item.use(this);
+            closeInventoryAfterItemUse();
+
+            if (!itemWasUsed) {
+                return;
             }
 
-            else if (item.type == consumable) {
-                item.stackCount--;
-                if (item.stackCount <= 0) {
-                    inventory.remove(itemIndex);
-                }
+            item.stackCount--;
+            if (item.stackCount <= 0) {
+                Entity removedItem = inventory.remove(itemIndex);
+                handleRemovedInventoryItem(removedItem);
             }
+            return;
+        }
+
+        gh.ui.addMessage(item.name + " can't be used.");
+    }
+
+    private void closeInventoryAfterItemUse() {
+        if (gh.gameState == gh.inventory) {
+            gh.gameState = gh.play;
         }
     }
 
