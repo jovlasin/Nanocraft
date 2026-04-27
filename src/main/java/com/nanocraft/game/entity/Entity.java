@@ -283,14 +283,7 @@ public class Entity {
     public void damage(int attack) {
         if (gh.player.invincible == false) {
                 gh.playSound(6);
-                int damage = attack - gh.player.defense;
-
-                if (damage < 0) {
-                    damage = 0;
-                }
-
-                gh.player.life -= damage;
-                gh.player.invincible = true;
+                gh.player.receiveDamage(attack);
         }
     }
 

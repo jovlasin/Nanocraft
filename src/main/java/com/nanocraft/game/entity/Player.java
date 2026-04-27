@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.core.ItemStacking;
-import com.nanocraft.game.core.SaveManager;
+import com.nanocraft.game.core.SaveHandler;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
@@ -492,6 +492,10 @@ public class Player extends Entity {
 
         life = Math.max(0, life - damage);
         invincible = true;
+
+        if (life == 0) {
+            gh.openGameOverMenu();
+        }
     }
 
     private void applyContactTileDamage() {
@@ -514,6 +518,9 @@ public class Player extends Entity {
         int previousLife = life;
         life = Math.max(0, life - damage);
         invincible = true;
+        if (life == 0) {
+            gh.openGameOverMenu();
+        }
         return life < previousLife;
     }
 
@@ -613,8 +620,8 @@ public class Player extends Entity {
         inventory.add(new Key(gh));
     }
 
-    public SaveManager.PlayerData createSaveData() {
-        SaveManager.PlayerData playerData = new SaveManager.PlayerData();
+    public SaveHandler.PlayerData createSaveData() {
+        SaveHandler.PlayerData playerData = new SaveHandler.PlayerData();
         playerData.worldX = worldX;
         playerData.worldY = worldY;
         playerData.direction = direction;
@@ -635,7 +642,7 @@ public class Player extends Entity {
                 continue;
             }
 
-            SaveManager.ItemData itemData = new SaveManager.ItemData();
+            SaveHandler.ItemData itemData = new SaveHandler.ItemData();
             itemData.itemId = itemId;
             itemData.stackCount = Math.max(1, item.stackCount);
             playerData.inventory.add(itemData);
@@ -644,7 +651,7 @@ public class Player extends Entity {
         return playerData;
     }
 
-    public void applySaveData(SaveManager.PlayerData playerData) {
+    public void applySaveData(SaveHandler.PlayerData playerData) {
         if (playerData == null) {
             return;
         }
@@ -673,7 +680,7 @@ public class Player extends Entity {
 
         inventory.clear();
         if (playerData.inventory != null) {
-            for (SaveManager.ItemData itemData : playerData.inventory) {
+            for (SaveHandler.ItemData itemData : playerData.inventory) {
                 if (itemData == null) {
                     continue;
                 }
