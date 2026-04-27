@@ -17,13 +17,14 @@ public class Skeleton extends Entity {
         type = monster;
         name = "Skeleton";
         speed = 1;
-        maxLife = 10;
+        maxLife = 11;
         life = maxLife;
-        attack = 10;
-        defense = 0;
-        exp = 10;
+        attack = 8;
+        defense = 1;
+        exp = 8;
         projectile = new Arrow(gh);
-        shotCounter = 30;
+        projectile.attack = 4;
+        projectile.speed = 5;
 
         solidArea.x = 8;
         solidArea.y = 16;

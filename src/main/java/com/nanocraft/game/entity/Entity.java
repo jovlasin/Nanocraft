@@ -283,7 +283,7 @@ public class Entity {
     public void damage(int attack) {
         if (gh.player.invincible == false) {
                 gh.playSound(6);
-                gh.player.receiveDamage(attack);
+                gh.player.receiveDamage(attack, this instanceof Projectile ? 1 : 2);
         }
     }
 

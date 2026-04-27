@@ -24,14 +24,14 @@ public class SkeletonKing extends Entity {
         type = TYPE_MONSTER;
         name = "Skeleton Boss";
         speed = CHASE_SPEED;
-        maxLife = 14;
+        maxLife = 50;
         life = maxLife;
-        attack = 5;
-        defense = 0;
-        exp = 10;
+        attack = 8;
+        defense = 2;
+        exp = 18;
         dropItemType = "eye_of_ender";
         projectile = new Arrow(gh);
-        projectile.attack = 5;
+        projectile.attack = 8;
         projectile.speed = 10;
 
         drawSize = gh.tileSize * DRAW_SIZE_MULTIPLIER;
