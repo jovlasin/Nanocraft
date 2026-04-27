@@ -33,6 +33,7 @@ class TiledTilesetData {
     int tileheight;
     int tilecount;
     int columns;
+    List<TiledPropertyData> properties;
     List<TiledTileData> tiles;
 }
 
@@ -51,6 +52,7 @@ class TiledObjectData {
     int id;
     String name;
     String type;
+    Integer gid;
     double x;
     double y;
     double width;

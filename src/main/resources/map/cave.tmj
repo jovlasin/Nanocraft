@@ -223,9 +223,241 @@
          "width":100,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":3,
+         "name":"Chest Markers",
+         "objects":[
+                {
+                 "height":16,
+                 "id":1,
+                 "name":"Chest 1",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"key"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":496,
+                 "y":144
+                }, 
+                {
+                 "height":16,
+                 "id":2,
+                 "name":"Chest 2",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk,ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":656,
+                 "y":144
+                }, 
+                {
+                 "height":16,
+                 "id":3,
+                 "name":"Chest 3",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":1296,
+                 "y":224
+                }, 
+                {
+                 "height":16,
+                 "id":4,
+                 "name":"Chest 4",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk,ore_chunk,ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":464,
+                 "y":320
+                }, 
+                {
+                 "height":16,
+                 "id":5,
+                 "name":"Chest 5",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":144,
+                 "y":560
+                }, 
+                {
+                 "height":16,
+                 "id":6,
+                 "name":"Chest 6",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk,ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":432,
+                 "y":592
+                }, 
+                {
+                 "height":16,
+                 "id":7,
+                 "name":"Chest 7",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":160,
+                 "y":848
+                }, 
+                {
+                 "height":16,
+                 "id":8,
+                 "name":"Chest 8",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":80,
+                 "y":1104
+                }, 
+                {
+                 "height":16,
+                 "id":9,
+                 "name":"Chest 9",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk,ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":80,
+                 "y":1360
+                }, 
+                {
+                 "height":16,
+                 "id":10,
+                 "name":"Chest 10",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":432,
+                 "y":1360
+                }, 
+                {
+                 "height":16,
+                 "id":11,
+                 "name":"Chest 11",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk,ore_chunk,ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":944,
+                 "y":1424
+                }, 
+                {
+                 "height":16,
+                 "id":12,
+                 "name":"Chest 12",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":784,
+                 "y":1488
+                }, 
+                {
+                 "height":16,
+                 "id":13,
+                 "name":"Chest 13",
+                 "properties":[
+                        {
+                         "name":"loot",
+                         "type":"string",
+                         "value":"ore_chunk"
+                        }],
+                 "rotation":0,
+                 "type":"chest",
+                 "visible":true,
+                 "width":16,
+                 "x":288,
+                 "y":1568
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":3,
- "nextobjectid":1,
+ "nextlayerid":4,
+ "nextobjectid":14,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.1",
@@ -533,9 +765,24 @@
                          "value":true
                         }, 
                         {
+                         "name":"dropItemType",
+                         "type":"string",
+                         "value":"diamond"
+                        }, 
+                        {
                          "name":"oreHealth",
                          "type":"int",
                          "value":5
+                        }, 
+                        {
+                         "name":"replacementTileId",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"requiredItemType",
+                         "type":"string",
+                         "value":"diamond_pickaxe"
                         }]
                 }],
          "tilewidth":16
@@ -561,9 +808,24 @@
                          "value":true
                         }, 
                         {
+                         "name":"dropItemType",
+                         "type":"string",
+                         "value":"redstone"
+                        }, 
+                        {
                          "name":"oreHealth",
                          "type":"int",
                          "value":4
+                        }, 
+                        {
+                         "name":"replacementTileId",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"requiredItemType",
+                         "type":"string",
+                         "value":"diamond_pickaxe"
                         }]
                 }],
          "tilewidth":16
@@ -589,9 +851,24 @@
                          "value":true
                         }, 
                         {
+                         "name":"dropItemType",
+                         "type":"string",
+                         "value":"emerald"
+                        }, 
+                        {
                          "name":"oreHealth",
                          "type":"int",
                          "value":4
+                        }, 
+                        {
+                         "name":"replacementTileId",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"requiredItemType",
+                         "type":"string",
+                         "value":"diamond_pickaxe"
                         }]
                 }],
          "tilewidth":16
