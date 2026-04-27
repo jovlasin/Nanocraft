@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.monster.GreenSlime;
 import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.Emerald;
 import com.nanocraft.game.object.Meat;
@@ -572,6 +573,27 @@ public class PlayerInteractionTest {
 
         assertSame(sword.attackUp1, gh.player.resolveCurrentAttackSprite());
         assertNotEquals(sword.attackUp1, gh.player.up1);
+    }
+
+    @Test
+    public void swordSwingCanOnlyDamageMonsterOnce() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.monsters = new Entity[50];
+
+        GreenSlime slime = new GreenSlime(gh);
+        slime.worldX = gh.player.worldX;
+        slime.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = slime;
+
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        for (int i = 0; i < 30; i++) {
+            gh.update();
+        }
+
+        assertEquals(slime.maxLife - gh.player.attack, slime.life);
     }
 
     @Test
