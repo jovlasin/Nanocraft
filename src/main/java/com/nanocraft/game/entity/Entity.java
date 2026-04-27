@@ -54,6 +54,10 @@ public class Entity {
     public boolean stackable;
     public int stackCount;
     public int maxStackSize;
+    public boolean knockBack;
+    public String knockBackDirection;
+    public int knockBackCounter;
+    public int knockBackSpeed;
 
     public final int player = TYPE_PLAYER;
     public final int npc = TYPE_NPC;
@@ -193,36 +197,79 @@ public class Entity {
     }
 
     public void update() {
-        setAction();
+        if (knockBack == true) {
+            collisionOn = false;
+            String movementDirection = knockBackDirection == null || knockBackDirection.isBlank() ? direction : knockBackDirection;
+            String originalDirection = direction;
+            int originalSpeed = speed;
+            direction = movementDirection;
+            speed = knockBackSpeed;
 
-        collisionOn = false;
-        gh.ch.checkTile(this);
-        gh.ch.checkObject(this, false);
-        gh.ch.checkEntity(this, gh.npcs);
-        gh.ch.checkEntity(this, gh.monsters);
-        boolean contact = gh.ch.checkPlayer(this);
+            gh.ch.checkTile(this);
+            gh.ch.checkObject(this, false);
+            gh.ch.checkEntity(this, gh.npcs);
+            gh.ch.checkEntity(this, gh.monsters);
 
-        if (type == monster && contact == true) {
-            damage(attack);
-        }
+            if (collisionOn == false) {
+                switch (movementDirection) {
+                    case "up":
+                        worldY -= speed;
+                    break;
 
-        if (collisionOn == false) {
-            switch (direction) {
-                case "up":
-                    worldY -= speed;
-                break;
-            
-                case "down":
-                    worldY += speed;
-                break;
+                    case "down":
+                        worldY += speed;
+                    break;
 
-                case "left":
-                    worldX -= speed;
-                break;
+                    case "left":
+                        worldX -= speed;
+                    break;
 
-                case "right":
-                    worldX += speed;
-                break;
+                    case "right":
+                        worldX += speed;
+                    break;
+                }
+            }
+
+            direction = originalDirection;
+            speed = originalSpeed;
+            knockBackCounter--;
+
+            if (collisionOn == true || knockBackCounter <= 0) {
+                knockBack = false;
+                knockBackCounter = 0;
+            }
+        } else {
+            setAction();
+
+            collisionOn = false;
+            gh.ch.checkTile(this);
+            gh.ch.checkObject(this, false);
+            gh.ch.checkEntity(this, gh.npcs);
+            gh.ch.checkEntity(this, gh.monsters);
+            boolean contact = gh.ch.checkPlayer(this);
+
+            if (type == monster && contact == true) {
+                damage(attack);
+            }
+
+            if (collisionOn == false) {
+                switch (direction) {
+                    case "up":
+                        worldY -= speed;
+                    break;
+                
+                    case "down":
+                        worldY += speed;
+                    break;
+
+                    case "left":
+                        worldX -= speed;
+                    break;
+
+                    case "right":
+                        worldX += speed;
+                    break;
+                }
             }
         }
 

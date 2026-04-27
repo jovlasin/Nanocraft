@@ -454,8 +454,9 @@ public class Player extends Entity {
             }
 
             if (gh.monsters[i].invincible == false) {
-                int monsterLifeBeforeHit = gh.monsters[i].life;
-                int damage = attack - gh.monsters[i].defense;
+                Entity monster = gh.monsters[i];
+                int monsterLifeBeforeHit = monster.life;
+                int damage = attack - monster.defense;
 
                 if (attack > 0 && damage < 1) {
                     damage = 1;
@@ -465,21 +466,25 @@ public class Player extends Entity {
                     damage = 0;
                 }
 
-                if (monsterLifeBeforeHit == gh.monsters[i].maxLife && monsterLifeBeforeHit > 1 && damage >= monsterLifeBeforeHit) {
+                if (monsterLifeBeforeHit == monster.maxLife && monsterLifeBeforeHit > 1 && damage >= monsterLifeBeforeHit) {
                     damage = monsterLifeBeforeHit - 1;
                 }
 
-                gh.monsters[i].life -= damage;
+                monster.life -= damage;
                 gh.ui.addMessage(damage + " damage!");
-                gh.monsters[i].invincible = true;
+                monster.invincible = true;
+                monster.knockBack = true;
+                monster.knockBackDirection = direction;
+                monster.knockBackSpeed = Math.max(monster.speed + 2, gh.tileSize / 8);
+                monster.knockBackCounter = 8;
 
-                if (gh.monsters[i].life <= 0) {
-                    gh.monsters[i].dying = true;
-                    gh.ui.addMessage("You killed a " + gh.monsters[i].name + "!");
-                    gh.ui.addMessage("Exp + " + gh.monsters[i].exp);
-                    exp += gh.monsters[i].exp;
-                    gh.monsters[i].onDefeat();
-                    if (gh.monsters[i].alive == false) {
+                if (monster.life <= 0) {
+                    monster.dying = true;
+                    gh.ui.addMessage("You killed a " + monster.name + "!");
+                    gh.ui.addMessage("Exp + " + monster.exp);
+                    exp += monster.exp;
+                    monster.onDefeat();
+                    if (monster.alive == false) {
                         gh.markMonsterKilled(i);
                         gh.monsters[i] = null;
                     }
