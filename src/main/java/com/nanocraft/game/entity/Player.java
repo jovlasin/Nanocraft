@@ -61,7 +61,7 @@ public class Player extends Entity {
     }
 
     public int getDefense() {
-        return dexterity * 3;
+        return dexterity + 1;
     }
 
     public void update() {
@@ -361,7 +361,7 @@ public class Player extends Entity {
     private void interactMonster(int i) {
         if (i != 999) {
             if (gh.monsters[i].dying == false) {
-                receiveDamage(gh.monsters[i].attack);
+                receiveDamage(gh.monsters[i].attack, 2);
             }
         }
     }
@@ -454,10 +454,19 @@ public class Player extends Entity {
             }
 
             if (gh.monsters[i].invincible == false) {
+                int monsterLifeBeforeHit = gh.monsters[i].life;
                 int damage = attack - gh.monsters[i].defense;
 
-                if (damage < 0) {
+                if (attack > 0 && damage < 1) {
+                    damage = 1;
+                }
+
+                else if (damage < 0) {
                     damage = 0;
+                }
+
+                if (monsterLifeBeforeHit == gh.monsters[i].maxLife && monsterLifeBeforeHit > 1 && damage >= monsterLifeBeforeHit) {
+                    damage = monsterLifeBeforeHit - 1;
                 }
 
                 gh.monsters[i].life -= damage;
@@ -481,12 +490,21 @@ public class Player extends Entity {
     }
 
     public void receiveDamage(int incomingAttack) {
+        receiveDamage(incomingAttack, 2);
+    }
+
+    public void receiveDamage(int incomingAttack, int minimumDamage) {
         if (invincible == true) {
             return;
         }
 
         int damage = incomingAttack - defense;
-        if (damage < 0) {
+        
+        if (incomingAttack > 0 && damage < minimumDamage) {
+            damage = minimumDamage;
+        }
+
+        else if (damage < 0) {
             damage = 0;
         }
 

@@ -116,7 +116,7 @@ public class Fireball extends Projectile {
             return false;
         }
 
-        gh.player.receiveDamage(attack);
+        gh.player.receiveDamage(attack, 1);
         return true;
     }
 }

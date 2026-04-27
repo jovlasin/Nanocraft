@@ -13,7 +13,7 @@ import com.nanocraft.game.object.Fireball;
 import com.nanocraft.game.tile.ResourceLoader;
 
 public class Dragon extends Entity {
-    private static final int MAX_LIFE = 36;
+    private static final int MAX_LIFE = 100;
     private static final int FRAME_COUNT = 4;
     private static final int SOURCE_FRAME_SIZE = 16;
     private static final int DRAW_WIDTH_TILES = 3;
@@ -45,8 +45,8 @@ public class Dragon extends Entity {
         speed = 0;
         maxLife = MAX_LIFE;
         life = maxLife;
-        attack = 5;
-        defense = 0;
+        attack = 9;
+        defense = 3;
         exp = 40;
         direction = "left";
 

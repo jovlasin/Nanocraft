@@ -19,6 +19,7 @@ import org.junit.Test;
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
 import com.nanocraft.game.monster.GreenSlime;
+import com.nanocraft.game.monster.Zombie;
 import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.Emerald;
 import com.nanocraft.game.object.Meat;
@@ -593,7 +594,32 @@ public class PlayerInteractionTest {
             gh.update();
         }
 
-        assertEquals(slime.maxLife - gh.player.attack, slime.life);
+        assertEquals(slime.maxLife - Math.min(gh.player.attack, slime.maxLife - 1), slime.life);
+    }
+
+    @Test
+    public void starterSwordStillDamagesDefensiveMonsters() {
+        GameHandler gh = new GameHandler();
+        Zombie zombie = new Zombie(gh);
+        gh.monsters[0] = zombie;
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertTrue(zombie.life < zombie.maxLife);
+    }
+
+    @Test
+    public void strongPlayerCannotOneShotFullHealthMonster() {
+        GameHandler gh = new GameHandler();
+        GreenSlime slime = new GreenSlime(gh);
+        gh.monsters[0] = slime;
+        gh.player.strength = 99;
+        gh.player.attack = gh.player.getAttack();
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertEquals(1, slime.life);
+        assertFalse(slime.dying);
     }
 
     @Test
@@ -650,6 +676,18 @@ public class PlayerInteractionTest {
         assertEquals(2, gh.player.inventory.size());
         assertEquals(gh.tileSize * 25, gh.player.worldX);
         assertEquals(gh.tileSize * 6, gh.player.worldY);
+    }
+
+    @Test
+    public void leveledPlayerStillTakesMinimumTwoDamageFromWeakMonsterMelee() {
+        GameHandler gh = new GameHandler();
+        gh.player.dexterity = 4;
+        gh.player.defense = gh.player.getDefense();
+        gh.player.life = gh.player.maxLife;
+
+        gh.player.receiveDamage(new GreenSlime(gh).attack);
+
+        assertEquals(gh.player.maxLife - 2, gh.player.life);
     }
 
     @Test
