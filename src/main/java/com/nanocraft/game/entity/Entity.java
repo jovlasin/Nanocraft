@@ -448,7 +448,7 @@ public class Entity {
         this.stackCount = 1;
     }
 
-    private void changeAlpha(Graphics2D g2d, float alpha) {
+    public void changeAlpha(Graphics2D g2d, float alpha) {
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
     }
 }

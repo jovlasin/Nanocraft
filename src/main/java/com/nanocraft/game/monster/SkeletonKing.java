@@ -91,7 +91,35 @@ public class SkeletonKing extends Entity {
                 image = spriteNum == 1 ? right1 : right2;
             }
 
+            if (hpBarOn == true) {
+                double oneScale = (double) drawSize / maxLife;
+                double hpValue = oneScale * life;
+
+                g2.setColor(new java.awt.Color(35, 35, 35));
+                g2.fillRect(screenX - 1, screenY - 16, drawSize + 2, 12);
+
+                g2.setColor(new java.awt.Color(255, 0, 30));
+                g2.fillRect(screenX, screenY - 15, (int) hpValue, 10);
+                hpBarCounter++;
+
+                if (hpBarCounter > 600) {
+                    hpBarCounter = 0;
+                    hpBarOn = false;
+                }
+            }
+
+            if (invincible == true) {
+                hpBarOn = true;
+                hpBarCounter = 0;
+                changeAlpha(g2, 0.4f);
+            }
+
+            if (dying == true) {
+                deathEffect(g2);
+            }
+
             g2.drawImage(image, screenX, screenY, null);
+            changeAlpha(g2, 1f);
         }
     }
 

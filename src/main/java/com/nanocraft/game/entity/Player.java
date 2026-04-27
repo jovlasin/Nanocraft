@@ -373,7 +373,7 @@ public class Player extends Entity {
             spriteNum = 1;
         }
 
-        else if (spriteCounter > 5 && spriteCounter <= 40) {
+        else if (spriteCounter > 5 && spriteCounter <= 30) {
             spriteNum = 2;
 
             int x = worldX;

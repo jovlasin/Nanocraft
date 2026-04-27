@@ -20,7 +20,7 @@ public class Dragon extends Entity {
     private static final int DRAW_HEIGHT_TILES = 3;
     private static final int ANIMATION_INTERVAL_TICKS = 10;
     private static final int SHOOT_INTERVAL_TICKS = 75;
-    private static final int INVINCIBLE_DURATION_TICKS = 18;
+    private static final int INVINCIBLE_DURATION_TICKS = 50;
     private static final int DYING_DURATION_TICKS = 45;
 
     private final BufferedImage[] frames;
@@ -93,9 +93,28 @@ public class Dragon extends Entity {
         BufferedImage currentFrame = frames[animationFrame];
         float alpha = 1f;
 
+        if (hpBarOn == true) {
+            double oneScale = (double) drawWidth / maxLife;
+            double hpValue = oneScale * life;
+
+            g2.setColor(new java.awt.Color(35, 35, 35));
+            g2.fillRect(screenX - 1, screenY - 16, drawWidth + 2, 12);
+
+            g2.setColor(new java.awt.Color(255, 0, 30));
+            g2.fillRect(screenX, screenY - 15, (int) hpValue, 10);
+            hpBarCounter++;
+
+            if (hpBarCounter > 600) {
+                hpBarCounter = 0;
+                hpBarOn = false;
+            }
+        }
+
         if (dying == true) {
             alpha = (dyingCounter / 4) % 2 == 0 ? 0.25f : 0.75f;
         } else if (invincible == true) {
+            hpBarOn = true;
+            hpBarCounter = 0;
             alpha = 0.6f;
         }
 
