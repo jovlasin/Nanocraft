@@ -10,7 +10,7 @@ public class DayNightCycle {
         + NIGHT_DURATION_SECONDS
         + (TRANSITION_DURATION_SECONDS * 2)
     );
-    private static final float MAX_NIGHT_ALPHA = 0.88f;
+    private static final float MAX_NIGHT_ALPHA = 0.95f;
 
     private final int cycleTicks;
     private int currentTick;

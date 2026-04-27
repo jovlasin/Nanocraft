@@ -35,6 +35,7 @@ import com.nanocraft.game.object.OreChunk;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Redstone;
 import com.nanocraft.game.object.Sword;
+import com.nanocraft.game.object.Torch;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
@@ -550,6 +551,8 @@ public class GameHandler extends JPanel implements Runnable {
                 return new Pickaxe(this);
             case "redstone":
                 return new Redstone(this);
+            case "torch":
+                return new Torch(this);
 
             case "sword":
             case "normal_sword":
@@ -608,6 +611,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         if (item instanceof Redstone) {
             return "redstone";
+        }
+
+        if (item instanceof Torch) {
+            return "torch";
         }
 
         if (item instanceof Sword) {
@@ -821,22 +828,31 @@ public class GameHandler extends JPanel implements Runnable {
         lightG.fillRect(0, 0, screenWidth, screenHeight);
 
         lightG.setComposite(AlphaComposite.SrcOver);
-        lightG.setColor(new Color(0f, 0.04f, 0.10f, darknessAlpha));
+        lightG.setColor(new Color(0f, 0f, 0f, darknessAlpha));
         lightG.fillRect(0, 0, screenWidth, screenHeight);
-
-        int lightRadius = tileSize * 3;
-        Point2D center = new Point2D.Float(player.screenX + (tileSize / 2f), player.screenY + (tileSize / 2f));
-        float[] dist = {0f, 0.45f, 1f};
-        Color[] colors = {
-            new Color(0f, 0f, 0f, darknessAlpha),
-            new Color(0f, 0f, 0f, darknessAlpha * 0.45f),
-            new Color(0f, 0f, 0f, 0f)
-        };
 
         lightG.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         lightG.setComposite(AlphaComposite.DstOut);
-        lightG.setPaint(new RadialGradientPaint(center, lightRadius, dist, colors));
-        lightG.fillOval(Math.round((float) center.getX()) - lightRadius, Math.round((float) center.getY()) - lightRadius, lightRadius * 2, lightRadius * 2);
+
+        boolean torchEquipped = player.currentTool != null && "torch".equalsIgnoreCase(player.currentTool.itemId);
+        float[] dist = {0f, 0.45f, 1f};
+        Point2D playerLightCenter = new Point2D.Float(player.screenX + (tileSize / 2f), player.screenY + (tileSize / 2f));
+
+        if (torchEquipped) {
+            Color[] torchColors = {
+                new Color(0f, 0f, 0f, darknessAlpha),
+                new Color(0f, 0f, 0f, darknessAlpha * 0.45f),
+                new Color(0f, 0f, 0f, 0f)
+            };
+            int playerLightRadius = tileSize * 5;
+            lightG.setPaint(new RadialGradientPaint(playerLightCenter, playerLightRadius, dist, torchColors));
+            lightG.fillOval(
+                Math.round((float) playerLightCenter.getX()) - playerLightRadius,
+                Math.round((float) playerLightCenter.getY()) - playerLightRadius,
+                playerLightRadius * 2,
+                playerLightRadius * 2
+            );
+        }
         lightG.dispose();
 
         g2d.drawImage(lightingFilter, 0, 0, null);

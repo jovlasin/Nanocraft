@@ -90,6 +90,7 @@ public class SaveHandler {
         public int nextLevelExp;
         public int coin;
         public int currentWeaponIndex = -1;
+        public int currentToolIndex = -1;
         public List<ItemData> inventory = new ArrayList<>();
     }
 
