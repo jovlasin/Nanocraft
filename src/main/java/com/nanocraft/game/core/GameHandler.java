@@ -56,6 +56,7 @@ public class GameHandler extends JPanel implements Runnable {
     public static final int SFX_MAIN_MENU = 9;
     public static final int SFX_CHEST_OPEN = 10;
     public static final int SFX_ENTERING_END = 11;
+    private static final int SFX_COUNT = SFX_ENTERING_END + 1;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -723,6 +724,7 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         loadMusicIfNeeded();
+        music.setVolume(MUSIC_MAIN, musicVolume);
         music.loop(MUSIC_MAIN);
     }
 
@@ -741,6 +743,7 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         loadSoundEffectsIfNeeded();
+        se.setVolume(i, sfxVolume);
         se.play(i);
     }
 
@@ -762,6 +765,7 @@ public class GameHandler extends JPanel implements Runnable {
         se.load(SFX_CHEST_OPEN, "/sound/ChestOpen.wav");
         se.load(SFX_ENTERING_END, "/sound/EnteringEnd.wav");
         soundEffectsLoaded = true;
+        applySfxVolume();
     }
 
     public boolean isFullScreen() {
@@ -784,6 +788,9 @@ public class GameHandler extends JPanel implements Runnable {
             return;
         }
 
+        if (musicLoaded) {
+            music.setVolume(MUSIC_MAIN, musicVolume);
+        }
         playMusic();
     }
 
@@ -793,6 +800,17 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setSfxVolume(int percent) {
         sfxVolume = Math.max(0, Math.min(100, percent));
+        applySfxVolume();
+    }
+
+    private void applySfxVolume() {
+        if (!soundEffectsLoaded) {
+            return;
+        }
+
+        for (int i = 0; i < SFX_COUNT; i++) {
+            se.setVolume(i, sfxVolume);
+        }
     }
   
     public void clearProjectiles() {
