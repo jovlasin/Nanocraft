@@ -10,7 +10,7 @@ import java.util.Set;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
-import com.nanocraft.game.core.SaveManager;
+import com.nanocraft.game.core.SaveHandler;
 import com.nanocraft.game.entity.Entity;
 
 public class TileHandler {
@@ -635,15 +635,15 @@ public class TileHandler {
         rememberCurrentMapState();
     }
 
-    public List<SaveManager.ChestData> createChestSaveData() {
-        List<SaveManager.ChestData> chestDataList = new ArrayList<>();
+    public List<SaveHandler.ChestData> createChestSaveData() {
+        List<SaveHandler.ChestData> chestDataList = new ArrayList<>();
 
         for (ChestState chestState : chestRegistry.values()) {
             if (chestState == null) {
                 continue;
             }
 
-            SaveManager.ChestData chestData = new SaveManager.ChestData();
+            SaveHandler.ChestData chestData = new SaveHandler.ChestData();
             chestData.mapPath = chestState.mapPath;
             chestData.col = chestState.col;
             chestData.row = chestState.row;
@@ -655,7 +655,7 @@ public class TileHandler {
                     continue;
                 }
 
-                SaveManager.ItemData itemData = new SaveManager.ItemData();
+                SaveHandler.ItemData itemData = new SaveHandler.ItemData();
                 itemData.itemId = itemId;
                 itemData.stackCount = Math.max(1, item.stackCount);
                 chestData.items.add(itemData);
@@ -667,13 +667,13 @@ public class TileHandler {
         return chestDataList;
     }
 
-    public void restoreChestSaveData(List<SaveManager.ChestData> savedChests) {
+    public void restoreChestSaveData(List<SaveHandler.ChestData> savedChests) {
         chestRegistry.clear();
         if (savedChests == null) {
             return;
         }
 
-        for (SaveManager.ChestData savedChest : savedChests) {
+        for (SaveHandler.ChestData savedChest : savedChests) {
             if (savedChest == null || savedChest.mapPath == null || savedChest.mapPath.isBlank()) {
                 continue;
             }
@@ -682,7 +682,7 @@ public class TileHandler {
             chestState.opened = savedChest.opened;
 
             if (savedChest.items != null) {
-                for (SaveManager.ItemData itemData : savedChest.items) {
+                for (SaveHandler.ItemData itemData : savedChest.items) {
                     if (itemData == null) {
                         continue;
                     }
@@ -701,12 +701,12 @@ public class TileHandler {
         }
     }
 
-    public List<SaveManager.MapStateData> createMapStateSaveData() {
+    public List<SaveHandler.MapStateData> createMapStateSaveData() {
         rememberCurrentMapState();
 
-        List<SaveManager.MapStateData> mapStateDataList = new ArrayList<>();
+        List<SaveHandler.MapStateData> mapStateDataList = new ArrayList<>();
         for (Map.Entry<String, StoredMapState> entry : storedMapStates.entrySet()) {
-            SaveManager.MapStateData mapStateData = new SaveManager.MapStateData();
+            SaveHandler.MapStateData mapStateData = new SaveHandler.MapStateData();
             mapStateData.mapPath = entry.getKey();
             mapStateData.layers = toLayerData(entry.getValue().layers);
             mapStateData.healthLayers = toLayerData(entry.getValue().healthLayers);
@@ -716,13 +716,13 @@ public class TileHandler {
         return mapStateDataList;
     }
 
-    public void restoreMapStateSaveData(List<SaveManager.MapStateData> savedMapStates) {
+    public void restoreMapStateSaveData(List<SaveHandler.MapStateData> savedMapStates) {
         storedMapStates.clear();
         if (savedMapStates == null) {
             return;
         }
 
-        for (SaveManager.MapStateData savedMapState : savedMapStates) {
+        for (SaveHandler.MapStateData savedMapState : savedMapStates) {
             if (savedMapState == null || savedMapState.mapPath == null || savedMapState.mapPath.isBlank()) {
                 continue;
             }
@@ -1034,8 +1034,8 @@ public class TileHandler {
         applyLayerCopies(layerHealth, storedMapState.healthLayers);
     }
 
-    private List<SaveManager.LayerData> toLayerData(List<int[][]> sourceLayers) {
-        List<SaveManager.LayerData> layerDataList = new ArrayList<>();
+    private List<SaveHandler.LayerData> toLayerData(List<int[][]> sourceLayers) {
+        List<SaveHandler.LayerData> layerDataList = new ArrayList<>();
         if (sourceLayers == null) {
             return layerDataList;
         }
@@ -1045,7 +1045,7 @@ public class TileHandler {
                 continue;
             }
 
-            SaveManager.LayerData layerData = new SaveManager.LayerData();
+            SaveHandler.LayerData layerData = new SaveHandler.LayerData();
             layerData.width = layer.length;
             layerData.height = layer[0].length;
             layerData.values = flattenLayer(layer);
@@ -1055,13 +1055,13 @@ public class TileHandler {
         return layerDataList;
     }
 
-    private List<int[][]> fromLayerData(List<SaveManager.LayerData> layerDataList) {
+    private List<int[][]> fromLayerData(List<SaveHandler.LayerData> layerDataList) {
         List<int[][]> restoredLayers = new ArrayList<>();
         if (layerDataList == null) {
             return restoredLayers;
         }
 
-        for (SaveManager.LayerData layerData : layerDataList) {
+        for (SaveHandler.LayerData layerData : layerDataList) {
             if (layerData == null || layerData.width <= 0 || layerData.height <= 0) {
                 continue;
             }

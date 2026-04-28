@@ -11,11 +11,11 @@ public class Zombie extends Entity {
         type = monster;
         name = "Zombie";
         speed = 1;
-        maxLife = 8;
+        maxLife = 9;
         life = maxLife;
-        attack = 8;
+        attack = 6;
         defense = 1;
-        exp = 3;
+        exp = 4;
 
         solidArea.x = 8;
         solidArea.y = 16;

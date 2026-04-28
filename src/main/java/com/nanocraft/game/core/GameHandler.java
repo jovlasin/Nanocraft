@@ -41,6 +41,7 @@ import com.nanocraft.game.tile.TileHandler;
 public class GameHandler extends JPanel implements Runnable {
     private static final String NETHER_MAP_PATH = "/map/nether.tmj";
     private static final String END_MAP_PATH = "/map/end.tmj";
+    public static final String STARTING_MAP_PATH = "/map/village.tmj";
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -63,11 +64,11 @@ public class GameHandler extends JPanel implements Runnable {
     public ChestState activeChest;
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
-    private boolean bronzeDragonDefeated;
-    private boolean skeletonKingDefeated;
-    private final SaveManager saveManager = new SaveManager();
-    private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
-    private final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
+    public boolean bronzeDragonDefeated;
+    public boolean skeletonKingDefeated;
+    public final SaveHandler sm = new SaveHandler(this);
+    public final Map<String, List<SaveHandler.WorldObjectData>> persistentObjectStates = new HashMap<>();
+    public final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
     public Innkeeper ik = new Innkeeper(this);
     private boolean monsterSpawnWindowOpen;
@@ -80,6 +81,7 @@ public class GameHandler extends JPanel implements Runnable {
     public final int inventory = 4;
     public final int stats = 5;
     public final int chest = 6;
+    public final int gameOver = 7;
     public int gameState = 999;
     private BufferedImage lightingFilter;
     private int musicVolume = 100;
@@ -278,12 +280,12 @@ public class GameHandler extends JPanel implements Runnable {
         persistentObjectStates.put(currentMapPath, snapshotObjects(objs));
     }
 
-    public List<SaveManager.ObjectMapData> createObjectSaveData() {
+    public List<SaveHandler.ObjectMapData> createObjectSaveData() {
         rememberCurrentMapObjects();
 
-        List<SaveManager.ObjectMapData> objectMaps = new ArrayList<>();
-        for (Map.Entry<String, List<SaveManager.WorldObjectData>> entry : persistentObjectStates.entrySet()) {
-            SaveManager.ObjectMapData objectMapData = new SaveManager.ObjectMapData();
+        List<SaveHandler.ObjectMapData> objectMaps = new ArrayList<>();
+        for (Map.Entry<String, List<SaveHandler.WorldObjectData>> entry : persistentObjectStates.entrySet()) {
+            SaveHandler.ObjectMapData objectMapData = new SaveHandler.ObjectMapData();
             objectMapData.mapPath = entry.getKey();
             objectMapData.objects = copyWorldObjectData(entry.getValue());
             objectMaps.add(objectMapData);
@@ -292,14 +294,14 @@ public class GameHandler extends JPanel implements Runnable {
         return objectMaps;
     }
 
-    public List<SaveManager.MonsterMapData> createMonsterSaveData() {
-        List<SaveManager.MonsterMapData> monsterMaps = new ArrayList<>();
+    public List<SaveHandler.MonsterMapData> createMonsterSaveData() {
+        List<SaveHandler.MonsterMapData> monsterMaps = new ArrayList<>();
         for (Map.Entry<String, Set<Integer>> entry : persistentMonsterStates.entrySet()) {
             if (entry.getKey() == null || entry.getKey().isBlank()) {
                 continue;
             }
 
-            SaveManager.MonsterMapData monsterMapData = new SaveManager.MonsterMapData();
+            SaveHandler.MonsterMapData monsterMapData = new SaveHandler.MonsterMapData();
             monsterMapData.mapPath = entry.getKey();
             monsterMapData.killedSlots = new ArrayList<>(entry.getValue());
             monsterMaps.add(monsterMapData);
@@ -308,7 +310,7 @@ public class GameHandler extends JPanel implements Runnable {
         return monsterMaps;
     }
 
-    public void applySaveData(SaveManager.SaveData saveData) {
+    public void applySaveData(SaveHandler.SaveData saveData) {
         activeChest = null;
         projectileList.clear();
         ui.resetChestUi();
@@ -319,7 +321,7 @@ public class GameHandler extends JPanel implements Runnable {
         persistentObjectStates.clear();
         persistentMonsterStates.clear();
         if (saveData.objectStates != null) {
-            for (SaveManager.ObjectMapData objectMapData : saveData.objectStates) {
+            for (SaveHandler.ObjectMapData objectMapData : saveData.objectStates) {
                 if (objectMapData == null || objectMapData.mapPath == null || objectMapData.mapPath.isBlank()) {
                     continue;
                 }
@@ -329,7 +331,7 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         if (saveData.monsterStates != null) {
-            for (SaveManager.MonsterMapData monsterMapData : saveData.monsterStates) {
+            for (SaveHandler.MonsterMapData monsterMapData : saveData.monsterStates) {
                 if (monsterMapData == null || monsterMapData.mapPath == null || monsterMapData.mapPath.isBlank()) {
                     continue;
                 }
@@ -365,7 +367,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public boolean saveGame() {
         try {
-            saveManager.save(this);
+            sm.save(this);
             ui.addMessage("Game saved.");
             return true;
         } catch (Exception e) {
@@ -377,7 +379,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public boolean loadGame() {
         try {
-            if (!saveManager.load(this)) {
+            if (!sm.load(this)) {
                 ui.addMessage("No save file found.");
                 if (gameState == pause) {
                     closePauseMenu();
@@ -397,6 +399,21 @@ public class GameHandler extends JPanel implements Runnable {
     public void openPauseMenu() {
         ui.resetPauseMenu();
         gameState = pause;
+    }
+
+    public void openGameOverMenu() {
+        if (gameState == gameOver) {
+            return;
+        }
+
+        kh.up = false;
+        kh.down = false;
+        kh.left = false;
+        kh.right = false;
+        kh.space = false;
+        kh.shoot = false;
+        ui.resetGameOverMenu();
+        gameState = gameOver;
     }
 
     public void closePauseMenu() {
@@ -476,6 +493,29 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         ui.closePauseExitConfirmation();
+    }
+
+    public void activateGameOverSelection() {
+        switch (ui.getGameOverSelection()) {
+            case 0:
+                if (hasSaveGame()) {
+                    loadGame();
+                } else {
+                    sm.startNewGame();
+                }
+                break;
+
+            case 1:
+                System.exit(0);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    public boolean hasSaveGame() {
+        return sm.hasSaveFile();
     }
 
     public Entity createItemEntity(String itemType) {
@@ -877,7 +917,7 @@ public class GameHandler extends JPanel implements Runnable {
         clearObjects();
 
         String currentMapPath = th.getCurrentMapPath();
-        List<SaveManager.WorldObjectData> savedObjects = persistentObjectStates.get(currentMapPath);
+        List<SaveHandler.WorldObjectData> savedObjects = persistentObjectStates.get(currentMapPath);
         if (savedObjects == null) {
             ah.setObjects();
             rememberCurrentMapObjects();
@@ -887,8 +927,8 @@ public class GameHandler extends JPanel implements Runnable {
         applyObjects(savedObjects);
     }
 
-    private List<SaveManager.WorldObjectData> snapshotObjects(Entity[] sourceObjects) {
-        List<SaveManager.WorldObjectData> savedObjects = new ArrayList<>();
+    private List<SaveHandler.WorldObjectData> snapshotObjects(Entity[] sourceObjects) {
+        List<SaveHandler.WorldObjectData> savedObjects = new ArrayList<>();
 
         for (Entity object : sourceObjects) {
             if (object == null) {
@@ -900,7 +940,7 @@ public class GameHandler extends JPanel implements Runnable {
                 continue;
             }
 
-            SaveManager.WorldObjectData worldObjectData = new SaveManager.WorldObjectData();
+            SaveHandler.WorldObjectData worldObjectData = new SaveHandler.WorldObjectData();
             worldObjectData.itemId = itemId;
             worldObjectData.worldX = object.worldX;
             worldObjectData.worldY = object.worldY;
@@ -911,18 +951,18 @@ public class GameHandler extends JPanel implements Runnable {
         return savedObjects;
     }
 
-    private List<SaveManager.WorldObjectData> copyWorldObjectData(List<SaveManager.WorldObjectData> sourceObjects) {
-        List<SaveManager.WorldObjectData> copy = new ArrayList<>();
+    private List<SaveHandler.WorldObjectData> copyWorldObjectData(List<SaveHandler.WorldObjectData> sourceObjects) {
+        List<SaveHandler.WorldObjectData> copy = new ArrayList<>();
         if (sourceObjects == null) {
             return copy;
         }
 
-        for (SaveManager.WorldObjectData sourceObject : sourceObjects) {
+        for (SaveHandler.WorldObjectData sourceObject : sourceObjects) {
             if (sourceObject == null) {
                 continue;
             }
 
-            SaveManager.WorldObjectData targetObject = new SaveManager.WorldObjectData();
+            SaveHandler.WorldObjectData targetObject = new SaveHandler.WorldObjectData();
             targetObject.itemId = sourceObject.itemId;
             targetObject.worldX = sourceObject.worldX;
             targetObject.worldY = sourceObject.worldY;
@@ -933,10 +973,10 @@ public class GameHandler extends JPanel implements Runnable {
         return copy;
     }
 
-    private void applyObjects(List<SaveManager.WorldObjectData> savedObjects) {
+    private void applyObjects(List<SaveHandler.WorldObjectData> savedObjects) {
         int objectIndex = 0;
 
-        for (SaveManager.WorldObjectData savedObject : savedObjects) {
+        for (SaveHandler.WorldObjectData savedObject : savedObjects) {
             if (savedObject == null || objectIndex >= objs.length) {
                 continue;
             }
@@ -1003,7 +1043,7 @@ public class GameHandler extends JPanel implements Runnable {
         ah.setMonsters();
     }
 
-    private void syncDayNightState() {
+    public void syncDayNightState() {
         wasNightPhase = dayNightCycle.isNight();
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         lightingFilter = null;
