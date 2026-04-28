@@ -7,6 +7,7 @@ import com.nanocraft.game.core.GameHandler;
 
 public class KeyHandler implements KeyListener {
     public boolean up, down, left, right, space, shoot;
+    private boolean shootHeld;
     private GameHandler gh;
 
     public KeyHandler(GameHandler gh) {
@@ -36,12 +37,20 @@ public class KeyHandler implements KeyListener {
             dialogueState(code);
         }
 
+        else if (gh.gameState == gh.inventory) {
+            inventoryState(code);
+        }
+
         else if (gh.gameState == gh.stats) { 
             statsState(code);
         }
 
         else if (gh.gameState == gh.chest) {
             chestState(code);
+        }
+
+        else if (gh.gameState == gh.gameOver) {
+            gameOverState(code);
         }
     }
 
@@ -70,6 +79,7 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_F) {
+            shootHeld = false;
             shoot = false;
         }
     }
@@ -94,9 +104,7 @@ public class KeyHandler implements KeyListener {
 
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
                 if (gh.ui.commandNum == 0) {
-                    gh.ui.titleScreen = 1;
-                    gh.gameState = gh.play;
-                    // gh.playMusic();
+                    gh.sm.startNewGame();
                 }
 
                 else if (gh.ui.commandNum == 1) {
@@ -142,17 +150,32 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_TAB) {
-            gh.gameState = gh.stats;
+            gh.gameState = gh.inventory;
         }
 
         if (code == KeyEvent.VK_F) {
-            shoot = true;
+            if (!shootHeld) {
+                shoot = true;
+            }
+            shootHeld = true;
         }
     }
 
     private void pauseState(int code) {
         if (gh.ui.isPauseExitConfirmationVisible()) {
             pauseExitConfirmationState(code);
+            return;
+        }
+
+        if (gh.ui.isControlMenuVisible()) {
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                gh.ui.closeControlMenu();
+            }
+            return;
+        }
+
+        if (gh.ui.isInSettings()) {
+            pauseSettingsState(code);
             return;
         }
 
@@ -173,6 +196,37 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
             gh.activatePauseMenuSelection();
+        }
+    }
+
+    private void pauseSettingsState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.ui.closeSettings();
+            return;
+        }
+
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.moveSettingsIndex(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.moveSettingsIndex(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            gh.selectSetting(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            gh.selectSetting(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.enterSettings();
         }
     }
 
@@ -198,46 +252,73 @@ public class KeyHandler implements KeyListener {
     }
 
     private void dialogueState(int code) {
-        if (code == KeyEvent.VK_SPACE) {
-            gh.gameState = gh.play;
+        if (gh.ik.isSleepPromptVisible()) {
+            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A || code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+                gh.ik.moveSleepPromptSelection(-1);
+                return;
+            }
+
+            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D || code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+                gh.ik.moveSleepPromptSelection(1);
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                gh.ik.confirmSleepPromptSelection();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ESCAPE) {
+                gh.ik.closeDialogue();
+            }
+            return;
+        }
+
+        if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) {
+            gh.ik.closeDialogue();
         }
     }
 
-    private void statsState(int code) {
-        if (code == KeyEvent.VK_TAB) {
+    private void inventoryState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
             gh.gameState = gh.play;
+            return;
+        }
+
+        if (code == KeyEvent.VK_TAB) {
+            gh.gameState = gh.stats;
+            return;
         }
 
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
-            if (gh.ui.slotRow != 0) {
-                gh.ui.slotRow--;
-                // gh.playSound();
-            }
+            gh.ui.moveInventoryCursor(0, -1);
         }
 
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
-            if (gh.ui.slotRow != 3) {
-                gh.ui.slotRow++;
-                // gh.playSound();
-            }
+            gh.ui.moveInventoryCursor(0, 1);
         }
 
         if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
-            if (gh.ui.slotCol != 0) {
-                gh.ui.slotCol--;
-                // gh.playSound();
-            }
+            gh.ui.moveInventoryCursor(-1, 0);
         }
 
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
-            if (gh.ui.slotCol != 4) {
-                gh.ui.slotCol++;
-                // gh.playSound();
-            }
+            gh.ui.moveInventoryCursor(1, 0);
         }
 
         if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
             gh.player.selectItem();
+        }
+    }
+
+    private void statsState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.gameState = gh.play;
+            return;
+        }
+
+        if (code == KeyEvent.VK_TAB) {
+            gh.gameState = gh.inventory;
         }
     }
 
@@ -273,5 +354,20 @@ public class KeyHandler implements KeyListener {
             gh.ui.moveChestCursor(1, 0);
         }
     }
-}
 
+    private void gameOverState(int code) {
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.moveGameOverSelection(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.moveGameOverSelection(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.activateGameOverSelection();
+        }
+    }
+}

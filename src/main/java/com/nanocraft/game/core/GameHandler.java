@@ -1,23 +1,34 @@
 package com.nanocraft.game.core;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RadialGradientPaint;
+import java.awt.RenderingHints;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.swing.JPanel;
 
 import com.nanocraft.game.entity.Entity;
+import com.nanocraft.game.entity.Innkeeper;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Apple;
+import com.nanocraft.game.object.ArrowItem;
 import com.nanocraft.game.object.Diamond;
 import com.nanocraft.game.object.Emerald;
+import com.nanocraft.game.object.EyeOfEnder;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.object.Meat;
 import com.nanocraft.game.object.Medkit;
@@ -28,6 +39,9 @@ import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.TileHandler;
 
 public class GameHandler extends JPanel implements Runnable {
+    private static final String NETHER_MAP_PATH = "/map/nether.tmj";
+    private static final String END_MAP_PATH = "/map/end.tmj";
+    public static final String STARTING_MAP_PATH = "/map/village.tmj";
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -46,23 +60,40 @@ public class GameHandler extends JPanel implements Runnable {
     public CollisionHandler ch = new CollisionHandler(this);
     public Entity objs[] = new Entity[10];
     public Entity npcs[] = new Entity[10];
-    public Entity monsters[] = new Entity[20];
+    public Entity monsters[] = new Entity[50];
     public ArrayList<Entity> entityList = new ArrayList<>();
     public AssetHandler ah = new AssetHandler(this);
     public Ui ui = new Ui(this);
     public ChestState activeChest;
     public ArrayList<Entity> projectileList = new ArrayList<>();
     public Utility u = new Utility(this);
-    private final SaveManager saveManager = new SaveManager();
-    private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
+    public boolean bronzeDragonDefeated;
+    public boolean skeletonKingDefeated;
+    public final SaveHandler sm = new SaveHandler(this);
+    public final Map<String, List<SaveHandler.WorldObjectData>> persistentObjectStates = new HashMap<>();
+    public final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
+    public DayNightCycle dayNightCycle = new DayNightCycle();
+    public Innkeeper ik = new Innkeeper(this);
+    private boolean monsterSpawnWindowOpen;
+    private boolean wasNightPhase;
 
     public final int title = 0;
     public final int pause = 1;
     public final int play = 2;
     public final int dialogue = 3;
-    public final int stats = 4;
-    public final int chest = 5;
+    public final int inventory = 4;
+    public final int stats = 5;
+    public final int chest = 6;
+    public final int gameOver = 7;
     public int gameState = 999;
+    private BufferedImage lightingFilter;
+    private int musicVolume = 100;
+    private int sfxVolume = 100;
+
+    // /** For unit tests; fullscreen is a no-op without a window. */
+    // public GameHandler() {
+    //     this(null);
+    // }
 
     public GameHandler() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -71,6 +102,8 @@ public class GameHandler extends JPanel implements Runnable {
         this.setFocusable(true);
         this.setFocusTraversalKeysEnabled(false);
         this.addKeyListener(kh);
+        wasNightPhase = dayNightCycle.isNight();
+        monsterSpawnWindowOpen = isNightForMonsterSpawns();
         refreshCurrentMapState();
 
         // TODO: Add sound files for game
@@ -119,11 +152,33 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void update() {
         if (gameState == play) {
+            dayNightCycle.update();
+            reconcileMonsterSpawnWindow();
             player.update();
 
             for (int i = 0; i < npcs.length; i++) {
                 if (npcs[i] != null) {
                     npcs[i].update();
+                }
+            }
+
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    if (monsters[i].alive == true && monsters[i].dying == false) {
+                        monsters[i].update();
+                    }
+                }
+            }
+
+            for (int i = 0; i < projectileList.size(); i++) {
+                if (projectileList.get(i) != null) {
+                    if (projectileList.get(i).alive == true) {
+                        projectileList.get(i).update();
+                    }
+                  
+                    if (projectileList.get(i).alive == false) {
+                        projectileList.remove(i);
+                    }
                 }
             }
 
@@ -204,19 +259,30 @@ public class GameHandler extends JPanel implements Runnable {
         int playerWorldY = player.worldY;
         String playerDirection = player.direction;
 
-        persistentObjectStates.remove(currentMapPath);
-        th.resetStoredMapState(currentMapPath);
-        th.loadMap(currentMapPath);
+        player.life = player.maxLife;
+        persistentObjectStates.clear();
+        persistentMonsterStates.clear();
+        th.resetAllChests();
+        th.resetAllStoredMapStates();
+        dayNightCycle.advanceToRestPhase();
+        syncDayNightState();
+        th.loadFreshMap(currentMapPath);
         player.worldX = playerWorldX;
         player.worldY = playerWorldY;
         player.direction = playerDirection;
+        activeChest = null;
+        ui.resetChestUi();
         refreshCurrentMapState();
-        System.out.println("You slept. The world has reset.");
+        ik.closeDialogue();
+        ui.addMessage("You feel rested.");
+        ui.addMessage("Time: " + dayNightCycle.getPhaseName());
     }
 
     public void refreshCurrentMapState() {
         restoreCurrentMapObjects();
         ah.setNPCS();
+        ah.setMonsters();
+        ah.applyMapProgression();
     }
 
     public void beforeMapChange() {
@@ -232,12 +298,12 @@ public class GameHandler extends JPanel implements Runnable {
         persistentObjectStates.put(currentMapPath, snapshotObjects(objs));
     }
 
-    public List<SaveManager.ObjectMapData> createObjectSaveData() {
+    public List<SaveHandler.ObjectMapData> createObjectSaveData() {
         rememberCurrentMapObjects();
 
-        List<SaveManager.ObjectMapData> objectMaps = new ArrayList<>();
-        for (Map.Entry<String, List<SaveManager.WorldObjectData>> entry : persistentObjectStates.entrySet()) {
-            SaveManager.ObjectMapData objectMapData = new SaveManager.ObjectMapData();
+        List<SaveHandler.ObjectMapData> objectMaps = new ArrayList<>();
+        for (Map.Entry<String, List<SaveHandler.WorldObjectData>> entry : persistentObjectStates.entrySet()) {
+            SaveHandler.ObjectMapData objectMapData = new SaveHandler.ObjectMapData();
             objectMapData.mapPath = entry.getKey();
             objectMapData.objects = copyWorldObjectData(entry.getValue());
             objectMaps.add(objectMapData);
@@ -246,7 +312,23 @@ public class GameHandler extends JPanel implements Runnable {
         return objectMaps;
     }
 
-    public void applySaveData(SaveManager.SaveData saveData) {
+    public List<SaveHandler.MonsterMapData> createMonsterSaveData() {
+        List<SaveHandler.MonsterMapData> monsterMaps = new ArrayList<>();
+        for (Map.Entry<String, Set<Integer>> entry : persistentMonsterStates.entrySet()) {
+            if (entry.getKey() == null || entry.getKey().isBlank()) {
+                continue;
+            }
+
+            SaveHandler.MonsterMapData monsterMapData = new SaveHandler.MonsterMapData();
+            monsterMapData.mapPath = entry.getKey();
+            monsterMapData.killedSlots = new ArrayList<>(entry.getValue());
+            monsterMaps.add(monsterMapData);
+        }
+
+        return monsterMaps;
+    }
+
+    public void applySaveData(SaveHandler.SaveData saveData) {
         activeChest = null;
         projectileList.clear();
         ui.resetChestUi();
@@ -255,8 +337,9 @@ public class GameHandler extends JPanel implements Runnable {
         ui.currentDialogue = "";
 
         persistentObjectStates.clear();
+        persistentMonsterStates.clear();
         if (saveData.objectStates != null) {
-            for (SaveManager.ObjectMapData objectMapData : saveData.objectStates) {
+            for (SaveHandler.ObjectMapData objectMapData : saveData.objectStates) {
                 if (objectMapData == null || objectMapData.mapPath == null || objectMapData.mapPath.isBlank()) {
                     continue;
                 }
@@ -265,9 +348,35 @@ public class GameHandler extends JPanel implements Runnable {
             }
         }
 
+        if (saveData.monsterStates != null) {
+            for (SaveHandler.MonsterMapData monsterMapData : saveData.monsterStates) {
+                if (monsterMapData == null || monsterMapData.mapPath == null || monsterMapData.mapPath.isBlank()) {
+                    continue;
+                }
+
+                Set<Integer> killedSlots = new HashSet<>();
+                if (monsterMapData.killedSlots != null) {
+                    for (Integer slotIndex : monsterMapData.killedSlots) {
+                        if (slotIndex != null && slotIndex >= 0) {
+                            killedSlots.add(slotIndex);
+                        }
+                    }
+                }
+                persistentMonsterStates.put(monsterMapData.mapPath, killedSlots);
+            }
+        }
+
+        skeletonKingDefeated = saveData.skeletonKingDefeated;
+        bronzeDragonDefeated = saveData.bronzeDragonDefeated;
+          
+        if (saveData.dayNightTick >= 0) {
+            dayNightCycle.setCurrentTick(saveData.dayNightTick);
+        }
+
         th.restoreChestSaveData(saveData.chests);
         th.restoreMapStateSaveData(saveData.mapStates);
         th.loadMap(saveData.currentMapPath);
+        syncDayNightState();
         refreshCurrentMapState();
         player.applySaveData(saveData.player);
         gameState = play;
@@ -276,7 +385,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public boolean saveGame() {
         try {
-            saveManager.save(this);
+            sm.save(this);
             ui.addMessage("Game saved.");
             return true;
         } catch (Exception e) {
@@ -288,9 +397,11 @@ public class GameHandler extends JPanel implements Runnable {
 
     public boolean loadGame() {
         try {
-            if (!saveManager.load(this)) {
+            if (!sm.load(this)) {
                 ui.addMessage("No save file found.");
-                closePauseMenu();
+                if (gameState == pause) {
+                    closePauseMenu();
+                }
                 return false;
             }
 
@@ -308,8 +419,24 @@ public class GameHandler extends JPanel implements Runnable {
         gameState = pause;
     }
 
+    public void openGameOverMenu() {
+        if (gameState == gameOver) {
+            return;
+        }
+
+        kh.up = false;
+        kh.down = false;
+        kh.left = false;
+        kh.right = false;
+        kh.space = false;
+        kh.shoot = false;
+        ui.resetGameOverMenu();
+        gameState = gameOver;
+    }
+
     public void closePauseMenu() {
         ui.closePauseExitConfirmation();
+        ui.closeSettings();
         gameState = play;
     }
 
@@ -332,11 +459,48 @@ public class GameHandler extends JPanel implements Runnable {
                 break;
 
             case 3:
+                ui.openSettings();
+                break;
+
+            case 4:
                 ui.openPauseExitConfirmation();
                 break;
 
             default:
                 break;
+        }
+    }
+
+    public void enterSettings() {
+        switch (ui.getSettingsIndex()) {
+            case 0:
+                setFullScreen(!isFullScreen());
+                break;
+
+            case 3:
+                ui.openControlMenu();
+                break;
+
+            case 4:
+                ui.closeSettings();
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    public void selectSetting(int direction) {
+        if (direction == 0) {
+            return;
+        }
+        int index = ui.getSettingsIndex();
+        if (index == 0) {
+            setFullScreen(direction > 0);
+        } else if (index == 1) {
+            setMusicVolume(musicVolume + direction * 5);
+        } else if (index == 2) {
+            setSfxVolume(sfxVolume + direction * 5);
         }
     }
 
@@ -349,6 +513,29 @@ public class GameHandler extends JPanel implements Runnable {
         ui.closePauseExitConfirmation();
     }
 
+    public void activateGameOverSelection() {
+        switch (ui.getGameOverSelection()) {
+            case 0:
+                if (hasSaveGame()) {
+                    loadGame();
+                } else {
+                    sm.startNewGame();
+                }
+                break;
+
+            case 1:
+                System.exit(0);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    public boolean hasSaveGame() {
+        return sm.hasSaveFile();
+    }
+
     public Entity createItemEntity(String itemType) {
         if (itemType == null || itemType.isBlank()) {
             return null;
@@ -356,6 +543,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         String normalized = itemType.trim().toLowerCase();
         switch (normalized) {
+            case "arrow":
+            case "arrows":
+                return new ArrowItem(this);
+
             case "apple":
                 return new Apple(this);
 
@@ -363,6 +554,9 @@ public class GameHandler extends JPanel implements Runnable {
                 return new Diamond(this);
             case "emerald":
                 return new Emerald(this);
+            case "eye_of_ender":
+            case "eyeofender":
+                return new EyeOfEnder(this);
 
             case "ore_chunk":
             case "orechunk":
@@ -404,12 +598,20 @@ public class GameHandler extends JPanel implements Runnable {
             return "apple";
         }
 
+        if (item instanceof ArrowItem) {
+            return "arrow";
+        }
+
         if (item instanceof Diamond) {
             return "diamond";
         }
 
         if (item instanceof Emerald) {
             return "emerald";
+        }
+
+        if (item instanceof EyeOfEnder) {
+            return "eye_of_ender";
         }
 
         if (item instanceof OreChunk) {
@@ -472,6 +674,12 @@ public class GameHandler extends JPanel implements Runnable {
                 }
             }
 
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] != null) {
+                    entityList.add(monsters[i]);
+                }
+            }
+
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null) {
                     entityList.add(objs[i]);
@@ -487,7 +695,9 @@ public class GameHandler extends JPanel implements Runnable {
             Collections.sort(entityList, new Comparator<Entity>() {
                 @Override
                 public int compare(Entity e1, Entity e2) {
-                    int result = Integer.compare(e1.worldY, e2.worldY);
+                    int e1Depth = e1.worldY + e1.solidArea.y + e1.solidArea.height;
+                    int e2Depth = e2.worldY + e2.solidArea.y + e2.solidArea.height;
+                    int result = Integer.compare(e1Depth, e2Depth);
                     return result;
                 }
             });
@@ -497,6 +707,7 @@ public class GameHandler extends JPanel implements Runnable {
             }
 
             entityList.clear();
+            drawLighting(g2d);
             ui.draw(g2d);
         }
         
@@ -504,19 +715,159 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void playMusic() {
-        music.loop(0);
+        if (musicVolume == 0) {
+            return;
+        }
+        // TODO Auto-generated method stub
+        // throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
     }
 
     public void playSound(int i) {
-        se.play(i);
+        if (sfxVolume == 0) {
+            return;
+        }
+        // TODO Auto-generated method stub
+        // throw new UnsupportedOperationException("Unimplemented method 'playSound'");
     }
 
-    public void stopSound(int i) {
-        se.stop(i);
+    public boolean isFullScreen() {
+        // TODO
+        return false;
     }
 
-    public void stopMusic() {
-        music.stop(0);
+    public void setFullScreen(boolean bool) {
+        // TODO
+    }
+
+    public int getMusicVolume() {
+        return musicVolume;
+    }
+
+    public void setMusicVolume(int percent) {
+        musicVolume = Math.max(0, Math.min(100, percent));
+    }
+
+    public int getSfxVolume() {
+        return sfxVolume;
+    }
+
+    public void setSfxVolume(int percent) {
+        sfxVolume = Math.max(0, Math.min(100, percent));
+    }
+  
+    public void clearProjectiles() {
+        projectileList.clear();
+    }
+
+    public void handleBronzeDragonDefeat() {
+        if (bronzeDragonDefeated) {
+            return;
+        }
+
+        bronzeDragonDefeated = true;
+        clearProjectiles();
+        ui.addMessage("The bronze dragon collapses into ash.");
+
+        if (ah.applyMapProgression()) {
+            ui.addMessage("A portal back to the village appears.");
+        }
+    }
+
+    public boolean isBronzeDragonDefeated() {
+        return bronzeDragonDefeated;
+    }
+
+    public void setBronzeDragonDefeated(boolean bronzeDragonDefeated) {
+        this.bronzeDragonDefeated = bronzeDragonDefeated;
+    }
+
+    public boolean isSkeletonKingDefeated() {
+        return skeletonKingDefeated;
+    }
+
+    public void setSkeletonKingDefeated(boolean skeletonKingDefeated) {
+        this.skeletonKingDefeated = skeletonKingDefeated;
+    }
+
+    public void cycleTimeOfDay() {
+        if (isInDayMap()) {
+            ui.addMessage("Time: Day");
+            return;
+        }
+
+        dayNightCycle.advanceToNextPhase();
+        reconcileMonsterSpawnWindow();
+        ui.addMessage("Time: " + dayNightCycle.getPhaseName());
+    }
+
+    public boolean isInCave() {
+        return AssetHandler.CAVE_MAP_PATH.equals(th.getCurrentMapPath());
+    }
+
+    public boolean isInDayMap() {
+        String currentMapPath = th.getCurrentMapPath();
+        return NETHER_MAP_PATH.equals(currentMapPath) || END_MAP_PATH.equals(currentMapPath);
+    }
+
+    public boolean isNightForMonsterSpawns() {
+        return isInCave() || (!isInDayMap() && dayNightCycle.isNight());
+    }
+
+    public float getCurrentDarknessAlpha() {
+        if (isInDayMap()) {
+            return 0f;
+        }
+
+        return isInCave() ? dayNightCycle.getMaxDarknessAlpha() : dayNightCycle.getDarknessAlpha();
+    }
+
+    public String getTimeLabel() {
+        if (isInCave()) {
+            return "Cave  Night";
+        }
+
+        if (isInDayMap()) {
+            return "12:00  Day";
+        }
+
+        return dayNightCycle.getClockText() + "  " + dayNightCycle.getPhaseName();
+    }
+
+    private void drawLighting(Graphics2D g2d) {
+        float darknessAlpha = getCurrentDarknessAlpha();
+
+        if (darknessAlpha <= 0f) {
+            return;
+        }
+
+        if (lightingFilter == null || lightingFilter.getWidth() != screenWidth || lightingFilter.getHeight() != screenHeight) {
+            lightingFilter = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_ARGB);
+        }
+
+        Graphics2D lightG = lightingFilter.createGraphics();
+        lightG.setComposite(AlphaComposite.Clear);
+        lightG.fillRect(0, 0, screenWidth, screenHeight);
+
+        lightG.setComposite(AlphaComposite.SrcOver);
+        lightG.setColor(new Color(0f, 0.04f, 0.10f, darknessAlpha));
+        lightG.fillRect(0, 0, screenWidth, screenHeight);
+
+        int lightRadius = tileSize * 3;
+        Point2D center = new Point2D.Float(player.screenX + (tileSize / 2f), player.screenY + (tileSize / 2f));
+        float[] dist = {0f, 0.45f, 1f};
+        Color[] colors = {
+            new Color(0f, 0f, 0f, darknessAlpha),
+            new Color(0f, 0f, 0f, darknessAlpha * 0.45f),
+            new Color(0f, 0f, 0f, 0f)
+        };
+
+        lightG.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        lightG.setComposite(AlphaComposite.DstOut);
+        lightG.setPaint(new RadialGradientPaint(center, lightRadius, dist, colors));
+        lightG.fillOval(Math.round((float) center.getX()) - lightRadius, Math.round((float) center.getY()) - lightRadius, lightRadius * 2, lightRadius * 2);
+        lightG.dispose();
+
+        g2d.drawImage(lightingFilter, 0, 0, null);
     }
 
     private void transferChestItemToPlayer() {
@@ -584,7 +935,7 @@ public class GameHandler extends JPanel implements Runnable {
         clearObjects();
 
         String currentMapPath = th.getCurrentMapPath();
-        List<SaveManager.WorldObjectData> savedObjects = persistentObjectStates.get(currentMapPath);
+        List<SaveHandler.WorldObjectData> savedObjects = persistentObjectStates.get(currentMapPath);
         if (savedObjects == null) {
             ah.setObjects();
             rememberCurrentMapObjects();
@@ -594,8 +945,8 @@ public class GameHandler extends JPanel implements Runnable {
         applyObjects(savedObjects);
     }
 
-    private List<SaveManager.WorldObjectData> snapshotObjects(Entity[] sourceObjects) {
-        List<SaveManager.WorldObjectData> savedObjects = new ArrayList<>();
+    private List<SaveHandler.WorldObjectData> snapshotObjects(Entity[] sourceObjects) {
+        List<SaveHandler.WorldObjectData> savedObjects = new ArrayList<>();
 
         for (Entity object : sourceObjects) {
             if (object == null) {
@@ -607,7 +958,7 @@ public class GameHandler extends JPanel implements Runnable {
                 continue;
             }
 
-            SaveManager.WorldObjectData worldObjectData = new SaveManager.WorldObjectData();
+            SaveHandler.WorldObjectData worldObjectData = new SaveHandler.WorldObjectData();
             worldObjectData.itemId = itemId;
             worldObjectData.worldX = object.worldX;
             worldObjectData.worldY = object.worldY;
@@ -618,18 +969,18 @@ public class GameHandler extends JPanel implements Runnable {
         return savedObjects;
     }
 
-    private List<SaveManager.WorldObjectData> copyWorldObjectData(List<SaveManager.WorldObjectData> sourceObjects) {
-        List<SaveManager.WorldObjectData> copy = new ArrayList<>();
+    private List<SaveHandler.WorldObjectData> copyWorldObjectData(List<SaveHandler.WorldObjectData> sourceObjects) {
+        List<SaveHandler.WorldObjectData> copy = new ArrayList<>();
         if (sourceObjects == null) {
             return copy;
         }
 
-        for (SaveManager.WorldObjectData sourceObject : sourceObjects) {
+        for (SaveHandler.WorldObjectData sourceObject : sourceObjects) {
             if (sourceObject == null) {
                 continue;
             }
 
-            SaveManager.WorldObjectData targetObject = new SaveManager.WorldObjectData();
+            SaveHandler.WorldObjectData targetObject = new SaveHandler.WorldObjectData();
             targetObject.itemId = sourceObject.itemId;
             targetObject.worldX = sourceObject.worldX;
             targetObject.worldY = sourceObject.worldY;
@@ -640,10 +991,10 @@ public class GameHandler extends JPanel implements Runnable {
         return copy;
     }
 
-    private void applyObjects(List<SaveManager.WorldObjectData> savedObjects) {
+    private void applyObjects(List<SaveHandler.WorldObjectData> savedObjects) {
         int objectIndex = 0;
 
-        for (SaveManager.WorldObjectData savedObject : savedObjects) {
+        for (SaveHandler.WorldObjectData savedObject : savedObjects) {
             if (savedObject == null || objectIndex >= objs.length) {
                 continue;
             }
@@ -664,6 +1015,66 @@ public class GameHandler extends JPanel implements Runnable {
     private void clearObjects() {
         for (int i = 0; i < objs.length; i++) {
             objs[i] = null;
+        }
+    }
+
+    public boolean isMonsterKilledOnCurrentMap(int slotIndex) {
+        if (slotIndex < 0) {
+            return false;
+        }
+
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null || currentMapPath.isBlank()) {
+            return false;
+        }
+
+        Set<Integer> killedSlots = persistentMonsterStates.get(currentMapPath);
+        return killedSlots != null && killedSlots.contains(slotIndex);
+    }
+
+    public void markMonsterKilled(int slotIndex) {
+        if (slotIndex < 0) {
+            return;
+        }
+
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null || currentMapPath.isBlank()) {
+            return;
+        }
+
+        persistentMonsterStates.computeIfAbsent(currentMapPath, key -> new HashSet<>()).add(slotIndex);
+    }
+
+    private void reconcileMonsterSpawnWindow() {
+        boolean nightPhaseNow = dayNightCycle.isNight();
+        if (nightPhaseNow && !wasNightPhase) {
+            clearKilledMonstersForNightRespawn();
+        }
+        wasNightPhase = nightPhaseNow;
+
+        boolean spawnWindowOpenNow = isNightForMonsterSpawns();
+        if (spawnWindowOpenNow == monsterSpawnWindowOpen) {
+            return;
+        }
+
+        monsterSpawnWindowOpen = spawnWindowOpenNow;
+        ah.setMonsters();
+    }
+
+    public void syncDayNightState() {
+        wasNightPhase = dayNightCycle.isNight();
+        monsterSpawnWindowOpen = isNightForMonsterSpawns();
+        lightingFilter = null;
+    }
+
+    private void clearKilledMonstersForNightRespawn() {
+        List<String> mapPaths = new ArrayList<>(persistentMonsterStates.keySet());
+        for (String mapPath : mapPaths) {
+            if (AssetHandler.CAVE_MAP_PATH.equals(mapPath)) {
+                continue;
+            }
+
+            persistentMonsterStates.remove(mapPath);
         }
     }
 }

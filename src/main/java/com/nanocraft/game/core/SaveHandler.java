@@ -12,11 +12,17 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.nanocraft.game.entity.Player;
 
-public class SaveManager {
+public class SaveHandler {
     private static final Path SAVE_FILE_PATH = Path.of(System.getProperty("user.home"), ".nanocraft.json");
-
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private GameHandler gh;
+
+    public SaveHandler(GameHandler gh) {
+        this.gh = gh;
+
+    }
 
     public boolean hasSaveFile() {
         return Files.isRegularFile(SAVE_FILE_PATH);
@@ -29,6 +35,10 @@ public class SaveManager {
         saveData.chests = gh.th.createChestSaveData();
         saveData.mapStates = gh.th.createMapStateSaveData();
         saveData.objectStates = gh.createObjectSaveData();
+        saveData.monsterStates = gh.createMonsterSaveData();
+        saveData.skeletonKingDefeated = gh.isSkeletonKingDefeated();
+        saveData.bronzeDragonDefeated = gh.isBronzeDragonDefeated();
+        saveData.dayNightTick = gh.dayNightCycle.getCurrentTick();
 
         try (Writer writer = Files.newBufferedWriter(SAVE_FILE_PATH)) {
             gson.toJson(saveData, writer);
@@ -60,6 +70,10 @@ public class SaveManager {
         public List<ChestData> chests = new ArrayList<>();
         public List<MapStateData> mapStates = new ArrayList<>();
         public List<ObjectMapData> objectStates = new ArrayList<>();
+        public List<MonsterMapData> monsterStates = new ArrayList<>();
+        public boolean skeletonKingDefeated;
+        public boolean bronzeDragonDefeated;
+        public int dayNightTick = -1;
     }
 
     public static class PlayerData {
@@ -116,6 +130,11 @@ public class SaveManager {
         public int stackCount = 1;
     }
 
+    public static class MonsterMapData {
+        public String mapPath;
+        public List<Integer> killedSlots = new ArrayList<>();
+    }
+
     public static Map<String, ChestData> indexChestsByKey(List<ChestData> chests) {
         Map<String, ChestData> indexed = new HashMap<>();
         if (chests == null) {
@@ -131,5 +150,31 @@ public class SaveManager {
         }
 
         return indexed;
+    }
+
+    public void startNewGame() {
+        gh.activeChest = null;
+        gh.projectileList.clear();
+        gh.ui.resetChestUi();
+        gh.ui.resetPauseMenu();
+        gh.ui.resetGameOverMenu();
+        gh.ui.message.clear();
+        gh.ui.counter.clear();
+        gh.ui.currentDialogue = "";
+        gh.persistentObjectStates.clear();
+        gh.persistentMonsterStates.clear();
+        gh.skeletonKingDefeated = false;
+        gh.bronzeDragonDefeated = false;
+        gh.dayNightCycle = new DayNightCycle();
+
+        gh.th.restoreChestSaveData(new ArrayList<>());
+        gh.th.restoreMapStateSaveData(new ArrayList<>());
+        gh.th.loadMap(GameHandler.STARTING_MAP_PATH);
+        gh.syncDayNightState();
+
+        gh.player = new Player(gh, gh.kh);
+        gh.refreshCurrentMapState();
+        gh.ui.titleScreen = 1;
+        gh.gameState = gh.play;
     }
 }

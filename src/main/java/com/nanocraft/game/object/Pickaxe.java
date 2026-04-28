@@ -12,7 +12,7 @@ public class Pickaxe extends Entity {
         type = TYPE_WEAPON;
         name = "Diamond Pickaxe";
         down1 = scale("/object/Diamond_Pickaxe", gh.tileSize, gh.tileSize);
-        attackValue = 2;
+        attackValue = 0;
         attackArea.width = 36;
         attackArea.height = 36;
         description = "[" + name + "]\nA sturdy pickaxe for heavy swings.";

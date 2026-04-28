@@ -6,7 +6,7 @@ import java.util.List;
 import com.nanocraft.game.entity.Entity;
 
 public class ChestState {
-    public static final int CAPACITY = 20;
+    public static final int CAPACITY = 30;
 
     public final String mapPath;
     public final int col;

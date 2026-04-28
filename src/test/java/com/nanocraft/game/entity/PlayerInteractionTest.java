@@ -11,13 +11,20 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.monster.Dragon;
+import com.nanocraft.game.monster.GreenSlime;
+import com.nanocraft.game.monster.Zombie;
+import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.Emerald;
+import com.nanocraft.game.object.Meat;
+import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.Tile;
@@ -194,6 +201,37 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void miningUsesCollisionProximityForReachableOre() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.gameState = gh.play;
+
+        OrePlacement placement = findCollisionReachableOrePlacement(gh, "emerald");
+        assertNotNull(placement);
+
+        Pickaxe pickaxe = new Pickaxe(gh);
+        assertTrue(gh.player.addToInventory(pickaxe));
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+        assertTrue(gh.player.hasEquippedItem("diamond_pickaxe"));
+
+        Tile oreTile = gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow);
+        assertNotNull(oreTile);
+        assertEquals("emerald", oreTile.dropItemType);
+
+        int inventoryBeforeDrop = gh.player.inventory.size();
+        for (int i = 0; i < oreTile.maxHealth; i++) {
+            performMineInteraction(gh, placement);
+        }
+
+        assertEquals(inventoryBeforeDrop + 1, gh.player.inventory.size());
+        Entity minedItem = gh.player.inventory.get(gh.player.inventory.size() - 1);
+        assertEquals("emerald", minedItem.itemId);
+        assertNull(gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow));
+    }
+
+    @Test
     public void unequipsPlayerWhenEquippedSwordLeavesInventory() {
         GameHandler gh = new GameHandler();
         Entity equippedSword = gh.player.currentWeapon;
@@ -237,6 +275,91 @@ public class PlayerInteractionTest {
 
         assertSame(pickaxe, gh.player.currentWeapon);
         assertEquals(gh.player.strength * pickaxe.attackValue, gh.player.attack);
+    }
+
+    @Test
+    public void usesAppleAndRemovesItFromInventory() {
+        GameHandler gh = new GameHandler();
+        Apple apple = new Apple(gh);
+        assertTrue(gh.player.addToInventory(apple));
+        gh.player.life = gh.player.maxLife - 1;
+        gh.gameState = gh.inventory;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(2, gh.player.inventory.size());
+        assertEquals("You ate an Apple. Health: 6/6", latestMessage(gh));
+        assertEquals(gh.play, gh.gameState);
+    }
+
+    @Test
+    public void usingHealingItemAtFullHealthDoesNotConsumeIt() {
+        GameHandler gh = new GameHandler();
+        Meat meat = new Meat(gh);
+        assertTrue(gh.player.addToInventory(meat));
+        gh.player.life = gh.player.maxLife;
+        gh.gameState = gh.inventory;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertSame(meat, gh.player.inventory.get(2));
+        assertEquals(1, meat.stackCount);
+        assertEquals("Health is full. Health: 6/6", latestMessage(gh));
+        assertEquals(gh.play, gh.gameState);
+    }
+
+    @Test
+    public void usingStackedMeatConsumesOnlyOneItem() {
+        GameHandler gh = new GameHandler();
+        assertTrue(gh.player.addToInventory(new Meat(gh)));
+        assertTrue(gh.player.addToInventory(new Meat(gh)));
+        gh.player.life = gh.player.maxLife - 2;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals("You ate Meat. Health: 6/6", latestMessage(gh));
+    }
+
+    @Test
+    public void usingStackedMedkitConsumesOnlyOneItemAndCapsAtMaxHealth() {
+        GameHandler gh = new GameHandler();
+        assertTrue(gh.player.addToInventory(new Medkit(gh)));
+        assertTrue(gh.player.addToInventory(new Medkit(gh)));
+        gh.player.life = gh.player.maxLife - 3;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals("You used a Medkit. Health: 6/6", latestMessage(gh));
+    }
+
+    @Test
+    public void nonUsableItemsAreNotConsumedWhenSelected() {
+        GameHandler gh = new GameHandler();
+        Entity key = gh.player.inventory.get(1);
+
+        gh.ui.slotCol = 1;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(2, gh.player.inventory.size());
+        assertSame(key, gh.player.inventory.get(1));
     }
 
     @Test
@@ -454,6 +577,292 @@ public class PlayerInteractionTest {
         assertNotEquals(sword.attackUp1, gh.player.up1);
     }
 
+    @Test
+    public void swordSwingCanOnlyDamageMonsterOnce() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.monsters = new Entity[50];
+
+        GreenSlime slime = new GreenSlime(gh);
+        slime.worldX = gh.player.worldX;
+        slime.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = slime;
+
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        for (int i = 0; i < 30; i++) {
+            gh.update();
+        }
+
+        assertEquals(slime.maxLife - Math.min(gh.player.attack, slime.maxLife - 1), slime.life);
+    }
+
+    @Test
+    public void starterSwordStillDamagesDefensiveMonsters() {
+        GameHandler gh = new GameHandler();
+        Zombie zombie = new Zombie(gh);
+        gh.monsters[0] = zombie;
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertTrue(zombie.life < zombie.maxLife);
+    }
+
+    @Test
+    public void strongPlayerCannotOneShotFullHealthMonster() {
+        GameHandler gh = new GameHandler();
+        GreenSlime slime = new GreenSlime(gh);
+        gh.monsters[0] = slime;
+        gh.player.strength = 99;
+        gh.player.attack = gh.player.getAttack();
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertEquals(1, slime.life);
+        assertFalse(slime.dying);
+    }
+
+    @Test
+    public void swordSwingCanOnlyDamageDragonOnce() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        Dragon dragon = new Dragon(gh);
+        dragon.worldX = gh.player.worldX;
+        dragon.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = dragon;
+
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        for (int i = 0; i < 30; i++) {
+            gh.update();
+        }
+
+        assertEquals(dragon.maxLife - Math.min(gh.player.attack, dragon.maxLife - 1), dragon.life);
+    }
+
+    @Test
+    public void hittingMonsterAppliesKnockbackInAttackDirection() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        GreenSlime slime = new GreenSlime(gh);
+        slime.worldX = gh.player.worldX;
+        slime.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = slime;
+        gh.player.direction = "up";
+        int startY = slime.worldY;
+
+        gh.player.damage(0, gh.player.attack);
+        assertEquals(startY, slime.worldY);
+
+        for (int i = 0; i < 4; i++) {
+            gh.update();
+        }
+
+        assertTrue(slime.worldY <= startY - (gh.tileSize / 2));
+    }
+
+    @Test
+    public void lethalDamageOpensGameOverMenu() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.player.life = 1;
+
+        gh.player.receiveDamage(gh.player.defense + 1);
+
+        assertEquals(0, gh.player.life);
+        assertEquals(gh.gameOver, gh.gameState);
+        assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void legacyEntityDamageAlsoClampsToZeroAndOpensGameOver() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.player.life = 1;
+
+        Entity attacker = new Entity(gh);
+        attacker.damage(gh.player.defense + 2);
+
+        assertEquals(0, gh.player.life);
+        assertEquals(gh.gameOver, gh.gameState);
+    }
+
+    @Test
+    public void gameOverMenuRespondsToKeyboardNavigation() {
+        GameHandler gh = new GameHandler();
+        gh.openGameOverMenu();
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_S, 'S'));
+        assertEquals(1, gh.ui.getGameOverSelection());
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_W, 'W'));
+        assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void startingNewGameResetsPlayerAndReturnsToPlay() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.gameOver;
+        gh.player.life = 1;
+        gh.player.coin = 99;
+        gh.player.inventory.clear();
+
+        gh.sm.startNewGame();
+
+        assertEquals(gh.play, gh.gameState);
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(0, gh.player.coin);
+        assertEquals(2, gh.player.inventory.size());
+        assertEquals(gh.tileSize * 25, gh.player.worldX);
+        assertEquals(gh.tileSize * 6, gh.player.worldY);
+    }
+
+    @Test
+    public void leveledPlayerStillTakesMinimumTwoDamageFromWeakMonsterMelee() {
+        GameHandler gh = new GameHandler();
+        gh.player.dexterity = 4;
+        gh.player.defense = gh.player.getDefense();
+        gh.player.life = gh.player.maxLife;
+
+        gh.player.receiveDamage(new GreenSlime(gh).attack);
+
+        assertEquals(gh.player.maxLife - 2, gh.player.life);
+    }
+
+    @Test
+    public void shootingRequiresArrowInInventoryAndConsumesOnePerShot() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertTrue(gh.projectileList.isEmpty());
+        assertFalse(gh.player.hasItem("arrow"));
+
+        Entity arrows = gh.createItemEntity("arrow");
+        assertNotNull(arrows);
+        arrows.stackCount = 2;
+        assertTrue(gh.player.addToInventory(arrows));
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+    }
+
+    @Test
+    public void shootingNeedsANewKeyPressAndRespectsTwoSecondCooldown() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        Entity arrows = gh.createItemEntity("arrow");
+        assertNotNull(arrows);
+        arrows.stackCount = 2;
+        assertTrue(gh.player.addToInventory(arrows));
+
+        pressShootKey(gh);
+        gh.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+
+        releaseShootKey(gh);
+        pressShootKey(gh);
+        gh.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+
+        releaseShootKey(gh);
+        for (int i = 0; i < 130; i++) {
+            gh.update();
+        }
+
+        assertTrue(gh.projectileList.isEmpty());
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+
+        pressShootKey(gh);
+        gh.update();
+
+        assertEquals(0, getItemCount(gh.player.inventory, "arrow"));
+        assertEquals(1, gh.projectileList.size());
+    }
+
+    @Test
+    public void talkingToInnkeeperOpensSleepPrompt() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/inn.tmj");
+        gh.refreshCurrentMapState();
+        gh.gameState = gh.play;
+
+        Entity innkeeper = gh.npcs[0];
+        assertNotNull(innkeeper);
+
+        gh.player.worldX = innkeeper.worldX;
+        gh.player.worldY = innkeeper.worldY + 35;
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        gh.player.update();
+
+        assertEquals(gh.dialogue, gh.gameState);
+        assertTrue(gh.ik.isSleepPromptVisible());
+        assertEquals("Want to rest?\nSleeping restores the world.", gh.ui.currentDialogue);
+    }
+
+    @Test
+    public void sleepRestoresHealthWorldStateAndCyclesNightToDay() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.refreshCurrentMapState();
+
+        OrePlacement orePlacement = findMineableOrePlacement(gh);
+        Pickaxe pickaxe = new Pickaxe(gh);
+        assertTrue(gh.player.addToInventory(pickaxe));
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        Tile oreTile = gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow);
+        assertNotNull(oreTile);
+
+        for (int i = 0; i < oreTile.maxHealth; i++) {
+            performMineInteraction(gh, orePlacement);
+        }
+        assertNull(gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow));
+
+        ChestState caveChest = gh.th.getChestAt(31, 9);
+        assertNotNull(caveChest);
+        caveChest.items.clear();
+        assertTrue(caveChest.items.isEmpty());
+
+        gh.th.loadMap("/map/inn.tmj");
+        gh.refreshCurrentMapState();
+        gh.player.life = gh.player.maxLife - 3;
+        gh.dayNightCycle.setCurrentTick(0);
+
+        gh.onPlayerSleep();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertFalse(gh.dayNightCycle.isNight());
+        assertEquals(gh.play, gh.gameState);
+
+        gh.th.loadMap("/map/cave.tmj");
+        gh.refreshCurrentMapState();
+
+        assertNotNull(gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow));
+        assertFalse(gh.th.getChestAt(31, 9).items.isEmpty());
+    }
+
+    private String latestMessage(GameHandler gh) {
+        return gh.ui.message.get(gh.ui.message.size() - 1);
+    }
+
     private ChestPlacement findOpenableChestPlacement(GameHandler gh) {
         for (int col = 0; col < 200; col++) {
             for (int row = 0; row < 200; row++) {
@@ -471,6 +880,14 @@ public class PlayerInteractionTest {
 
         fail("Expected to find at least one openable chest in the map.");
         return null;
+    }
+
+    private void pressShootKey(GameHandler gh) {
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_F, 'F'));
+    }
+
+    private void releaseShootKey(GameHandler gh) {
+        gh.kh.keyReleased(new KeyEvent(gh, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, KeyEvent.VK_F, 'F'));
     }
 
     private OrePlacement findMineableOrePlacement(GameHandler gh) {
@@ -555,6 +972,43 @@ public class PlayerInteractionTest {
         return buildOrePlacement(gh, oreCol, oreRow, oreCol - 1, oreRow, "right");
     }
 
+    private OrePlacement findCollisionReachableOrePlacement(GameHandler gh, String dropItemType) {
+        for (int col = 0; col < 200; col++) {
+            for (int row = 0; row < 200; row++) {
+                Tile oreTile = gh.th.getTopBreakableTileAt(col, row);
+                if (oreTile == null || !dropItemType.equalsIgnoreCase(oreTile.dropItemType)) {
+                    continue;
+                }
+
+                OrePlacement placement = findCollisionReachablePlacementAroundOre(gh, col, row);
+                if (placement != null) {
+                    return placement;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private OrePlacement findCollisionReachablePlacementAroundOre(GameHandler gh, int oreCol, int oreRow) {
+        OrePlacement placement = buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol, oreRow + 1, "up");
+        if (placement != null) {
+            return placement;
+        }
+
+        placement = buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol + 1, oreRow, "left");
+        if (placement != null) {
+            return placement;
+        }
+
+        placement = buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol, oreRow - 1, "down");
+        if (placement != null) {
+            return placement;
+        }
+
+        return buildCollisionReachableOrePlacement(gh, oreCol, oreRow, oreCol - 1, oreRow, "right");
+    }
+
     private OrePlacement buildOrePlacement(
         GameHandler gh,
         int oreCol,
@@ -575,6 +1029,35 @@ public class PlayerInteractionTest {
         }
 
         return new OrePlacement(oreCol, oreRow, worldX, worldY, direction);
+    }
+
+    private OrePlacement buildCollisionReachableOrePlacement(
+        GameHandler gh,
+        int oreCol,
+        int oreRow,
+        int standCol,
+        int standRow,
+        String direction
+    ) {
+        if (gh.th.isCollisionAt(standCol, standRow)) {
+            return null;
+        }
+
+        int worldX = standCol * gh.tileSize - gh.player.solidArea.x;
+        int worldY = standRow * gh.tileSize - gh.player.solidArea.y;
+        int[][] targetTiles = Player.resolveInteractionTiles(worldX, worldY, gh.player.solidArea, gh.tileSize, direction);
+        for (int[] targetTile : targetTiles) {
+            if (targetTile[0] == oreCol && targetTile[1] == oreRow) {
+                return null;
+            }
+        }
+
+        int[] targetTile = gh.th.findBreakableTileNear(worldX, worldY, gh.player.solidArea, gh.tileSize);
+        if (targetTile != null && targetTile[0] == oreCol && targetTile[1] == oreRow) {
+            return new OrePlacement(oreCol, oreRow, worldX, worldY, direction);
+        }
+
+        return null;
     }
 
     private void performMineInteraction(GameHandler gh, OrePlacement placement) {
@@ -615,6 +1098,16 @@ public class PlayerInteractionTest {
             }
         }
         return count;
+    }
+
+    private int getItemCount(Iterable<Entity> items, String itemId) {
+        int total = 0;
+        for (Entity item : items) {
+            if (item != null && itemId.equalsIgnoreCase(item.itemId)) {
+                total += item.stackCount;
+            }
+        }
+        return total;
     }
 
     private static final class ChestPlacement {

@@ -11,7 +11,7 @@ public class Arrow extends Projectile {
         speed = 8;
         maxLife = 30;
         life = maxLife;
-        attack = 2;
+        attack = 4;
         alive = false;
         
         solidArea.x = 5;

@@ -48,6 +48,15 @@ public class DayNightCycle {
         }
     }
 
+    public void advanceToRestPhase() {
+        if (isNight()) {
+            setProgress(dayStartProgress());
+            return;
+        }
+
+        setProgress(nightStartProgress());
+    }
+
     public float getDarknessAlpha() {
         double progress = getProgress();
 
@@ -94,11 +103,24 @@ public class DayNightCycle {
         return "Dusk";
     }
 
+    public boolean isNight() {
+        double progress = getProgress();
+        return progress < dayStartProgress() || progress >= nightStartProgress();
+    }
+
     public String getClockText() {
         int totalMinutes = (int) Math.round(getProgress() * 24 * 60) % (24 * 60);
         int hours = totalMinutes / 60;
         int minutes = totalMinutes % 60;
         return String.format("%02d:%02d", hours, minutes);
+    }
+
+    public int getCurrentTick() {
+        return currentTick;
+    }
+
+    public void setCurrentTick(int currentTick) {
+        this.currentTick = Math.floorMod(currentTick, cycleTicks);
     }
 
     public double getProgress() {

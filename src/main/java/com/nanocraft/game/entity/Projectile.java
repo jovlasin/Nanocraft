@@ -19,11 +19,18 @@ public class Projectile extends Entity {
     }
 
     public void update() {
-        int index = gh.ch.checkEntity(this, gh.monsters);
-
-        if (index != 999) {
-            gh.player.damage(index, attack);
-            alive = false;
+        if (user != null && user.type == TYPE_PLAYER) {
+            int index = gh.ch.checkEntity(this, gh.monsters);
+            if (index != 999) {
+                gh.player.damage(index, attack);
+                alive = false;
+            }
+        } else {
+            boolean contact = gh.ch.checkPlayer(this);
+            if (gh.player.invincible == false && contact == true) {
+                damage(attack);
+                alive = false;
+            }
         }
 
         switch (direction) {
