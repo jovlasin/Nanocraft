@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RadialGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
@@ -42,6 +43,8 @@ public class GameHandler extends JPanel implements Runnable {
     private static final String NETHER_MAP_PATH = "/map/nether.tmj";
     private static final String END_MAP_PATH = "/map/end.tmj";
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
+    public static final int SFX_ARROW = 0;
+    public static final int SFX_SWORD_ATTACK = 1;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -89,6 +92,7 @@ public class GameHandler extends JPanel implements Runnable {
     private BufferedImage lightingFilter;
     private int musicVolume = 100;
     private int sfxVolume = 100;
+    private boolean soundEffectsLoaded;
 
     // /** For unit tests; fullscreen is a no-op without a window. */
     // public GameHandler() {
@@ -106,19 +110,6 @@ public class GameHandler extends JPanel implements Runnable {
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         refreshCurrentMapState();
 
-        // TODO: Add sound files for game
-        // music.load(0, "");
-        // se.load(1, "");
-        // se.load(2, "");
-        // se.load(3, "");
-        // se.load(4, "");
-        // se.load(5, "");
-        // se.load(6, "");
-        // se.load(7, "");
-        // se.load(8, "");
-        // se.load(9, "");
-        // se.load(10, "");
-  
         // playMusic();
         
         gameState = title;
@@ -723,11 +714,22 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void playSound(int i) {
-        if (sfxVolume == 0) {
+        if (sfxVolume == 0 || GraphicsEnvironment.isHeadless()) {
             return;
         }
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+
+        loadSoundEffectsIfNeeded();
+        se.play(i);
+    }
+
+    private void loadSoundEffectsIfNeeded() {
+        if (soundEffectsLoaded) {
+            return;
+        }
+
+        se.load(SFX_ARROW, "/sound/arrow.wav");
+        se.load(SFX_SWORD_ATTACK, "/sound/attack.wav");
+        soundEffectsLoaded = true;
     }
 
     public boolean isFullScreen() {

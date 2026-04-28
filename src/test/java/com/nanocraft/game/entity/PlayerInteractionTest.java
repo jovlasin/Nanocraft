@@ -33,6 +33,17 @@ public class PlayerInteractionTest {
     private static final Rectangle SOLID_AREA = new Rectangle(8, 16, 32, 32);
     private static final int TILE_SIZE = 48;
 
+    private static class RecordingGameHandler extends GameHandler {
+        int soundPlayCount;
+        int lastSoundId = -1;
+
+        @Override
+        public void playSound(int i) {
+            soundPlayCount++;
+            lastSoundId = i;
+        }
+    }
+
     @Test
     public void resolvesInteractionTilesForAllDirections() {
         assertArrayEquals(
@@ -730,6 +741,115 @@ public class PlayerInteractionTest {
         gh.player.receiveDamage(new GreenSlime(gh).attack);
 
         assertEquals(gh.player.maxLife - 2, gh.player.life);
+    }
+
+    @Test
+    public void shootingWithoutArrowsDoesNotPlaySound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.play;
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertTrue(gh.projectileList.isEmpty());
+        assertEquals(0, gh.soundPlayCount);
+    }
+
+    @Test
+    public void successfulArrowShotPlaysArrowSoundOnce() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.play;
+
+        Entity arrows = gh.createItemEntity("arrow");
+        assertNotNull(arrows);
+        assertTrue(gh.player.addToInventory(arrows));
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertEquals(1, gh.projectileList.size());
+        assertEquals(1, gh.soundPlayCount);
+        assertEquals(GameHandler.SFX_ARROW, gh.lastSoundId);
+    }
+
+    @Test
+    public void shootingDuringCooldownDoesNotPlaySound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.play;
+
+        Entity arrows = gh.createItemEntity("arrow");
+        assertNotNull(arrows);
+        arrows.stackCount = 2;
+        assertTrue(gh.player.addToInventory(arrows));
+
+        gh.kh.shoot = true;
+        gh.player.update();
+        gh.projectileList.clear();
+        gh.player.projectile.alive = false;
+
+        gh.kh.shoot = true;
+        gh.player.update();
+
+        assertEquals(1, gh.soundPlayCount);
+        assertEquals(GameHandler.SFX_ARROW, gh.lastSoundId);
+        assertEquals(1, getItemCount(gh.player.inventory, "arrow"));
+    }
+
+    @Test
+    public void swordAttackStartPlaysAttackSoundOnce() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.play;
+
+        gh.kh.space = true;
+        gh.player.update();
+
+        assertTrue(gh.player.attacking);
+        assertEquals(1, gh.soundPlayCount);
+        assertEquals(GameHandler.SFX_SWORD_ATTACK, gh.lastSoundId);
+    }
+
+    @Test
+    public void nonSwordSpaceActionsDoNotPlayAttackSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.gameState = gh.play;
+
+        int[][] targetTiles = Player.resolveInteractionTiles(1272, 1808, gh.player.solidArea, gh.tileSize, "up");
+        ChestState chest = gh.th.findChestAt(targetTiles);
+        assertNotNull(chest);
+
+        gh.player.worldX = 1272;
+        gh.player.worldY = 1808;
+        gh.player.direction = "up";
+        gh.player.requestInteract();
+        gh.kh.space = true;
+        gh.player.update();
+
+        assertEquals(gh.chest, gh.gameState);
+        assertEquals(0, gh.soundPlayCount);
+
+        RecordingGameHandler toolGh = new RecordingGameHandler();
+        toolGh.gameState = toolGh.play;
+        Pickaxe pickaxe = new Pickaxe(toolGh);
+        assertTrue(toolGh.player.addToInventory(pickaxe));
+        toolGh.ui.slotCol = 2;
+        toolGh.ui.slotRow = 0;
+        toolGh.player.selectItem();
+        toolGh.kh.space = true;
+        toolGh.player.update();
+
+        assertTrue(toolGh.player.attacking);
+        assertEquals(0, toolGh.soundPlayCount);
+
+        RecordingGameHandler unarmedGh = new RecordingGameHandler();
+        Entity removedItem = unarmedGh.player.removeFromInventory(0);
+        unarmedGh.player.handleRemovedInventoryItem(removedItem);
+        unarmedGh.gameState = unarmedGh.play;
+        unarmedGh.kh.space = true;
+        unarmedGh.player.update();
+
+        assertFalse(unarmedGh.player.attacking);
+        assertEquals(0, unarmedGh.soundPlayCount);
     }
 
     @Test

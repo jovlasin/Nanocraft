@@ -30,6 +30,8 @@ public class Sound {
         if (pool == null) return;
 
         for (Clip c : pool) {
+            if (c == null) continue;
+
             if (!c.isRunning()) {
                 c.setFramePosition(0);
                 c.start();
@@ -43,6 +45,8 @@ public class Sound {
         if (pool == null) return;
 
         Clip c = pool[0];
+        if (c == null) return;
+
         if (!c.isRunning()) {
             c.setFramePosition(0);
             c.loop(Clip.LOOP_CONTINUOUSLY);
@@ -54,6 +58,8 @@ public class Sound {
         if (pool == null) return;
 
         for (Clip c : pool) {
+            if (c == null) continue;
+
             if (c.isRunning()) c.stop();
         }
     }

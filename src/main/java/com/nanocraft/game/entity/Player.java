@@ -117,6 +117,9 @@ public class Player extends Entity {
                     clearToolSwingAnimation();
                     attacking = true;
                     spriteCounter = 0;
+                    if (currentWeapon instanceof Sword) {
+                        gh.playSound(GameHandler.SFX_SWORD_ATTACK);
+                    }
                 }
 
                 cancelAttack = false;
@@ -825,7 +828,7 @@ public class Player extends Entity {
         projectile.set(worldX, worldY, direction, true, this);
         gh.projectileList.add(projectile);
         shotCounter = 0;
-        // gh.playSound(10);
+        gh.playSound(GameHandler.SFX_ARROW);
     }
 
     private boolean consumeInventoryItem(String itemId) {
