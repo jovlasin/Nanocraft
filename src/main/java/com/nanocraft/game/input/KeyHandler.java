@@ -85,19 +85,31 @@ public class KeyHandler implements KeyListener {
     }
 
     private void titleState(int code) {
+        if (gh.ui.isControlMenuVisible()) {
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                gh.ui.closeControlMenu();
+            }
+            return;
+        }
+
+        if (gh.ui.isInSettings()) {
+            titleSettingsState(code);
+            return;
+        }
+
         if (gh.ui.titleScreen == 0) {
             if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
                 gh.ui.commandNum--;
 
                 if (gh.ui.commandNum < 0) {
-                    gh.ui.commandNum = 2;
+                    gh.ui.commandNum = 3;
                 }
             }
 
             if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
                 gh.ui.commandNum++;
 
-                if (gh.ui.commandNum > 2) {
+                if (gh.ui.commandNum > 3) {
                     gh.ui.commandNum = 0;
                 }
             }
@@ -112,9 +124,44 @@ public class KeyHandler implements KeyListener {
                 }
 
                 else if (gh.ui.commandNum == 2) {
+                    gh.ui.openSettings();
+                }
+
+                else if (gh.ui.commandNum == 3) {
                     System.exit(0);
                 }
             }   
+        }
+    }
+
+    private void titleSettingsState(int code) {
+        if (code == KeyEvent.VK_ESCAPE) {
+            gh.ui.closeSettings();
+            return;
+        }
+
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.moveSettingsIndex(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.moveSettingsIndex(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            gh.selectSetting(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            gh.selectSetting(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.enterSettings();
         }
     }
 

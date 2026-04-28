@@ -15,7 +15,6 @@ import com.google.gson.GsonBuilder;
 import com.nanocraft.game.entity.Player;
 
 public class SaveHandler {
-    private static final Path SAVE_FILE_PATH = Path.of(System.getProperty("user.home"), ".nanocraft.json");
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private GameHandler gh;
 
@@ -25,7 +24,7 @@ public class SaveHandler {
     }
 
     public boolean hasSaveFile() {
-        return Files.isRegularFile(SAVE_FILE_PATH);
+        return Files.isRegularFile(getSaveFilePath());
     }
 
     public void save(GameHandler gh) throws IOException {
@@ -40,7 +39,7 @@ public class SaveHandler {
         saveData.bronzeDragonDefeated = gh.isBronzeDragonDefeated();
         saveData.dayNightTick = gh.dayNightCycle.getCurrentTick();
 
-        try (Writer writer = Files.newBufferedWriter(SAVE_FILE_PATH)) {
+        try (Writer writer = Files.newBufferedWriter(getSaveFilePath())) {
             gson.toJson(saveData, writer);
         }
     }
@@ -51,7 +50,7 @@ public class SaveHandler {
         }
 
         SaveData saveData;
-        try (Reader reader = Files.newBufferedReader(SAVE_FILE_PATH)) {
+        try (Reader reader = Files.newBufferedReader(getSaveFilePath())) {
             saveData = gson.fromJson(reader, SaveData.class);
         }
 
@@ -176,5 +175,47 @@ public class SaveHandler {
         gh.refreshCurrentMapState();
         gh.ui.titleScreen = 1;
         gh.gameState = gh.play;
+    }
+
+    public void saveSettings(GameHandler gh) throws IOException {
+        SettingsData settingsData = new SettingsData();
+        settingsData.fullScreen = gh.isFullScreen();
+        settingsData.musicVolume = gh.getMusicVolume();
+        settingsData.sfxVolume = gh.getSfxVolume();
+
+        try (Writer writer = Files.newBufferedWriter(getSettingsFilePath())) {
+            gson.toJson(settingsData, writer);
+        }
+    }
+
+    public SettingsData loadSettings() throws IOException {
+        Path settingsFilePath = getSettingsFilePath();
+        if (!Files.isRegularFile(settingsFilePath)) {
+            return new SettingsData();
+        }
+
+        try (Reader reader = Files.newBufferedReader(settingsFilePath)) {
+            SettingsData settingsData = gson.fromJson(reader, SettingsData.class);
+            return settingsData == null ? new SettingsData() : settingsData;
+        }
+    }
+
+    private static Path getSaveFilePath() {
+        return Path.of(System.getProperty("nanocraft.save.path", defaultPath(".nanocraft-save.json")));
+    }
+
+    private static Path getSettingsFilePath() {
+        return Path.of(System.getProperty("nanocraft.settings.path", defaultPath(".nanocraft-settings.json")));
+    }
+
+    private static String defaultPath(String fileName) {
+        return Path.of(System.getProperty("user.home"), fileName).toString();
+    }
+
+    public static class SettingsData {
+        public int version = 1;
+        public boolean fullScreen;
+        public int musicVolume = 100;
+        public int sfxVolume = 100;
     }
 }

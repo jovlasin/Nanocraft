@@ -293,13 +293,21 @@ public class Ui {
 
             int menuY = y + h + gh.tileSize;
 
-            String[] options = {"NEW GAME", "LOAD GAME", "QUIT"};
-            int optionStartY = menuY + 40;
+            String[] options = {"NEW GAME", "LOAD GAME", "SETTINGS", "QUIT"};
+            int optionStartY = menuY + 10;
             int optionHeight = 70;
 
             for (int i = 0; i < options.length; i++) {
                 drawCenteredMenuOption(options[i], optionStartY + (i * optionHeight), commandNum == i);
             }
+        }
+
+        if (inSettings) {
+            drawSettingsMenu();
+        }
+
+        if (controlMenu) {
+            drawControlsMenu();
         }
     }
 
@@ -575,10 +583,10 @@ public class Ui {
     private void drawInventoryScreen() {
         drawOverlayBackdrop();
 
-        int outerX = gh.tileSize;
-        int outerY = gh.tileSize / 2;
-        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerWidth = getOverlayFrameWidth();
         int outerHeight = gh.screenHeight - gh.tileSize;
+        int outerX = (gh.screenWidth - outerWidth) / 2;
+        int outerY = gh.tileSize / 2;
         u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
 
         drawScreenHeader("INVENTORY", "TAB: Stats   ESC: Close   ENTER/SPACE: Equip or use", outerX, outerY, outerWidth);
@@ -644,10 +652,10 @@ public class Ui {
     private void drawStatsScreen() {
         drawOverlayBackdrop();
 
-        int outerX = gh.tileSize;
-        int outerY = gh.tileSize / 2;
-        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerWidth = getOverlayFrameWidth();
         int outerHeight = gh.screenHeight - gh.tileSize;
+        int outerX = (gh.screenWidth - outerWidth) / 2;
+        int outerY = gh.tileSize / 2;
         u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
 
         drawScreenHeader("STATS", "TAB: Inventory   ESC: Close", outerX, outerY, outerWidth);
@@ -765,10 +773,10 @@ public class Ui {
     private void drawChestScreen() {
         drawOverlayBackdrop();
 
-        int outerX = gh.tileSize;
-        int outerY = gh.tileSize / 2;
-        int outerWidth = gh.screenWidth - (gh.tileSize * 2);
+        int outerWidth = getOverlayFrameWidth();
         int outerHeight = gh.screenHeight - gh.tileSize;
+        int outerX = (gh.screenWidth - outerWidth) / 2;
+        int outerY = gh.tileSize / 2;
         u.drawSubWindow(outerX, outerY, outerWidth, outerHeight, g2d);
 
         drawScreenHeader("Chest", "TAB: Switch panel   SPACE/ENTER: Transfer item   ESC: Close", outerX, outerY, outerWidth);
@@ -885,6 +893,11 @@ public class Ui {
     private void drawOverlayBackdrop() {
         g2d.setColor(new Color(0, 0, 0, 150));
         g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+    }
+
+    private int getOverlayFrameWidth() {
+        int maxWindowedWidth = gh.tileSize * 14;
+        return Math.min(gh.screenWidth - (gh.tileSize * 2), maxWindowedWidth);
     }
 
     private void drawScreenHeader(String title, String hint, int frameX, int frameY, int frameWidth) {
