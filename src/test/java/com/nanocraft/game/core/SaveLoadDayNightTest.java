@@ -9,7 +9,7 @@ public class SaveLoadDayNightTest {
     @Test
     public void applySaveDataRestoresNightAfterCurrentSessionIsDay() {
         GameHandler gh = new GameHandler();
-        SaveManager.SaveData saveData = new SaveManager.SaveData();
+        SaveHandler.SaveData saveData = new SaveHandler.SaveData();
         saveData.currentMapPath = gh.th.getCurrentMapPath();
         saveData.player = gh.player.createSaveData();
         saveData.dayNightTick = 0;

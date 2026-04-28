@@ -48,6 +48,10 @@ public class KeyHandler implements KeyListener {
         else if (gh.gameState == gh.chest) {
             chestState(code);
         }
+
+        else if (gh.gameState == gh.gameOver) {
+            gameOverState(code);
+        }
     }
 
     @Override
@@ -100,9 +104,7 @@ public class KeyHandler implements KeyListener {
 
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
                 if (gh.ui.commandNum == 0) {
-                    gh.ui.titleScreen = 1;
-                    gh.gameState = gh.play;
-                    // gh.playMusic();
+                    gh.sm.startNewGame();
                 }
 
                 else if (gh.ui.commandNum == 1) {
@@ -350,6 +352,22 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
             gh.ui.moveChestCursor(1, 0);
+        }
+    }
+
+    private void gameOverState(int code) {
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            gh.ui.moveGameOverSelection(-1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            gh.ui.moveGameOverSelection(1);
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            gh.activateGameOverSelection();
         }
     }
 }

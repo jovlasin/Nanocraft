@@ -32,6 +32,7 @@ public class Ui {
     private int pauseExitConfirmationIndex;
     private boolean inSettings;
     private int settingsIndex;
+    private int gameOverIndex;
     private boolean controlMenu;
     private int chestSlotCol;
     private int chestSlotRow;
@@ -93,6 +94,10 @@ public class Ui {
             drawChestScreen();
             drawMessage();
         }
+
+        else if (gh.gameState == gh.gameOver) {
+            drawGameOverScreen();
+        }
     }
 
     public void addMessage(String text) {
@@ -136,6 +141,18 @@ public class Ui {
         inSettings = false;
         settingsIndex = 0;
         controlMenu = false;
+    }
+
+    public void resetGameOverMenu() {
+        gameOverIndex = 0;
+    }
+
+    public void moveGameOverSelection(int delta) {
+        gameOverIndex = clamp(gameOverIndex + delta, 0, 1);
+    }
+
+    public int getGameOverSelection() {
+        return gameOverIndex;
     }
 
     public void movePauseMenuSelection(int delta) {
@@ -483,6 +500,46 @@ public class Ui {
             g2d.setColor(Color.white);
             g2d.drawString(options[i], optionX, optionY);
         }
+    }
+
+    private void drawGameOverScreen() {
+        g2d.setColor(new Color(0, 0, 0, 220));
+        g2d.fillRect(0, 0, gh.screenWidth, gh.screenHeight);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.BOLD, 48F));
+        g2d.setColor(Color.white);
+        String title = "GAME OVER";
+        int titleY = gh.tileSize + 24;
+        g2d.drawString(title, u.getXforCenteredText(title, g2d), titleY);
+
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 24F));
+        String subtitle = gh.hasSaveGame() ? "Retry from your last save or quit the game." : "No save found. You can quit or start a new run.";
+        g2d.drawString(subtitle, u.getXforCenteredText(subtitle, g2d), titleY + 70);
+
+        int lineH = 60;
+        int startY = titleY + gh.tileSize + 150;
+        String[] options = {"Retry", "Quit"};
+
+        for (int row = 0; row < options.length; row++) {
+            String label = options[row];
+            g2d.setFont(text.deriveFont(Font.BOLD, 26F));
+            int y = startY + row * lineH;
+            int labelX = u.getXforCenteredText(label, g2d);
+
+            boolean selected = gameOverIndex == row;
+            g2d.setColor(selected ? new Color(240, 190, 90) : Color.white);
+
+            if (selected) {
+                g2d.drawString(">", labelX - gh.tileSize, y);
+            }
+
+            g2d.drawString(label, labelX, y);
+        }
+
+        g2d.setColor(Color.white);
+        g2d.setFont(g2d.getFont().deriveFont(Font.PLAIN, 20F));
+        String help = "UP/DOWN: Move   ENTER/SPACE: Select";
+        g2d.drawString(help, u.getXforCenteredText(help, g2d), gh.screenHeight - gh.tileSize);
     }
 
     private void drawPlayerHealth() {
