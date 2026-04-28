@@ -173,6 +173,19 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void openingChestPlaysChestOpenSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+
+        gh.openChest(chest);
+
+        assertEquals(gh.chest, gh.gameState);
+        assertSame(chest, gh.activeChest);
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_CHEST_OPEN));
+        assertEquals(GameHandler.SFX_CHEST_OPEN, gh.lastSoundId);
+    }
+
+    @Test
     public void miningRequiresPickaxeAndDropsOreAfterExpectedNumberOfHits() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/cave.tmj");
@@ -567,6 +580,9 @@ public class PlayerInteractionTest {
     public void movingChestCursorPlaysCursorSound() {
         RecordingGameHandler gh = new RecordingGameHandler();
         gh.openChest(new ChestState("/map/test.tmj", 0, 0));
+        gh.soundPlayCount = 0;
+        gh.lastSoundId = -1;
+        gh.soundCounts = new int[30];
 
         gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_D, 'D'));
         gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_A, 'A'));
@@ -575,6 +591,28 @@ public class PlayerInteractionTest {
         assertEquals(0, gh.ui.getSelectedChestSlotIndex());
         assertEquals(2, gh.getSoundCount(GameHandler.SFX_CURSOR));
         assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void openingPauseMenuFromPlayDoesNotPlayMainMenuSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.play;
+
+        gh.openPauseMenu();
+
+        assertEquals(gh.pause, gh.gameState);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_MAIN_MENU));
+    }
+
+    @Test
+    public void openingPauseMenuOutsidePlayDoesNotPlayMainMenuSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.title;
+
+        gh.openPauseMenu();
+
+        assertEquals(gh.pause, gh.gameState);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_MAIN_MENU));
     }
 
     @Test
@@ -903,6 +941,17 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void startingNewGameDoesNotPlayMainMenuAsSoundEffect() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.title;
+
+        gh.sm.startNewGame();
+
+        assertEquals(gh.play, gh.gameState);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_MAIN_MENU));
+    }
+
+    @Test
     public void leveledPlayerStillTakesMinimumTwoDamageFromWeakMonsterMelee() {
         GameHandler gh = new GameHandler();
         gh.player.dexterity = 4;
@@ -997,7 +1046,7 @@ public class PlayerInteractionTest {
         gh.player.update();
 
         assertEquals(gh.chest, gh.gameState);
-        assertEquals(0, gh.soundPlayCount);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_SWORD_ATTACK));
 
         RecordingGameHandler toolGh = new RecordingGameHandler();
         toolGh.gameState = toolGh.play;
@@ -1148,6 +1197,19 @@ public class PlayerInteractionTest {
 
         assertNotNull(gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow));
         assertFalse(gh.th.getChestAt(31, 9).items.isEmpty());
+    }
+
+    @Test
+    public void enteringEndMapPlaysEnteringEndSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.th.loadMap("/map/village.tmj");
+        gh.refreshCurrentMapState();
+
+        gh.th.swapMap("/map/end.tmj", 8, 9, "down");
+
+        assertEquals("/map/end.tmj", gh.th.getCurrentMapPath());
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_ENTERING_END));
+        assertEquals(GameHandler.SFX_ENTERING_END, gh.lastSoundId);
     }
 
     private String latestMessage(GameHandler gh) {

@@ -42,6 +42,7 @@ import com.nanocraft.game.tile.TileHandler;
 public class GameHandler extends JPanel implements Runnable {
     private static final String NETHER_MAP_PATH = "/map/nether.tmj";
     private static final String END_MAP_PATH = "/map/end.tmj";
+    private static final int MUSIC_MAIN = 0;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
     public static final int SFX_ARROW = 0;
     public static final int SFX_SWORD_ATTACK = 1;
@@ -52,6 +53,9 @@ public class GameHandler extends JPanel implements Runnable {
     public static final int SFX_BLOCK_HIT = 6;
     public static final int SFX_BLOCK_BREAK = 7;
     public static final int SFX_LEVEL_UP = 8;
+    public static final int SFX_MAIN_MENU = 9;
+    public static final int SFX_CHEST_OPEN = 10;
+    public static final int SFX_ENTERING_END = 11;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -99,6 +103,7 @@ public class GameHandler extends JPanel implements Runnable {
     private BufferedImage lightingFilter;
     private int musicVolume = 100;
     private int sfxVolume = 100;
+    private boolean musicLoaded;
     private boolean soundEffectsLoaded;
 
     // /** For unit tests; fullscreen is a no-op without a window. */
@@ -117,13 +122,12 @@ public class GameHandler extends JPanel implements Runnable {
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         refreshCurrentMapState();
 
-        // playMusic();
-        
         gameState = title;
         // gameState = play;
     }
 
     public void startGame() {
+        playMusic();
         gameThread = new Thread(this);
         gameThread.start();
     }
@@ -207,6 +211,7 @@ public class GameHandler extends JPanel implements Runnable {
         activeChest.opened = true;
         ui.resetChestUi();
         ui.addMessage("Opened chest.");
+        playSound(SFX_CHEST_OPEN);
         gameState = chest;
     }
 
@@ -713,11 +718,21 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void playMusic() {
-        if (musicVolume == 0) {
+        if (musicVolume == 0 || GraphicsEnvironment.isHeadless()) {
             return;
         }
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
+
+        loadMusicIfNeeded();
+        music.loop(MUSIC_MAIN);
+    }
+
+    private void loadMusicIfNeeded() {
+        if (musicLoaded) {
+            return;
+        }
+
+        music.load(MUSIC_MAIN, "/sound/MainMenu.wav");
+        musicLoaded = true;
     }
 
     public void playSound(int i) {
@@ -743,6 +758,9 @@ public class GameHandler extends JPanel implements Runnable {
         se.load(SFX_BLOCK_HIT, "/sound/blockhit.wav");
         se.load(SFX_BLOCK_BREAK, "/sound/blockbreak.wav");
         se.load(SFX_LEVEL_UP, "/sound/levelup.wav");
+        se.load(SFX_MAIN_MENU, "/sound/MainMenu.wav");
+        se.load(SFX_CHEST_OPEN, "/sound/ChestOpen.wav");
+        se.load(SFX_ENTERING_END, "/sound/EnteringEnd.wav");
         soundEffectsLoaded = true;
     }
 
@@ -761,6 +779,12 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setMusicVolume(int percent) {
         musicVolume = Math.max(0, Math.min(100, percent));
+        if (musicVolume == 0) {
+            music.stop(MUSIC_MAIN);
+            return;
+        }
+
+        playMusic();
     }
 
     public int getSfxVolume() {
