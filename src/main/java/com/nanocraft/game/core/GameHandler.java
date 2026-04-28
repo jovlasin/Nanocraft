@@ -51,6 +51,7 @@ public class GameHandler extends JPanel implements Runnable {
     public static final int SFX_POWERUP = 5;
     public static final int SFX_BLOCK_HIT = 6;
     public static final int SFX_BLOCK_BREAK = 7;
+    public static final int SFX_LEVEL_UP = 8;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -741,6 +742,7 @@ public class GameHandler extends JPanel implements Runnable {
         se.load(SFX_POWERUP, "/sound/powerup.wav");
         se.load(SFX_BLOCK_HIT, "/sound/blockhit.wav");
         se.load(SFX_BLOCK_BREAK, "/sound/blockbreak.wav");
+        se.load(SFX_LEVEL_UP, "/sound/levelup.wav");
         soundEffectsLoaded = true;
     }
 

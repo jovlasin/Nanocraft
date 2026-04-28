@@ -737,6 +737,38 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void earningXpWithoutLevelUpDoesNotPlayLevelSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        GreenSlime slime = new GreenSlime(gh);
+        slime.life = 1;
+        gh.monsters[0] = slime;
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertEquals(1, gh.player.level);
+        assertEquals(slime.exp, gh.player.exp);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_LEVEL_UP));
+    }
+
+    @Test
+    public void levelingUpFromXpAndHealthIncreasePlaysLevelSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        GreenSlime slime = new GreenSlime(gh);
+        slime.life = 1;
+        gh.monsters[0] = slime;
+        gh.player.exp = gh.player.nextLevelExp - slime.exp;
+        int previousMaxLife = gh.player.maxLife;
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertEquals(2, gh.player.level);
+        assertEquals(previousMaxLife + 2, gh.player.maxLife);
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_LEVEL_UP));
+        assertEquals(GameHandler.SFX_LEVEL_UP, gh.lastSoundId);
+    }
+
+    @Test
     public void swordSwingCanOnlyDamageDragonOnce() {
         GameHandler gh = new GameHandler();
         gh.gameState = gh.play;

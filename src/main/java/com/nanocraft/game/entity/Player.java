@@ -568,6 +568,7 @@ public class Player extends Entity {
             dexterity++;
             attack = getAttack();
             defense = getDefense();
+            gh.playSound(GameHandler.SFX_LEVEL_UP);
             gh.gameState = gh.dialogue;
             gh.ui.currentDialogue = "You are level " + level + " now!\nYou feel stronger!";
         }
