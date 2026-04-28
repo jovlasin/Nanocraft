@@ -36,11 +36,17 @@ public class PlayerInteractionTest {
     private static class RecordingGameHandler extends GameHandler {
         int soundPlayCount;
         int lastSoundId = -1;
+        int[] soundCounts = new int[30];
 
         @Override
         public void playSound(int i) {
             soundPlayCount++;
             lastSoundId = i;
+            soundCounts[i]++;
+        }
+
+        int getSoundCount(int i) {
+            return soundCounts[i];
         }
     }
 
@@ -676,6 +682,20 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void hittingMonsterPlaysHitSoundOnce() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        GreenSlime slime = new GreenSlime(gh);
+        gh.monsters[0] = slime;
+
+        gh.player.damage(0, gh.player.attack);
+        gh.player.damage(0, gh.player.attack);
+
+        assertTrue(slime.life < slime.maxLife);
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_MONSTER_HIT));
+        assertEquals(GameHandler.SFX_MONSTER_HIT, gh.lastSoundId);
+    }
+
+    @Test
     public void lethalDamageOpensGameOverMenu() {
         GameHandler gh = new GameHandler();
         gh.gameState = gh.play;
@@ -686,6 +706,29 @@ public class PlayerInteractionTest {
         assertEquals(0, gh.player.life);
         assertEquals(gh.gameOver, gh.gameState);
         assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void playerTakingDamagePlaysDamageSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.play;
+
+        gh.player.receiveDamage(gh.player.defense + 1);
+
+        assertTrue(gh.player.life < gh.player.maxLife);
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_PLAYER_DAMAGE));
+        assertEquals(GameHandler.SFX_PLAYER_DAMAGE, gh.lastSoundId);
+    }
+
+    @Test
+    public void ignoredPlayerDamageDoesNotPlayDamageSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.player.invincible = true;
+
+        gh.player.receiveDamage(gh.player.defense + 1);
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_PLAYER_DAMAGE));
     }
 
     @Test

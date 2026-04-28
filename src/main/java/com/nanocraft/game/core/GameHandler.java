@@ -45,6 +45,8 @@ public class GameHandler extends JPanel implements Runnable {
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
     public static final int SFX_ARROW = 0;
     public static final int SFX_SWORD_ATTACK = 1;
+    public static final int SFX_PLAYER_DAMAGE = 2;
+    public static final int SFX_MONSTER_HIT = 3;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -729,6 +731,8 @@ public class GameHandler extends JPanel implements Runnable {
 
         se.load(SFX_ARROW, "/sound/arrow.wav");
         se.load(SFX_SWORD_ATTACK, "/sound/attack.wav");
+        se.load(SFX_PLAYER_DAMAGE, "/sound/damage.wav");
+        se.load(SFX_MONSTER_HIT, "/sound/hit.wav");
         soundEffectsLoaded = true;
     }
 

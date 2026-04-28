@@ -474,6 +474,7 @@ public class Player extends Entity {
                 }
 
                 monster.life -= damage;
+                gh.playSound(GameHandler.SFX_MONSTER_HIT);
                 gh.ui.addMessage(damage + " damage!");
                 monster.invincible = true;
                 monster.knockBack = true;
@@ -516,7 +517,11 @@ public class Player extends Entity {
             damage = 0;
         }
 
+        int previousLife = life;
         life = Math.max(0, life - damage);
+        if (life < previousLife) {
+            gh.playSound(GameHandler.SFX_PLAYER_DAMAGE);
+        }
         invincible = true;
 
         if (life == 0) {
@@ -543,6 +548,9 @@ public class Player extends Entity {
 
         int previousLife = life;
         life = Math.max(0, life - damage);
+        if (life < previousLife) {
+            gh.playSound(GameHandler.SFX_PLAYER_DAMAGE);
+        }
         invincible = true;
         if (life == 0) {
             gh.openGameOverMenu();
