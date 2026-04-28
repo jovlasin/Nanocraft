@@ -218,6 +218,41 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void miningOrePlaysHitAndBreakSounds() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.gameState = gh.play;
+
+        OrePlacement placement = findMineableOrePlacement(gh);
+        Tile oreTile = gh.th.getTopBreakableTileAt(placement.oreCol, placement.oreRow);
+        assertNotNull(oreTile);
+
+        performMineInteraction(gh, placement);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_BLOCK_HIT));
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_BLOCK_BREAK));
+
+        Pickaxe pickaxe = new Pickaxe(gh);
+        assertTrue(gh.player.addToInventory(pickaxe));
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+        assertTrue(gh.player.hasEquippedItem("diamond_pickaxe"));
+
+        for (int i = 0; i < oreTile.maxHealth - 1; i++) {
+            performMineInteraction(gh, placement);
+        }
+
+        assertEquals(Math.max(0, oreTile.maxHealth - 1), gh.getSoundCount(GameHandler.SFX_BLOCK_HIT));
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_BLOCK_BREAK));
+
+        performMineInteraction(gh, placement);
+
+        assertEquals(Math.max(0, oreTile.maxHealth - 1), gh.getSoundCount(GameHandler.SFX_BLOCK_HIT));
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_BLOCK_BREAK));
+        assertEquals(GameHandler.SFX_BLOCK_BREAK, gh.lastSoundId);
+    }
+
+    @Test
     public void miningUsesCollisionProximityForReachableOre() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/cave.tmj");

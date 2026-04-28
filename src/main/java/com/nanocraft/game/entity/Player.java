@@ -776,9 +776,11 @@ public class Player extends Entity {
         startToolSwingAnimation(currentWeapon);
         String dropItemType = gh.th.damageBreakableTile(targetTileCoordinates[0], targetTileCoordinates[1], 1);
         if (dropItemType == null || dropItemType.isBlank()) {
+            gh.playSound(GameHandler.SFX_BLOCK_HIT);
             return true;
         }
 
+        gh.playSound(GameHandler.SFX_BLOCK_BREAK);
         Entity minedItem = gh.createItemEntity(dropItemType);
         if (minedItem != null && addToInventory(minedItem)) {
             gh.ui.addMessage("Got a " + minedItem.name + "!");
