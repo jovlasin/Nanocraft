@@ -313,6 +313,23 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void healingItemPlaysPowerupSoundWhenLifeIsRestored() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        Apple apple = new Apple(gh);
+        assertTrue(gh.player.addToInventory(apple));
+        gh.player.life = gh.player.maxLife - 1;
+        gh.gameState = gh.inventory;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_POWERUP));
+        assertEquals(GameHandler.SFX_POWERUP, gh.lastSoundId);
+    }
+
+    @Test
     public void usingHealingItemAtFullHealthDoesNotConsumeIt() {
         GameHandler gh = new GameHandler();
         Meat meat = new Meat(gh);
@@ -330,6 +347,22 @@ public class PlayerInteractionTest {
         assertEquals(1, meat.stackCount);
         assertEquals("Health is full. Health: 6/6", latestMessage(gh));
         assertEquals(gh.play, gh.gameState);
+    }
+
+    @Test
+    public void fullHealthHealingItemDoesNotPlayPowerupSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        Meat meat = new Meat(gh);
+        assertTrue(gh.player.addToInventory(meat));
+        gh.player.life = gh.player.maxLife;
+        gh.gameState = gh.inventory;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_POWERUP));
     }
 
     @Test
@@ -479,6 +512,34 @@ public class PlayerInteractionTest {
 
         assertEquals(4, gh.player.inventory.size());
         assertSame(pickaxe, gh.player.currentWeapon);
+    }
+
+    @Test
+    public void movingInventoryCursorPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.inventory;
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_D, 'D'));
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_A, 'A'));
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_A, 'A'));
+
+        assertEquals(0, gh.ui.slotCol);
+        assertEquals(2, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void movingChestCursorPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.openChest(new ChestState("/map/test.tmj", 0, 0));
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_D, 'D'));
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_A, 'A'));
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_A, 'A'));
+
+        assertEquals(0, gh.ui.getSelectedChestSlotIndex());
+        assertEquals(2, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
     }
 
     @Test

@@ -291,19 +291,19 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
-            gh.ui.moveInventoryCursor(0, -1);
+            playCursorSoundIfMoved(gh.ui.moveInventoryCursor(0, -1));
         }
 
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
-            gh.ui.moveInventoryCursor(0, 1);
+            playCursorSoundIfMoved(gh.ui.moveInventoryCursor(0, 1));
         }
 
         if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
-            gh.ui.moveInventoryCursor(-1, 0);
+            playCursorSoundIfMoved(gh.ui.moveInventoryCursor(-1, 0));
         }
 
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
-            gh.ui.moveInventoryCursor(1, 0);
+            playCursorSoundIfMoved(gh.ui.moveInventoryCursor(1, 0));
         }
 
         if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
@@ -339,19 +339,25 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
-            gh.ui.moveChestCursor(0, -1);
+            playCursorSoundIfMoved(gh.ui.moveChestCursor(0, -1));
         }
 
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
-            gh.ui.moveChestCursor(0, 1);
+            playCursorSoundIfMoved(gh.ui.moveChestCursor(0, 1));
         }
 
         if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
-            gh.ui.moveChestCursor(-1, 0);
+            playCursorSoundIfMoved(gh.ui.moveChestCursor(-1, 0));
         }
 
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
-            gh.ui.moveChestCursor(1, 0);
+            playCursorSoundIfMoved(gh.ui.moveChestCursor(1, 0));
+        }
+    }
+
+    private void playCursorSoundIfMoved(boolean moved) {
+        if (moved) {
+            gh.playSound(GameHandler.SFX_CURSOR);
         }
     }
 

@@ -403,6 +403,9 @@ public class Entity {
 
         int restoredLife = Math.min(amount, missingLife);
         player.life += restoredLife;
+        if (restoredLife > 0) {
+            gh.playSound(GameHandler.SFX_POWERUP);
+        }
         return restoredLife;
     }
 
