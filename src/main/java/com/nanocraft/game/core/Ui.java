@@ -24,6 +24,9 @@ public class Ui {
     public ArrayList<String> message = new ArrayList<>();
     public ArrayList<Integer> counter = new ArrayList<>();
     public String currentDialogue = "";
+    private boolean dialogueChoiceVisible;
+    private String[] dialogueChoices = new String[0];
+    private int dialogueChoiceIndex;
     private int pauseMenuIndex;
     private boolean pauseExitConfirmationVisible;
     private int pauseExitConfirmationIndex;
@@ -95,6 +98,35 @@ public class Ui {
     public void addMessage(String text) {
         message.add(text);
         counter.add(0);
+    }
+
+    public void openDialogueChoice(String dialogue, String... choices) {
+        currentDialogue = dialogue == null ? "" : dialogue;
+        dialogueChoices = choices == null ? new String[0] : choices.clone();
+        dialogueChoiceVisible = dialogueChoices.length > 0;
+        dialogueChoiceIndex = 0;
+    }
+
+    public void closeDialogueChoice() {
+        dialogueChoiceVisible = false;
+        dialogueChoices = new String[0];
+        dialogueChoiceIndex = 0;
+    }
+
+    public boolean isDialogueChoiceVisible() {
+        return dialogueChoiceVisible;
+    }
+
+    public void moveDialogueChoiceSelection(int delta) {
+        if (!dialogueChoiceVisible || dialogueChoices.length == 0) {
+            return;
+        }
+
+        dialogueChoiceIndex = clamp(dialogueChoiceIndex + delta, 0, dialogueChoices.length - 1);
+    }
+
+    public int getDialogueChoiceIndex() {
+        return dialogueChoiceIndex;
     }
 
     public void resetPauseMenu() {
@@ -620,6 +652,24 @@ public class Ui {
             g2d.drawString(line, x, y);
             y += 40;
         }
+
+        if (dialogueChoiceVisible) {
+            drawDialogueChoices(x, y + 8);
+        }
+    }
+
+    private void drawDialogueChoices(int startX, int y) {
+        int x = startX;
+
+        for (int i = 0; i < dialogueChoices.length; i++) {
+            String choice = dialogueChoices[i];
+            String label = (dialogueChoiceIndex == i ? "> " : "  ") + choice;
+            g2d.setColor(dialogueChoiceIndex == i ? new Color(240, 190, 90) : Color.white);
+            g2d.drawString(label, x, y);
+            x += g2d.getFontMetrics().stringWidth(label) + 36;
+        }
+
+        g2d.setColor(Color.white);
     }
 
     private void drawMessage() {

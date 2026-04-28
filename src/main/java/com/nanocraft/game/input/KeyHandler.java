@@ -250,8 +250,30 @@ public class KeyHandler implements KeyListener {
     }
 
     private void dialogueState(int code) {
-        if (code == KeyEvent.VK_SPACE) {
-            gh.gameState = gh.play;
+        if (gh.ik.isSleepPromptVisible()) {
+            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A || code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+                gh.ik.moveSleepPromptSelection(-1);
+                return;
+            }
+
+            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D || code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+                gh.ik.moveSleepPromptSelection(1);
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+                gh.ik.confirmSleepPromptSelection();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ESCAPE) {
+                gh.ik.closeDialogue();
+            }
+            return;
+        }
+
+        if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) {
+            gh.ik.closeDialogue();
         }
     }
 
