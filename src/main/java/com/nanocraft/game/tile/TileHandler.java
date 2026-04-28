@@ -152,7 +152,17 @@ public class TileHandler {
     }
 
     public void loadMap(String mapPath) {
-        rememberCurrentMapState();
+        loadMap(mapPath, true);
+    }
+
+    public void loadFreshMap(String mapPath) {
+        loadMap(mapPath, false);
+    }
+
+    private void loadMap(String mapPath, boolean rememberCurrentState) {
+        if (rememberCurrentState) {
+            rememberCurrentMapState();
+        }
 
         MapLoader.MapData mapData = mapLoader.loadMap(mapPath);
         tileRegistry.clear();
@@ -730,6 +740,14 @@ public class TileHandler {
         }
 
         storedMapStates.remove(mapPath);
+    }
+
+    public void resetAllStoredMapStates() {
+        storedMapStates.clear();
+    }
+
+    public void resetAllChests() {
+        chestRegistry.clear();
     }
 
     private Tile getTile(int globalId) {

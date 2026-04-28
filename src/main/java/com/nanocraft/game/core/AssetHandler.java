@@ -1,6 +1,7 @@
 package com.nanocraft.game.core;
 
 import com.nanocraft.game.entity.Elder;
+import com.nanocraft.game.entity.Innkeeper;
 import com.nanocraft.game.monster.Dragon;
 import com.nanocraft.game.monster.GreenSlime;
 import com.nanocraft.game.monster.Skeleton;
@@ -8,7 +9,6 @@ import com.nanocraft.game.monster.SkeletonKing;
 import com.nanocraft.game.monster.Zombie;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.tile.MapMarker;
-import com.nanocraft.game.entity.SleepNPC;
 
 public class AssetHandler {
     public static final String SPAWN_MAP_PATH = "/map/village.tmj";
@@ -40,9 +40,12 @@ public class AssetHandler {
         clearNPCs();
 
         if (INN_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
-        drawSleepNPC(0, 3, 6); // adjust x/y if needed
-        return;
-    }
+            int[] innkeeperTile = gh.th.findNearestOpenTile(3, 5);
+            if (innkeeperTile != null) {
+                drawInnkeeper(0, 5, 2);
+            }
+            return;
+        }
 
         if (!shouldPlaceVillageAssets()) {
             return;
@@ -260,11 +263,12 @@ public class AssetHandler {
         gh.npcs[i].worldY = gh.tileSize * y;
     }
 
-    private void drawSleepNPC(int i, int x, int y) {
-    gh.npcs[i] = new SleepNPC(gh);
-    gh.npcs[i].worldX = gh.tileSize * x;
-    gh.npcs[i].worldY = gh.tileSize * y;
-}
+    private void drawInnkeeper(int i, int x, int y) {
+        gh.npcs[i] = new Innkeeper(gh);
+        gh.npcs[i].worldX = gh.tileSize * x;
+        gh.npcs[i].worldY = gh.tileSize * y;
+    }
+
 
     
     private void drawGreenSlime(int i, int x, int y) {
@@ -310,10 +314,10 @@ public class AssetHandler {
     }
   
     private boolean shouldPlaceVillageAssets() {
-    String currentMapPath = gh.th.getCurrentMapPath();
-    return !CAVE_MAP_PATH.equals(currentMapPath)
-        && !NETHER_MAP_PATH.equals(currentMapPath)
-        && !END_MAP_PATH.equals(currentMapPath)
-        && !INN_MAP_PATH.equals(currentMapPath);
-}
+        String currentMapPath = gh.th.getCurrentMapPath();
+        return !CAVE_MAP_PATH.equals(currentMapPath)
+            && !NETHER_MAP_PATH.equals(currentMapPath)
+            && !END_MAP_PATH.equals(currentMapPath)
+            && !INN_MAP_PATH.equals(currentMapPath);
+    }
 }
