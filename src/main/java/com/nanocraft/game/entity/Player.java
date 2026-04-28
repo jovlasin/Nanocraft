@@ -958,14 +958,6 @@ public class Player extends Entity {
             return true;
         }
 
-        for (int[] targetTile : targetTiles) {
-            String interactionType = gh.th.getInteractionTypeAt(targetTile[0], targetTile[1]);
-            if ("sleep".equals(interactionType)) {
-                gh.onPlayerSleep();
-                return true;
-            }
-        }
-
         if (interactNPC(npcIndex)) {
             return true;
         }

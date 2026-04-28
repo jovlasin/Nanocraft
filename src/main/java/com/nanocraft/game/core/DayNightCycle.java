@@ -48,6 +48,15 @@ public class DayNightCycle {
         }
     }
 
+    public void advanceToRestPhase() {
+        if (isNight()) {
+            setProgress(dayStartProgress());
+            return;
+        }
+
+        setProgress(nightStartProgress());
+    }
+
     public float getDarknessAlpha() {
         double progress = getProgress();
 

@@ -635,6 +635,72 @@ public class PlayerInteractionTest {
         assertEquals(1, gh.projectileList.size());
     }
 
+    @Test
+    public void talkingToInnkeeperOpensSleepPrompt() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/inn.tmj");
+        gh.refreshCurrentMapState();
+        gh.gameState = gh.play;
+
+        Entity innkeeper = gh.npcs[0];
+        assertNotNull(innkeeper);
+
+        gh.player.worldX = innkeeper.worldX;
+        gh.player.worldY = innkeeper.worldY + 35;
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        gh.player.update();
+
+        assertEquals(gh.dialogue, gh.gameState);
+        assertTrue(gh.ik.isSleepPromptVisible());
+        assertEquals("Want to rest?\nSleeping restores the world.", gh.ui.currentDialogue);
+    }
+
+    @Test
+    public void sleepRestoresHealthWorldStateAndCyclesNightToDay() {
+        GameHandler gh = new GameHandler();
+        gh.th.loadMap("/map/cave.tmj");
+        gh.refreshCurrentMapState();
+
+        OrePlacement orePlacement = findMineableOrePlacement(gh);
+        Pickaxe pickaxe = new Pickaxe(gh);
+        assertTrue(gh.player.addToInventory(pickaxe));
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        Tile oreTile = gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow);
+        assertNotNull(oreTile);
+
+        for (int i = 0; i < oreTile.maxHealth; i++) {
+            performMineInteraction(gh, orePlacement);
+        }
+        assertNull(gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow));
+
+        ChestState caveChest = gh.th.getChestAt(31, 9);
+        assertNotNull(caveChest);
+        caveChest.items.clear();
+        assertTrue(caveChest.items.isEmpty());
+
+        gh.th.loadMap("/map/inn.tmj");
+        gh.refreshCurrentMapState();
+        gh.player.life = gh.player.maxLife - 3;
+        gh.dayNightCycle.setCurrentTick(0);
+
+        gh.onPlayerSleep();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertFalse(gh.dayNightCycle.isNight());
+        assertEquals(gh.play, gh.gameState);
+
+        gh.th.loadMap("/map/cave.tmj");
+        gh.refreshCurrentMapState();
+
+        assertNotNull(gh.th.getTopBreakableTileAt(orePlacement.oreCol, orePlacement.oreRow));
+        assertFalse(gh.th.getChestAt(31, 9).items.isEmpty());
+    }
+
     private String latestMessage(GameHandler gh) {
         return gh.ui.message.get(gh.ui.message.size() - 1);
     }

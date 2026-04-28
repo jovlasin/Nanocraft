@@ -1,6 +1,7 @@
 package com.nanocraft.game.core;
 
 import com.nanocraft.game.entity.Elder;
+import com.nanocraft.game.entity.Innkeeper;
 import com.nanocraft.game.monster.Dragon;
 import com.nanocraft.game.monster.GreenSlime;
 import com.nanocraft.game.monster.Skeleton;
@@ -18,6 +19,7 @@ public class AssetHandler {
     private static final String END_RETURN_PORTAL_MARKER = "end_return_portal_spawn";
     private static final String END_RETURN_PORTAL_LAYER = "Portal";
     private static final String END_RETURN_PORTAL_TILE_TYPE = "end_return_portal";
+    public static final String INN_MAP_PATH = "/map/inn.tmj";
     private GameHandler gh;
 
     public AssetHandler(GameHandler gh) {
@@ -36,6 +38,14 @@ public class AssetHandler {
 
     public void setNPCS() {
         clearNPCs();
+
+        if (INN_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+            int[] innkeeperTile = gh.th.findNearestOpenTile(3, 5);
+            if (innkeeperTile != null) {
+                drawInnkeeper(0, 5, 2);
+            }
+            return;
+        }
 
         if (!shouldPlaceVillageAssets()) {
             return;
@@ -253,6 +263,14 @@ public class AssetHandler {
         gh.npcs[i].worldY = gh.tileSize * y;
     }
 
+    private void drawInnkeeper(int i, int x, int y) {
+        gh.npcs[i] = new Innkeeper(gh);
+        gh.npcs[i].worldX = gh.tileSize * x;
+        gh.npcs[i].worldY = gh.tileSize * y;
+    }
+
+
+    
     private void drawGreenSlime(int i, int x, int y) {
         if (gh.isMonsterKilledOnCurrentMap(i)) {
             return;
@@ -299,6 +317,7 @@ public class AssetHandler {
         String currentMapPath = gh.th.getCurrentMapPath();
         return !CAVE_MAP_PATH.equals(currentMapPath)
             && !NETHER_MAP_PATH.equals(currentMapPath)
-            && !END_MAP_PATH.equals(currentMapPath);
+            && !END_MAP_PATH.equals(currentMapPath)
+            && !INN_MAP_PATH.equals(currentMapPath);
     }
 }
