@@ -25,4 +25,26 @@ public class SaveLoadDayNightTest {
         assertTrue(gh.getTimeLabel().contains("Night"));
         assertTrue(gh.getCurrentDarknessAlpha() > 0f);
     }
+
+    @Test
+    public void restPhaseTurnsNightIntoDay() {
+        DayNightCycle cycle = new DayNightCycle();
+        cycle.setCurrentTick(0);
+
+        cycle.advanceToRestPhase();
+
+        assertFalse(cycle.isNight());
+        assertTrue("Day".equals(cycle.getPhaseName()));
+    }
+
+    @Test
+    public void restPhaseTurnsDayIntoNight() {
+        DayNightCycle cycle = new DayNightCycle();
+        cycle.setCurrentTick(12000);
+
+        cycle.advanceToRestPhase();
+
+        assertTrue(cycle.isNight());
+        assertTrue("Night".equals(cycle.getPhaseName()));
+    }
 }

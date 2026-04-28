@@ -21,6 +21,7 @@ import java.util.Set;
 import javax.swing.JPanel;
 
 import com.nanocraft.game.entity.Entity;
+import com.nanocraft.game.entity.Innkeeper;
 import com.nanocraft.game.entity.Player;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Apple;
@@ -68,6 +69,7 @@ public class GameHandler extends JPanel implements Runnable {
     private final Map<String, List<SaveManager.WorldObjectData>> persistentObjectStates = new HashMap<>();
     private final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
+    public Innkeeper ik = new Innkeeper(this);
     private boolean monsterSpawnWindowOpen;
     private boolean wasNightPhase;
 
@@ -237,15 +239,23 @@ public class GameHandler extends JPanel implements Runnable {
         int playerWorldY = player.worldY;
         String playerDirection = player.direction;
 
-        persistentObjectStates.remove(currentMapPath);
-        persistentMonsterStates.remove(currentMapPath);
-        th.resetStoredMapState(currentMapPath);
-        th.loadMap(currentMapPath);
+        player.life = player.maxLife;
+        persistentObjectStates.clear();
+        persistentMonsterStates.clear();
+        th.resetAllChests();
+        th.resetAllStoredMapStates();
+        dayNightCycle.advanceToRestPhase();
+        syncDayNightState();
+        th.loadFreshMap(currentMapPath);
         player.worldX = playerWorldX;
         player.worldY = playerWorldY;
         player.direction = playerDirection;
+        activeChest = null;
+        ui.resetChestUi();
         refreshCurrentMapState();
-        System.out.println("You slept. The world has reset.");
+        ik.closeDialogue();
+        ui.addMessage("You feel rested.");
+        ui.addMessage("Time: " + dayNightCycle.getPhaseName());
     }
 
     public void refreshCurrentMapState() {
