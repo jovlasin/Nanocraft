@@ -8,6 +8,7 @@ import com.nanocraft.game.monster.SkeletonKing;
 import com.nanocraft.game.monster.Zombie;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.tile.MapMarker;
+import com.nanocraft.game.entity.SleepNPC;
 
 public class AssetHandler {
     public static final String SPAWN_MAP_PATH = "/map/village.tmj";
@@ -18,6 +19,7 @@ public class AssetHandler {
     private static final String END_RETURN_PORTAL_MARKER = "end_return_portal_spawn";
     private static final String END_RETURN_PORTAL_LAYER = "Portal";
     private static final String END_RETURN_PORTAL_TILE_TYPE = "end_return_portal";
+    public static final String INN_MAP_PATH = "/map/inn.tmj";
     private GameHandler gh;
 
     public AssetHandler(GameHandler gh) {
@@ -36,6 +38,11 @@ public class AssetHandler {
 
     public void setNPCS() {
         clearNPCs();
+
+        if (INN_MAP_PATH.equals(gh.th.getCurrentMapPath())) {
+        drawSleepNPC(0, 3, 6); // adjust x/y if needed
+        return;
+    }
 
         if (!shouldPlaceVillageAssets()) {
             return;
@@ -253,6 +260,13 @@ public class AssetHandler {
         gh.npcs[i].worldY = gh.tileSize * y;
     }
 
+    private void drawSleepNPC(int i, int x, int y) {
+    gh.npcs[i] = new SleepNPC(gh);
+    gh.npcs[i].worldX = gh.tileSize * x;
+    gh.npcs[i].worldY = gh.tileSize * y;
+}
+
+    
     private void drawGreenSlime(int i, int x, int y) {
         if (gh.isMonsterKilledOnCurrentMap(i)) {
             return;
@@ -296,9 +310,10 @@ public class AssetHandler {
     }
   
     private boolean shouldPlaceVillageAssets() {
-        String currentMapPath = gh.th.getCurrentMapPath();
-        return !CAVE_MAP_PATH.equals(currentMapPath)
-            && !NETHER_MAP_PATH.equals(currentMapPath)
-            && !END_MAP_PATH.equals(currentMapPath);
-    }
+    String currentMapPath = gh.th.getCurrentMapPath();
+    return !CAVE_MAP_PATH.equals(currentMapPath)
+        && !NETHER_MAP_PATH.equals(currentMapPath)
+        && !END_MAP_PATH.equals(currentMapPath)
+        && !INN_MAP_PATH.equals(currentMapPath);
+}
 }
