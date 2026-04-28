@@ -12,7 +12,7 @@ public class Sword extends Entity {
         type = TYPE_WEAPON;
         name = "Normal Sword";
         down1 = scale("/object/old_sword", gh.tileSize, gh.tileSize);
-        attackValue = 1;
+        attackValue = 2;
         attackArea.width = 36;
         attackArea.height = 36;
         description = "[" + name + "]\nAn old, rusty sword.";

@@ -18,7 +18,13 @@ import org.junit.Test;
 
 import com.nanocraft.game.core.ChestState;
 import com.nanocraft.game.core.GameHandler;
+import com.nanocraft.game.monster.Dragon;
+import com.nanocraft.game.monster.GreenSlime;
+import com.nanocraft.game.monster.Zombie;
+import com.nanocraft.game.object.Apple;
 import com.nanocraft.game.object.Emerald;
+import com.nanocraft.game.object.Meat;
+import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.Tile;
@@ -272,6 +278,91 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void usesAppleAndRemovesItFromInventory() {
+        GameHandler gh = new GameHandler();
+        Apple apple = new Apple(gh);
+        assertTrue(gh.player.addToInventory(apple));
+        gh.player.life = gh.player.maxLife - 1;
+        gh.gameState = gh.inventory;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(2, gh.player.inventory.size());
+        assertEquals("You ate an Apple. Health: 6/6", latestMessage(gh));
+        assertEquals(gh.play, gh.gameState);
+    }
+
+    @Test
+    public void usingHealingItemAtFullHealthDoesNotConsumeIt() {
+        GameHandler gh = new GameHandler();
+        Meat meat = new Meat(gh);
+        assertTrue(gh.player.addToInventory(meat));
+        gh.player.life = gh.player.maxLife;
+        gh.gameState = gh.inventory;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertSame(meat, gh.player.inventory.get(2));
+        assertEquals(1, meat.stackCount);
+        assertEquals("Health is full. Health: 6/6", latestMessage(gh));
+        assertEquals(gh.play, gh.gameState);
+    }
+
+    @Test
+    public void usingStackedMeatConsumesOnlyOneItem() {
+        GameHandler gh = new GameHandler();
+        assertTrue(gh.player.addToInventory(new Meat(gh)));
+        assertTrue(gh.player.addToInventory(new Meat(gh)));
+        gh.player.life = gh.player.maxLife - 2;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals("You ate Meat. Health: 6/6", latestMessage(gh));
+    }
+
+    @Test
+    public void usingStackedMedkitConsumesOnlyOneItemAndCapsAtMaxHealth() {
+        GameHandler gh = new GameHandler();
+        assertTrue(gh.player.addToInventory(new Medkit(gh)));
+        assertTrue(gh.player.addToInventory(new Medkit(gh)));
+        gh.player.life = gh.player.maxLife - 3;
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(3, gh.player.inventory.size());
+        assertEquals(1, gh.player.inventory.get(2).stackCount);
+        assertEquals("You used a Medkit. Health: 6/6", latestMessage(gh));
+    }
+
+    @Test
+    public void nonUsableItemsAreNotConsumedWhenSelected() {
+        GameHandler gh = new GameHandler();
+        Entity key = gh.player.inventory.get(1);
+
+        gh.ui.slotCol = 1;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertEquals(2, gh.player.inventory.size());
+        assertSame(key, gh.player.inventory.get(1));
+    }
+
+    @Test
     public void miningDoesNotStartPickaxeSwingWhenPickaxeIsNotEquipped() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/cave.tmj");
@@ -487,6 +578,161 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void swordSwingCanOnlyDamageMonsterOnce() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.monsters = new Entity[50];
+
+        GreenSlime slime = new GreenSlime(gh);
+        slime.worldX = gh.player.worldX;
+        slime.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = slime;
+
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        for (int i = 0; i < 30; i++) {
+            gh.update();
+        }
+
+        assertEquals(slime.maxLife - Math.min(gh.player.attack, slime.maxLife - 1), slime.life);
+    }
+
+    @Test
+    public void starterSwordStillDamagesDefensiveMonsters() {
+        GameHandler gh = new GameHandler();
+        Zombie zombie = new Zombie(gh);
+        gh.monsters[0] = zombie;
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertTrue(zombie.life < zombie.maxLife);
+    }
+
+    @Test
+    public void strongPlayerCannotOneShotFullHealthMonster() {
+        GameHandler gh = new GameHandler();
+        GreenSlime slime = new GreenSlime(gh);
+        gh.monsters[0] = slime;
+        gh.player.strength = 99;
+        gh.player.attack = gh.player.getAttack();
+
+        gh.player.damage(0, gh.player.attack);
+
+        assertEquals(1, slime.life);
+        assertFalse(slime.dying);
+    }
+
+    @Test
+    public void swordSwingCanOnlyDamageDragonOnce() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+
+        Dragon dragon = new Dragon(gh);
+        dragon.worldX = gh.player.worldX;
+        dragon.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = dragon;
+
+        gh.player.direction = "up";
+        gh.kh.space = true;
+
+        for (int i = 0; i < 30; i++) {
+            gh.update();
+        }
+
+        assertEquals(dragon.maxLife - Math.min(gh.player.attack, dragon.maxLife - 1), dragon.life);
+    }
+
+    @Test
+    public void hittingMonsterAppliesKnockbackInAttackDirection() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        GreenSlime slime = new GreenSlime(gh);
+        slime.worldX = gh.player.worldX;
+        slime.worldY = gh.player.worldY - gh.tileSize;
+        gh.monsters[0] = slime;
+        gh.player.direction = "up";
+        int startY = slime.worldY;
+
+        gh.player.damage(0, gh.player.attack);
+        assertEquals(startY, slime.worldY);
+
+        for (int i = 0; i < 4; i++) {
+            gh.update();
+        }
+
+        assertTrue(slime.worldY <= startY - (gh.tileSize / 2));
+    }
+
+    @Test
+    public void lethalDamageOpensGameOverMenu() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.player.life = 1;
+
+        gh.player.receiveDamage(gh.player.defense + 1);
+
+        assertEquals(0, gh.player.life);
+        assertEquals(gh.gameOver, gh.gameState);
+        assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void legacyEntityDamageAlsoClampsToZeroAndOpensGameOver() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.player.life = 1;
+
+        Entity attacker = new Entity(gh);
+        attacker.damage(gh.player.defense + 2);
+
+        assertEquals(0, gh.player.life);
+        assertEquals(gh.gameOver, gh.gameState);
+    }
+
+    @Test
+    public void gameOverMenuRespondsToKeyboardNavigation() {
+        GameHandler gh = new GameHandler();
+        gh.openGameOverMenu();
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_S, 'S'));
+        assertEquals(1, gh.ui.getGameOverSelection());
+
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_W, 'W'));
+        assertEquals(0, gh.ui.getGameOverSelection());
+    }
+
+    @Test
+    public void startingNewGameResetsPlayerAndReturnsToPlay() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.gameOver;
+        gh.player.life = 1;
+        gh.player.coin = 99;
+        gh.player.inventory.clear();
+
+        gh.sm.startNewGame();
+
+        assertEquals(gh.play, gh.gameState);
+        assertEquals(gh.player.maxLife, gh.player.life);
+        assertEquals(0, gh.player.coin);
+        assertEquals(2, gh.player.inventory.size());
+        assertEquals(gh.tileSize * 25, gh.player.worldX);
+        assertEquals(gh.tileSize * 6, gh.player.worldY);
+    }
+
+    @Test
+    public void leveledPlayerStillTakesMinimumTwoDamageFromWeakMonsterMelee() {
+        GameHandler gh = new GameHandler();
+        gh.player.dexterity = 4;
+        gh.player.defense = gh.player.getDefense();
+        gh.player.life = gh.player.maxLife;
+
+        gh.player.receiveDamage(new GreenSlime(gh).attack);
+
+        assertEquals(gh.player.maxLife - 2, gh.player.life);
+    }
+
+    @Test
     public void shootingRequiresArrowInInventoryAndConsumesOnePerShot() {
         GameHandler gh = new GameHandler();
         gh.gameState = gh.play;
@@ -545,6 +791,10 @@ public class PlayerInteractionTest {
 
         assertEquals(0, getItemCount(gh.player.inventory, "arrow"));
         assertEquals(1, gh.projectileList.size());
+    }
+
+    private String latestMessage(GameHandler gh) {
+        return gh.ui.message.get(gh.ui.message.size() - 1);
     }
 
     private ChestPlacement findOpenableChestPlacement(GameHandler gh) {

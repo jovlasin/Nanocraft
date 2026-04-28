@@ -12,11 +12,17 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.nanocraft.game.entity.Player;
 
-public class SaveManager {
+public class SaveHandler {
     private static final Path SAVE_FILE_PATH = Path.of(System.getProperty("user.home"), ".nanocraft.json");
-
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private GameHandler gh;
+
+    public SaveHandler(GameHandler gh) {
+        this.gh = gh;
+
+    }
 
     public boolean hasSaveFile() {
         return Files.isRegularFile(SAVE_FILE_PATH);
@@ -144,5 +150,31 @@ public class SaveManager {
         }
 
         return indexed;
+    }
+
+    public void startNewGame() {
+        gh.activeChest = null;
+        gh.projectileList.clear();
+        gh.ui.resetChestUi();
+        gh.ui.resetPauseMenu();
+        gh.ui.resetGameOverMenu();
+        gh.ui.message.clear();
+        gh.ui.counter.clear();
+        gh.ui.currentDialogue = "";
+        gh.persistentObjectStates.clear();
+        gh.persistentMonsterStates.clear();
+        gh.skeletonKingDefeated = false;
+        gh.bronzeDragonDefeated = false;
+        gh.dayNightCycle = new DayNightCycle();
+
+        gh.th.restoreChestSaveData(new ArrayList<>());
+        gh.th.restoreMapStateSaveData(new ArrayList<>());
+        gh.th.loadMap(GameHandler.STARTING_MAP_PATH);
+        gh.syncDayNightState();
+
+        gh.player = new Player(gh, gh.kh);
+        gh.refreshCurrentMapState();
+        gh.ui.titleScreen = 1;
+        gh.gameState = gh.play;
     }
 }

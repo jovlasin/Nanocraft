@@ -54,6 +54,10 @@ public class Entity {
     public boolean stackable;
     public int stackCount;
     public int maxStackSize;
+    public boolean knockBack;
+    public String knockBackDirection;
+    public int knockBackCounter;
+    public int knockBackSpeed;
 
     public final int player = TYPE_PLAYER;
     public final int npc = TYPE_NPC;
@@ -193,48 +197,91 @@ public class Entity {
     }
 
     public void update() {
-        setAction();
+        if (knockBack == true) {
+            collisionOn = false;
+            String movementDirection = knockBackDirection == null || knockBackDirection.isBlank() ? direction : knockBackDirection;
+            String originalDirection = direction;
+            int originalSpeed = speed;
+            direction = movementDirection;
+            speed = knockBackSpeed;
 
-        collisionOn = false;
-        gh.ch.checkTile(this);
-        gh.ch.checkObject(this, false);
-        gh.ch.checkEntity(this, gh.npcs);
-        gh.ch.checkEntity(this, gh.monsters);
-        boolean contact = gh.ch.checkPlayer(this);
+            gh.ch.checkTile(this);
+            gh.ch.checkObject(this, false);
+            gh.ch.checkEntity(this, gh.npcs);
+            gh.ch.checkEntity(this, gh.monsters);
 
-        if (type == monster && contact == true) {
-            damage(attack);
-        }
+            if (collisionOn == false) {
+                switch (movementDirection) {
+                    case "up":
+                        worldY -= speed;
+                    break;
 
-        if (collisionOn == false) {
-            switch (direction) {
-                case "up":
-                    worldY -= speed;
-                break;
-            
-                case "down":
-                    worldY += speed;
-                break;
+                    case "down":
+                        worldY += speed;
+                    break;
 
-                case "left":
-                    worldX -= speed;
-                break;
+                    case "left":
+                        worldX -= speed;
+                    break;
 
-                case "right":
-                    worldX += speed;
-                break;
+                    case "right":
+                        worldX += speed;
+                    break;
+                }
+            }
+
+            direction = originalDirection;
+            speed = originalSpeed;
+            knockBackCounter--;
+
+            if (collisionOn == true || knockBackCounter <= 0) {
+                knockBack = false;
+                knockBackCounter = 0;
+            }
+        } else {
+            setAction();
+
+            collisionOn = false;
+            gh.ch.checkTile(this);
+            gh.ch.checkObject(this, false);
+            gh.ch.checkEntity(this, gh.npcs);
+            gh.ch.checkEntity(this, gh.monsters);
+            boolean contact = gh.ch.checkPlayer(this);
+
+            if (type == monster && contact == true) {
+                damage(attack);
+            }
+
+            if (collisionOn == false) {
+                switch (direction) {
+                    case "up":
+                        worldY -= speed;
+                    break;
+                
+                    case "down":
+                        worldY += speed;
+                    break;
+
+                    case "left":
+                        worldX -= speed;
+                    break;
+
+                    case "right":
+                        worldX += speed;
+                    break;
+                }
             }
         }
 
         if (invincible == true) {
             invincibleCounter++;
 
-            if (invincibleCounter > 20) {
+            if (invincibleCounter > 50) {
                 invincible = false;
                 invincibleCounter = 0;
             }
         }
-        
+
         spriteCounter++;
 
         if (spriteCounter > 14) {
@@ -246,15 +293,6 @@ public class Entity {
                 spriteNum = 1;
             }
             spriteCounter = 0;
-        }
-
-        if (invincible == true) {
-            invincibleCounter++;
-
-            if (invincibleCounter > 40) {
-                invincible = false;
-                invincibleCounter = 0;
-            }
         }
         
         if (shotCounter < 30) {
@@ -292,14 +330,7 @@ public class Entity {
     public void damage(int attack) {
         if (gh.player.invincible == false) {
                 gh.playSound(6);
-                int damage = attack - gh.player.defense;
-
-                if (damage < 0) {
-                    damage = 0;
-                }
-
-                gh.player.life -= damage;
-                gh.player.invincible = true;
+                gh.player.receiveDamage(attack, this instanceof Projectile ? 1 : 2);
         }
     }
 
@@ -357,6 +388,33 @@ public class Entity {
         }
     }
 
+    public boolean use(Player player) {
+        return false;
+    }
+
+    protected int restoreLife(Player player, int amount) {
+        if (player == null || amount <= 0) {
+            return 0;
+        }
+
+        int missingLife = player.maxLife - player.life;
+        if (missingLife <= 0) {
+            return 0;
+        }
+
+        int restoredLife = Math.min(amount, missingLife);
+        player.life += restoredLife;
+        return restoredLife;
+    }
+
+    protected String healthStatus(Player player) {
+        if (player == null) {
+            return "Health: 0/0";
+        }
+
+        return "Health: " + player.life + "/" + player.maxLife;
+    }
+
     public String getStackKey() {
         return getClass().getName();
     }
@@ -390,7 +448,7 @@ public class Entity {
         this.stackCount = 1;
     }
 
-    private void changeAlpha(Graphics2D g2d, float alpha) {
+    public void changeAlpha(Graphics2D g2d, float alpha) {
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
     }
 }
