@@ -44,11 +44,12 @@ public class GameHandler extends JPanel implements Runnable {
     private static final String END_MAP_PATH = "/map/end.tmj";
     private static final int MUSIC_TITLE = 0;
     private static final int MUSIC_VILLAGE = 1;
-    private static final int MUSIC_CAVE = 2;
-    private static final int MUSIC_NETHER = 3;
-    private static final int MUSIC_DESERT = 4;
-    private static final int MUSIC_END = 5;
-    private static final int MUSIC_INN = 6;
+    private static final int MUSIC_NIGHT = 2;
+    private static final int MUSIC_CAVE = 3;
+    private static final int MUSIC_NETHER = 4;
+    private static final int MUSIC_DESERT = 5;
+    private static final int MUSIC_END = 6;
+    private static final int MUSIC_INN = 7;
     private static final int MUSIC_COUNT = MUSIC_INN + 1;
     private static final int NO_MUSIC = -1;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
@@ -100,6 +101,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Innkeeper ik = new Innkeeper(this);
     private boolean monsterSpawnWindowOpen;
     private boolean wasNightPhase;
+    private boolean wasNightMusicPhase;
 
     public final int title = 0;
     public final int pause = 1;
@@ -131,6 +133,7 @@ public class GameHandler extends JPanel implements Runnable {
         this.setFocusTraversalKeysEnabled(false);
         this.addKeyListener(kh);
         wasNightPhase = dayNightCycle.isNight();
+        wasNightMusicPhase = shouldUseNightMusic();
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         refreshCurrentMapState();
 
@@ -299,6 +302,7 @@ public class GameHandler extends JPanel implements Runnable {
         ah.setNPCS();
         ah.setMonsters();
         ah.applyMapProgression();
+        wasNightMusicPhase = shouldUseNightMusic();
         updateMusicForCurrentMap();
     }
 
@@ -775,7 +779,17 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         if (AssetHandler.DESERT_MAP_PATH.equals(currentMapPath)) {
+            if (dayNightCycle.isNight()) {
+                return MUSIC_NIGHT;
+            }
             return MUSIC_DESERT;
+        }
+
+        if (STARTING_MAP_PATH.equals(currentMapPath)) {
+            if (dayNightCycle.isNight()) {
+                return MUSIC_NIGHT;
+            }
+            return MUSIC_VILLAGE;
         }
 
         if (AssetHandler.END_MAP_PATH.equals(currentMapPath)) {
@@ -799,6 +813,7 @@ public class GameHandler extends JPanel implements Runnable {
 
         loadMusicTrack(MUSIC_TITLE, "/sound/MainMenu.wav");
         loadMusicTrack(MUSIC_VILLAGE, "/sound/village.wav");
+        loadMusicTrack(MUSIC_NIGHT, "/sound/night.wav");
         loadMusicTrack(MUSIC_CAVE, "/sound/Moody Dungeon.wav");
         loadMusicTrack(MUSIC_NETHER, "/sound/Alone in the Chamber.wav");
         loadMusicTrack(MUSIC_DESERT, "/sound/Desert.wav");
@@ -969,6 +984,20 @@ public class GameHandler extends JPanel implements Runnable {
     public boolean isInDayMap() {
         String currentMapPath = th.getCurrentMapPath();
         return NETHER_MAP_PATH.equals(currentMapPath) || END_MAP_PATH.equals(currentMapPath);
+    }
+
+    private boolean shouldUseNightMusic() {
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null) {
+            return false;
+        }
+
+        String phaseName = dayNightCycle.getPhaseName();
+        if (!"Night".equals(phaseName) && !"Dawn".equals(phaseName)) {
+            return false;
+        }
+
+        return STARTING_MAP_PATH.equals(currentMapPath) || AssetHandler.DESERT_MAP_PATH.equals(currentMapPath);
     }
 
     public boolean isNightForMonsterSpawns() {
@@ -1214,6 +1243,12 @@ public class GameHandler extends JPanel implements Runnable {
         }
         wasNightPhase = nightPhaseNow;
 
+        boolean nightMusicPhaseNow = shouldUseNightMusic();
+        if (nightMusicPhaseNow != wasNightMusicPhase) {
+            wasNightMusicPhase = nightMusicPhaseNow;
+            updateMusicForCurrentMap();
+        }
+
         boolean spawnWindowOpenNow = isNightForMonsterSpawns();
         if (spawnWindowOpenNow == monsterSpawnWindowOpen) {
             return;
@@ -1225,6 +1260,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void syncDayNightState() {
         wasNightPhase = dayNightCycle.isNight();
+        wasNightMusicPhase = shouldUseNightMusic();
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         lightingFilter = null;
     }

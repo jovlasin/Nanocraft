@@ -83,6 +83,37 @@ public class GameHandlerMusicTest {
     }
 
     @Test
+    public void villageMapUsesNightMusicAtNightAndVillageMusicAtDay() {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
+        int nightMusic = gh.getTrackId("/sound/night.wav");
+        assertEquals(villageMusic, gh.lastLoopedTrack());
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(villageMusic, gh.lastLoopedTrack());
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(nightMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(nightMusic, gh.lastLoopedTrack());
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(villageMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(nightMusic));
+    }
+
+    @Test
     public void caveMapLoopsDungeonMusicAndLeavingCaveStopsIt() {
         RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
 
@@ -158,6 +189,38 @@ public class GameHandlerMusicTest {
 
         assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(desertMusic));
+    }
+
+    @Test
+    public void desertMapUsesNightMusicAtNightAndDesertMusicAtDay() throws Exception {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+        gh.gameState = gh.play;
+        setCurrentMapPath(gh, AssetHandler.DESERT_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        int desertMusic = gh.getTrackId("/sound/Desert.wav");
+        int nightMusic = gh.getTrackId("/sound/night.wav");
+        assertEquals(desertMusic, gh.lastLoopedTrack());
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(desertMusic, gh.lastLoopedTrack());
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(nightMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(desertMusic));
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(nightMusic, gh.lastLoopedTrack());
+
+        gh.cycleTimeOfDay();
+
+        assertEquals(desertMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(nightMusic));
     }
 
     @Test
