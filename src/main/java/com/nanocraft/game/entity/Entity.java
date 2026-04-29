@@ -31,7 +31,7 @@ public class Entity {
     public String direction;
     public int spriteCounter, hpBarCounter,  actionCounter, spriteNum, invincibleCounter, shotCounter, deathCounter;
     public int speed, maxLife, maxMana, mana, life, level, strength, dexterity, attack, defense, exp, nextLevelExp, coin;
-    public Entity currentWeapon, currentShield;
+    public Entity currentWeapon, currentTool;
     public Projectile projectile;
     public boolean collisionOn, collision, hpBarOn;
     public String name;

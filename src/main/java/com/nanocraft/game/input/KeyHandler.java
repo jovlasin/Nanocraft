@@ -159,6 +159,10 @@ public class KeyHandler implements KeyListener {
             }
             shootHeld = true;
         }
+
+        if (code == KeyEvent.VK_N) {
+            gh.cycleTimeOfDay();
+        }
     }
 
     private void pauseState(int code) {
