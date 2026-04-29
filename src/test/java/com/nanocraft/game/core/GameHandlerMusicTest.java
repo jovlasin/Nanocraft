@@ -143,6 +143,29 @@ public class GameHandlerMusicTest {
         assertTrue(gh.stoppedTracks.contains(endMusic));
     }
 
+    @Test
+    public void innMapLoopsInnMusicAndLeavingInnStopsIt() throws Exception {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        int innMusic = gh.getTrackId("/sound/inn.wav");
+        assertEquals(mainMusic, gh.lastLoopedTrack());
+
+        setCurrentMapPath(gh, AssetHandler.INN_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertEquals(innMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(mainMusic));
+
+        setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(innMusic));
+    }
+
     private void setCurrentMapPath(GameHandler gh, String mapPath) throws Exception {
         Field currentMapPath = gh.th.getClass().getDeclaredField("currentMapPath");
         currentMapPath.setAccessible(true);
