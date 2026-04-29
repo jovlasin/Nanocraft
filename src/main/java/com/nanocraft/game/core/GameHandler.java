@@ -157,6 +157,7 @@ public class GameHandler extends JPanel implements Runnable {
 
         while (gameThread != null) {
             currentTime = System.nanoTime();
+
             delta += (currentTime - time) / drawInterval;
             time = currentTime;
 

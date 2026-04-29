@@ -52,6 +52,19 @@ public class Player extends Entity {
         getImage();
     }
 
+    public Player(GameHandler gh, KeyHandler kh, boolean loadAssets) {
+        super(gh);
+        this.kh = kh;
+
+        setStats();
+        setPos();
+
+        if (loadAssets) {
+            setItems();
+            getImage();
+        }
+    }
+
     public int getAttack() {
         if (currentWeapon == null) {
             attackArea = new Rectangle(0, 0, 0, 0);
