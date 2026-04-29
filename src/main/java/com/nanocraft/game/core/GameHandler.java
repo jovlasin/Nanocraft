@@ -782,7 +782,7 @@ public class GameHandler extends JPanel implements Runnable {
         loadMusicTrack(MUSIC_MAIN, "/sound/MainMenu.wav");
         loadMusicTrack(MUSIC_CAVE, "/sound/Moody Dungeon.wav");
         loadMusicTrack(MUSIC_NETHER, "/sound/Alone in the Chamber.wav");
-        loadMusicTrack(MUSIC_DESERT, "/sound/Tangle.wav");
+        loadMusicTrack(MUSIC_DESERT, "/sound/Desert.wav");
         loadMusicTrack(MUSIC_END, "/sound/EndMusic.wav");
         musicLoaded = true;
     }

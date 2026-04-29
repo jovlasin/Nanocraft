@@ -98,13 +98,13 @@ public class GameHandlerMusicTest {
     }
 
     @Test
-    public void desertMapLoopsTangleMusicAndLeavingDesertStopsIt() throws Exception {
+    public void desertMapLoopsDesertMusicAndLeavingDesertStopsIt() throws Exception {
         RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
 
         gh.playMusic();
 
         int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
-        int desertMusic = gh.getTrackId("/sound/Tangle.wav");
+        int desertMusic = gh.getTrackId("/sound/Desert.wav");
         assertEquals(mainMusic, gh.lastLoopedTrack());
 
         setCurrentMapPath(gh, AssetHandler.DESERT_MAP_PATH);
