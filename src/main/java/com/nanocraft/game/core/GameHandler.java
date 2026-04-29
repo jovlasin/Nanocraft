@@ -219,6 +219,7 @@ public class GameHandler extends JPanel implements Runnable {
     public void closeChest() {
         activeChest = null;
         ui.resetChestUi();
+        playSound(SFX_CHEST_OPEN);
         gameState = play;
     }
 

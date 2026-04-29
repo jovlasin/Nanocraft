@@ -186,6 +186,23 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void closingChestPlaysChestOpenSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        ChestState chest = new ChestState("/map/test.tmj", 0, 0);
+        gh.openChest(chest);
+        gh.soundPlayCount = 0;
+        gh.lastSoundId = -1;
+        gh.soundCounts = new int[30];
+
+        gh.closeChest();
+
+        assertEquals(gh.play, gh.gameState);
+        assertNull(gh.activeChest);
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_CHEST_OPEN));
+        assertEquals(GameHandler.SFX_CHEST_OPEN, gh.lastSoundId);
+    }
+
+    @Test
     public void miningRequiresPickaxeAndDropsOreAfterExpectedNumberOfHits() {
         GameHandler gh = new GameHandler();
         gh.th.loadMap("/map/cave.tmj");
