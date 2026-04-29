@@ -3,6 +3,7 @@ package com.nanocraft.game.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,5 +72,34 @@ public class GameHandlerMusicTest {
 
         assertEquals(mainMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(caveMusic));
+    }
+
+    @Test
+    public void netherMapLoopsChamberMusicAndLeavingNetherStopsIt() throws Exception {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        int netherMusic = gh.getTrackId("/sound/Alone in the Chamber.wav");
+        assertEquals(mainMusic, gh.lastLoopedTrack());
+
+        setCurrentMapPath(gh, AssetHandler.NETHER_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertEquals(netherMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(mainMusic));
+
+        setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(netherMusic));
+    }
+
+    private void setCurrentMapPath(GameHandler gh, String mapPath) throws Exception {
+        Field currentMapPath = gh.th.getClass().getDeclaredField("currentMapPath");
+        currentMapPath.setAccessible(true);
+        currentMapPath.set(gh.th, mapPath);
     }
 }
