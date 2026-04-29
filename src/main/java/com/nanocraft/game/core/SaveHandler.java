@@ -173,8 +173,8 @@ public class SaveHandler {
         gh.syncDayNightState();
 
         gh.player = new Player(gh, gh.kh);
+        gh.gameState = gh.play;
         gh.refreshCurrentMapState();
         gh.ui.titleScreen = 1;
-        gh.gameState = gh.play;
     }
 }

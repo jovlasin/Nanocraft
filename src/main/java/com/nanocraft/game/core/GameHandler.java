@@ -42,12 +42,13 @@ import com.nanocraft.game.tile.TileHandler;
 public class GameHandler extends JPanel implements Runnable {
     private static final String NETHER_MAP_PATH = "/map/nether.tmj";
     private static final String END_MAP_PATH = "/map/end.tmj";
-    private static final int MUSIC_MAIN = 0;
-    private static final int MUSIC_CAVE = 1;
-    private static final int MUSIC_NETHER = 2;
-    private static final int MUSIC_DESERT = 3;
-    private static final int MUSIC_END = 4;
-    private static final int MUSIC_INN = 5;
+    private static final int MUSIC_TITLE = 0;
+    private static final int MUSIC_VILLAGE = 1;
+    private static final int MUSIC_CAVE = 2;
+    private static final int MUSIC_NETHER = 3;
+    private static final int MUSIC_DESERT = 4;
+    private static final int MUSIC_END = 5;
+    private static final int MUSIC_INN = 6;
     private static final int MUSIC_COUNT = MUSIC_INN + 1;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
     public static final int SFX_ARROW = 0;
@@ -392,9 +393,9 @@ public class GameHandler extends JPanel implements Runnable {
         th.restoreMapStateSaveData(saveData.mapStates);
         th.loadMap(saveData.currentMapPath);
         syncDayNightState();
+        gameState = play;
         refreshCurrentMapState();
         player.applySaveData(saveData.player);
-        gameState = play;
         ui.titleScreen = 1;
     }
 
@@ -755,6 +756,10 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     private int getCurrentMapMusicTrack() {
+        if (gameState == title) {
+            return MUSIC_TITLE;
+        }
+
         String currentMapPath = th.getCurrentMapPath();
         if (AssetHandler.CAVE_MAP_PATH.equals(currentMapPath)) {
             return MUSIC_CAVE;
@@ -776,7 +781,7 @@ public class GameHandler extends JPanel implements Runnable {
             return MUSIC_INN;
         }
 
-        return MUSIC_MAIN;
+        return MUSIC_VILLAGE;
     }
 
     private void loadMusicIfNeeded() {
@@ -784,7 +789,8 @@ public class GameHandler extends JPanel implements Runnable {
             return;
         }
 
-        loadMusicTrack(MUSIC_MAIN, "/sound/MainMenu.wav");
+        loadMusicTrack(MUSIC_TITLE, "/sound/MainMenu.wav");
+        loadMusicTrack(MUSIC_VILLAGE, "/sound/village.wav");
         loadMusicTrack(MUSIC_CAVE, "/sound/Moody Dungeon.wav");
         loadMusicTrack(MUSIC_NETHER, "/sound/Alone in the Chamber.wav");
         loadMusicTrack(MUSIC_DESERT, "/sound/Desert.wav");

@@ -52,25 +52,55 @@ public class GameHandlerMusicTest {
     }
 
     @Test
+    public void titleScreenUsesMainMenuMusic() {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        int titleMusic = gh.getTrackId("/sound/MainMenu.wav");
+        assertEquals(titleMusic, gh.lastLoopedTrack());
+    }
+
+    @Test
+    public void villageMapUsesVillageMusicAfterLeavingTitleScreen() {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        int titleMusic = gh.getTrackId("/sound/MainMenu.wav");
+        int villageMusic = gh.getTrackId("/sound/village.wav");
+        assertEquals(titleMusic, gh.lastLoopedTrack());
+
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        assertEquals(villageMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(titleMusic));
+    }
+
+    @Test
     public void caveMapLoopsDungeonMusicAndLeavingCaveStopsIt() {
         RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
 
         gh.playMusic();
 
-        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
         int caveMusic = gh.getTrackId("/sound/Moody Dungeon.wav");
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
 
         gh.th.loadMap(AssetHandler.CAVE_MAP_PATH);
         gh.refreshCurrentMapState();
 
         assertEquals(caveMusic, gh.lastLoopedTrack());
-        assertTrue(gh.stoppedTracks.contains(mainMusic));
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
 
         gh.th.loadMap(GameHandler.STARTING_MAP_PATH);
         gh.refreshCurrentMapState();
 
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(caveMusic));
     }
 
@@ -80,20 +110,23 @@ public class GameHandlerMusicTest {
 
         gh.playMusic();
 
-        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
         int netherMusic = gh.getTrackId("/sound/Alone in the Chamber.wav");
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
 
         setCurrentMapPath(gh, AssetHandler.NETHER_MAP_PATH);
         gh.refreshCurrentMapState();
 
         assertEquals(netherMusic, gh.lastLoopedTrack());
-        assertTrue(gh.stoppedTracks.contains(mainMusic));
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
 
         setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
         gh.refreshCurrentMapState();
 
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(netherMusic));
     }
 
@@ -103,20 +136,23 @@ public class GameHandlerMusicTest {
 
         gh.playMusic();
 
-        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
         int desertMusic = gh.getTrackId("/sound/Desert.wav");
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
 
         setCurrentMapPath(gh, AssetHandler.DESERT_MAP_PATH);
         gh.refreshCurrentMapState();
 
         assertEquals(desertMusic, gh.lastLoopedTrack());
-        assertTrue(gh.stoppedTracks.contains(mainMusic));
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
 
         setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
         gh.refreshCurrentMapState();
 
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(desertMusic));
     }
 
@@ -126,20 +162,23 @@ public class GameHandlerMusicTest {
 
         gh.playMusic();
 
-        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
         int endMusic = gh.getTrackId("/sound/EndMusic.wav");
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
 
         setCurrentMapPath(gh, AssetHandler.END_MAP_PATH);
         gh.refreshCurrentMapState();
 
         assertEquals(endMusic, gh.lastLoopedTrack());
-        assertTrue(gh.stoppedTracks.contains(mainMusic));
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
 
         setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
         gh.refreshCurrentMapState();
 
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(endMusic));
     }
 
@@ -149,20 +188,23 @@ public class GameHandlerMusicTest {
 
         gh.playMusic();
 
-        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
         int innMusic = gh.getTrackId("/sound/inn.wav");
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
 
         setCurrentMapPath(gh, AssetHandler.INN_MAP_PATH);
         gh.refreshCurrentMapState();
 
         assertEquals(innMusic, gh.lastLoopedTrack());
-        assertTrue(gh.stoppedTracks.contains(mainMusic));
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
 
         setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
         gh.refreshCurrentMapState();
 
-        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(innMusic));
     }
 
