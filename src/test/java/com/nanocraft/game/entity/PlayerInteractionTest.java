@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -27,6 +28,7 @@ import com.nanocraft.game.object.Meat;
 import com.nanocraft.game.object.Medkit;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
+import com.nanocraft.game.object.Torch;
 import com.nanocraft.game.tile.Tile;
 
 public class PlayerInteractionTest {
@@ -360,6 +362,34 @@ public class PlayerInteractionTest {
 
         assertSame(pickaxe, gh.player.currentWeapon);
         assertEquals(gh.player.strength * pickaxe.attackValue, gh.player.attack);
+    }
+
+    @Test
+    public void equipsTorchIntoOffhandWhenSelectedFromInventory() {
+        GameHandler gh = new GameHandler();
+        Torch torch = new Torch(gh);
+        assertTrue(gh.player.addToInventory(torch));
+
+        gh.ui.slotCol = 3;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+
+        assertSame(torch, gh.player.currentTool);
+        assertNotSame(torch, gh.player.currentWeapon);
+    }
+
+    @Test
+    public void selectingEquippedTorchAgainUnequipsIt() {
+        GameHandler gh = new GameHandler();
+        Entity torch = gh.player.inventory.get(2);
+
+        gh.ui.slotCol = 2;
+        gh.ui.slotRow = 0;
+        gh.player.selectItem();
+        assertSame(torch, gh.player.currentTool);
+
+        gh.player.selectItem();
+        assertNull(gh.player.currentTool);
     }
 
     @Test

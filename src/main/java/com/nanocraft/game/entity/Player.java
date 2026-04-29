@@ -18,6 +18,7 @@ import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
 import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
+import com.nanocraft.game.object.Torch;
 import com.nanocraft.game.tile.Tile;
 
 public class Player extends Entity {
@@ -207,6 +208,10 @@ public class Player extends Entity {
     public void handleRemovedInventoryItem(Entity removedItem) {
         if (removedItem == toolSwingSource) {
             clearToolSwingAnimation();
+        }
+
+        if (removedItem == currentTool) {
+            currentTool = null;
         }
 
         if (removedItem == null || removedItem != currentWeapon) {
@@ -553,9 +558,11 @@ public class Player extends Entity {
 
         int previousLife = life;
         life = Math.max(0, life - damage);
+
         if (life < previousLife) {
             gh.playSound(GameHandler.SFX_PLAYER_DAMAGE);
         }
+        
         invincible = true;
         if (life == 0) {
             gh.openGameOverMenu();
@@ -591,6 +598,18 @@ public class Player extends Entity {
         if (item.type == TYPE_WEAPON) {
             currentWeapon = item;
             attack = getAttack();
+            return;
+        }
+
+        if ("torch".equalsIgnoreCase(item.itemId)) {
+            if (currentTool == item) {
+                currentTool = null;
+                gh.ui.addMessage(item.name + " unequipped.");
+            }
+            else {
+                currentTool = item;
+                gh.ui.addMessage(item.name + " equipped.");
+            }
             return;
         }
 
@@ -658,6 +677,7 @@ public class Player extends Entity {
     private void setItems() {
         inventory.add(currentWeapon);
         inventory.add(new Key(gh));
+        inventory.add(new Torch(gh));
     }
 
     public SaveHandler.PlayerData createSaveData() {
@@ -675,6 +695,7 @@ public class Player extends Entity {
         playerData.nextLevelExp = nextLevelExp;
         playerData.coin = coin;
         playerData.currentWeaponIndex = inventory.indexOf(currentWeapon);
+        playerData.currentToolIndex = inventory.indexOf(currentTool);
 
         for (Entity item : inventory) {
             String itemId = gh.getItemId(item);
@@ -716,6 +737,7 @@ public class Player extends Entity {
         shotCounter = getArrowCooldownTicks();
         spriteCounter = 0;
         spriteNum = 1;
+        currentTool = null;
         projectile = new Arrow(gh);
 
         inventory.clear();
@@ -740,6 +762,10 @@ public class Player extends Entity {
         }
         else {
             currentWeapon = findFirstWeaponInInventory();
+        }
+
+        if (playerData.currentToolIndex >= 0 && playerData.currentToolIndex < inventory.size()) {
+            currentTool = inventory.get(playerData.currentToolIndex);
         }
 
         attack = getAttack();

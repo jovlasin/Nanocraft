@@ -602,7 +602,7 @@ public class Ui {
 
         for (int i = 0; i < gh.player.inventory.size(); i++) {
             Entity item = gh.player.inventory.get(i);
-            if (item == gh.player.currentWeapon) {
+            if (item == gh.player.currentWeapon || item == gh.player.currentTool) {
                 g2d.setColor(new Color(240, 190, 90));
                 g2d.fillRoundRect(slotX - 3, slotY - 3, gh.tileSize + 6, gh.tileSize + 6, 12, 12);
             }
