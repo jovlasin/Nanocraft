@@ -87,19 +87,23 @@ public class KeyHandler implements KeyListener {
     private void titleState(int code) {
         if (gh.ui.titleScreen == 0) {
             if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+                int previousCommand = gh.ui.commandNum;
                 gh.ui.commandNum--;
 
                 if (gh.ui.commandNum < 0) {
                     gh.ui.commandNum = 2;
                 }
+                playCursorSoundIfChanged(previousCommand, gh.ui.commandNum);
             }
 
             if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+                int previousCommand = gh.ui.commandNum;
                 gh.ui.commandNum++;
 
                 if (gh.ui.commandNum > 2) {
                     gh.ui.commandNum = 0;
                 }
+                playCursorSoundIfChanged(previousCommand, gh.ui.commandNum);
             }
 
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
@@ -185,12 +189,16 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            int previousSelection = gh.ui.getPauseMenuSelection();
             gh.ui.movePauseMenuSelection(-1);
+            playCursorSoundIfChanged(previousSelection, gh.ui.getPauseMenuSelection());
             return;
         }
 
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            int previousSelection = gh.ui.getPauseMenuSelection();
             gh.ui.movePauseMenuSelection(1);
+            playCursorSoundIfChanged(previousSelection, gh.ui.getPauseMenuSelection());
             return;
         }
 
@@ -206,22 +214,26 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            int previousSelection = gh.ui.getSettingsIndex();
             gh.ui.moveSettingsIndex(-1);
+            playCursorSoundIfChanged(previousSelection, gh.ui.getSettingsIndex());
             return;
         }
 
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            int previousSelection = gh.ui.getSettingsIndex();
             gh.ui.moveSettingsIndex(1);
+            playCursorSoundIfChanged(previousSelection, gh.ui.getSettingsIndex());
             return;
         }
 
         if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
-            gh.selectSetting(-1);
+            selectSettingWithCursorSound(-1);
             return;
         }
 
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
-            gh.selectSetting(1);
+            selectSettingWithCursorSound(1);
             return;
         }
 
@@ -237,12 +249,16 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            boolean wasExitSelected = gh.ui.shouldExitFromPauseConfirmation();
             gh.ui.movePauseExitConfirmationSelection(-1);
+            playCursorSoundIfChanged(wasExitSelected, gh.ui.shouldExitFromPauseConfirmation());
             return;
         }
 
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            boolean wasExitSelected = gh.ui.shouldExitFromPauseConfirmation();
             gh.ui.movePauseExitConfirmationSelection(1);
+            playCursorSoundIfChanged(wasExitSelected, gh.ui.shouldExitFromPauseConfirmation());
             return;
         }
 
@@ -254,12 +270,16 @@ public class KeyHandler implements KeyListener {
     private void dialogueState(int code) {
         if (gh.ik.isSleepPromptVisible()) {
             if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A || code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+                int previousSelection = gh.ui.getDialogueChoiceIndex();
                 gh.ik.moveSleepPromptSelection(-1);
+                playCursorSoundIfChanged(previousSelection, gh.ui.getDialogueChoiceIndex());
                 return;
             }
 
             if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D || code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+                int previousSelection = gh.ui.getDialogueChoiceIndex();
                 gh.ik.moveSleepPromptSelection(1);
+                playCursorSoundIfChanged(previousSelection, gh.ui.getDialogueChoiceIndex());
                 return;
             }
 
@@ -330,6 +350,7 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_TAB) {
             gh.ui.toggleChestPanel();
+            gh.playSound(GameHandler.SFX_CURSOR);
             return;
         }
 
@@ -361,14 +382,44 @@ public class KeyHandler implements KeyListener {
         }
     }
 
+    private void playCursorSoundIfChanged(int previousSelection, int currentSelection) {
+        if (previousSelection != currentSelection) {
+            gh.playSound(GameHandler.SFX_CURSOR);
+        }
+    }
+
+    private void playCursorSoundIfChanged(boolean previousSelection, boolean currentSelection) {
+        if (previousSelection != currentSelection) {
+            gh.playSound(GameHandler.SFX_CURSOR);
+        }
+    }
+
+    private void selectSettingWithCursorSound(int direction) {
+        int settingsIndex = gh.ui.getSettingsIndex();
+        int previousMusicVolume = gh.getMusicVolume();
+        int previousSfxVolume = gh.getSfxVolume();
+
+        gh.selectSetting(direction);
+
+        if ((settingsIndex == 1 && previousMusicVolume != gh.getMusicVolume()) ||
+            (settingsIndex == 2 && previousSfxVolume != gh.getSfxVolume()) ||
+            settingsIndex == 0) {
+            gh.playSound(GameHandler.SFX_CURSOR);
+        }
+    }
+
     private void gameOverState(int code) {
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+            int previousSelection = gh.ui.getGameOverSelection();
             gh.ui.moveGameOverSelection(-1);
+            playCursorSoundIfChanged(previousSelection, gh.ui.getGameOverSelection());
             return;
         }
 
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+            int previousSelection = gh.ui.getGameOverSelection();
             gh.ui.moveGameOverSelection(1);
+            playCursorSoundIfChanged(previousSelection, gh.ui.getGameOverSelection());
             return;
         }
 

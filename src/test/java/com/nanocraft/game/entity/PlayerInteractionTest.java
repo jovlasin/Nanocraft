@@ -611,6 +611,95 @@ public class PlayerInteractionTest {
     }
 
     @Test
+    public void movingTitleMenuSelectionPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.gameState = gh.title;
+
+        pressKey(gh, KeyEvent.VK_S);
+        pressKey(gh, KeyEvent.VK_W);
+        pressKey(gh, KeyEvent.VK_W);
+
+        assertEquals(2, gh.ui.commandNum);
+        assertEquals(3, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void movingPauseMenuSelectionPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.openPauseMenu();
+
+        pressKey(gh, KeyEvent.VK_S);
+        pressKey(gh, KeyEvent.VK_W);
+        pressKey(gh, KeyEvent.VK_W);
+
+        assertEquals(0, gh.ui.getPauseMenuSelection());
+        assertEquals(2, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void movingSettingsSelectionAndChangingVolumePlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.openPauseMenu();
+        gh.ui.openSettings();
+        gh.setMusicVolume(95);
+        gh.soundCounts = new int[30];
+
+        pressKey(gh, KeyEvent.VK_S);
+        pressKey(gh, KeyEvent.VK_D);
+        pressKey(gh, KeyEvent.VK_A);
+        pressKey(gh, KeyEvent.VK_W);
+        pressKey(gh, KeyEvent.VK_D);
+        pressKey(gh, KeyEvent.VK_W);
+
+        assertEquals(0, gh.ui.getSettingsIndex());
+        assertEquals(5, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void movingSleepPromptSelectionPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.ik.openSleepPrompt();
+
+        pressKey(gh, KeyEvent.VK_D);
+        pressKey(gh, KeyEvent.VK_A);
+        pressKey(gh, KeyEvent.VK_A);
+
+        assertEquals(0, gh.ui.getDialogueChoiceIndex());
+        assertEquals(2, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void movingGameOverSelectionPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.openGameOverMenu();
+
+        pressKey(gh, KeyEvent.VK_S);
+        pressKey(gh, KeyEvent.VK_W);
+        pressKey(gh, KeyEvent.VK_W);
+
+        assertEquals(0, gh.ui.getGameOverSelection());
+        assertEquals(2, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
+    public void switchingChestPanelPlaysCursorSound() {
+        RecordingGameHandler gh = new RecordingGameHandler();
+        gh.openChest(new ChestState("/map/test.tmj", 0, 0));
+        gh.soundCounts = new int[30];
+        gh.lastSoundId = -1;
+
+        pressKey(gh, KeyEvent.VK_TAB);
+
+        assertEquals(1, gh.getSoundCount(GameHandler.SFX_CURSOR));
+        assertEquals(GameHandler.SFX_CURSOR, gh.lastSoundId);
+    }
+
+    @Test
     public void openingPauseMenuFromPlayDoesNotPlayMainMenuSound() {
         RecordingGameHandler gh = new RecordingGameHandler();
         gh.gameState = gh.play;
@@ -1231,6 +1320,10 @@ public class PlayerInteractionTest {
 
     private String latestMessage(GameHandler gh) {
         return gh.ui.message.get(gh.ui.message.size() - 1);
+    }
+
+    private void pressKey(GameHandler gh, int keyCode) {
+        gh.kh.keyPressed(new KeyEvent(gh, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, keyCode, KeyEvent.CHAR_UNDEFINED));
     }
 
     private ChestPlacement findOpenableChestPlacement(GameHandler gh) {
