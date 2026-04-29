@@ -70,16 +70,21 @@ public class GameHandler extends JPanel implements Runnable {
     private static final int SFX_COUNT = SFX_FANFARE + 1;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
-    private final int maxScreenCol = 16; // 16 tiles wide
+    
     private final int maxScreenRow = 12; // 12 tiles tall
     public final int tileSize = defaultTileSize * scale; // scale tile to 48x48
-    public final int screenWidth = tileSize * maxScreenCol; // scale screen width to 768px
+   
     public final int screenHeight = tileSize * maxScreenRow; // scale screen height to 576 tall
     public double fps = 60; // update the game 60 times per sec
     public Thread gameThread;
     public KeyHandler kh = new KeyHandler(this);
     public Player player = new Player(this, kh);
     public TileHandler th = new TileHandler(this);
+
+    private static final int WINDOWED_SCREEN_COLUMNS = 16;
+    private static final int FULLSCREEN_ASPECT_WIDTH = 16;
+    private static final int FULLSCREEN_ASPECT_HEIGHT = 9;
+    public int screenWidth = tileSize * WINDOWED_SCREEN_COLUMNS; 
 
     private Sound music = new Sound();
     private Sound se = new Sound();
@@ -95,7 +100,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Utility u = new Utility(this);
     public boolean bronzeDragonDefeated;
     public boolean skeletonKingDefeated;
-    public final SaveHandler sm = new SaveHandler(this);
+    public final SaveHandler sh = new SaveHandler(this);
     public final Map<String, List<SaveHandler.WorldObjectData>> persistentObjectStates = new HashMap<>();
     public final Map<String, Set<Integer>> persistentMonsterStates = new HashMap<>();
     public DayNightCycle dayNightCycle = new DayNightCycle();
@@ -103,6 +108,10 @@ public class GameHandler extends JPanel implements Runnable {
     private boolean monsterSpawnWindowOpen;
     private boolean wasNightPhase;
     private boolean wasNightMusicPhase;
+
+    private boolean fullScreen;
+    private transient Game game;
+    private BufferedImage frameBuffer;
 
     public final int title = 0;
     public final int pause = 1;
@@ -127,6 +136,8 @@ public class GameHandler extends JPanel implements Runnable {
     // }
 
     public GameHandler() {
+        loadSavedSettings();
+
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.BLACK);
         this.setDoubleBuffered(true);
@@ -140,6 +151,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         gameState = title;
         // gameState = play;
+    }
+
+    public void attachGame(Game game) {
+        this.game = game;
     }
 
     public void startGame() {
@@ -408,7 +423,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public boolean saveGame() {
         try {
-            sm.save(this);
+            sh.save(this);
             ui.addMessage("Game saved.");
             return true;
         } catch (Exception e) {
@@ -420,7 +435,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public boolean loadGame() {
         try {
-            if (!sm.load(this)) {
+            if (!sh.load(this)) {
                 ui.addMessage("No save file found.");
                 if (gameState == pause) {
                     closePauseMenu();
@@ -542,7 +557,7 @@ public class GameHandler extends JPanel implements Runnable {
                 if (hasSaveGame()) {
                     loadGame();
                 } else {
-                    sm.startNewGame();
+                    sh.startNewGame();
                 }
                 break;
 
@@ -556,7 +571,7 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public boolean hasSaveGame() {
-        return sm.hasSaveFile();
+        return sh.hasSaveFile();
     }
 
     public Entity createItemEntity(String itemType) {
@@ -680,8 +695,31 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
 
+        ensureFrameBuffer();
+
+        Graphics2D frameGraphics = frameBuffer.createGraphics();
+        frameGraphics.setColor(getBackground());
+        frameGraphics.fillRect(0, 0, screenWidth, screenHeight);
+        renderGame(frameGraphics);
+        frameGraphics.dispose();
+
+        Graphics2D g2d = (Graphics2D) g.create();
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        double scaleFactor = Math.min(getWidth() / (double) screenWidth, getHeight() / (double) screenHeight);
+        int drawWidth = Math.max(1, (int) Math.round(screenWidth * scaleFactor));
+        int drawHeight = Math.max(1, (int) Math.round(screenHeight * scaleFactor));
+        int drawX = (getWidth() - drawWidth) / 2;
+        int drawY = (getHeight() - drawHeight) / 2;
+
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g2d.drawImage(frameBuffer, drawX, drawY, drawWidth, drawHeight, null);
+        g2d.dispose();
+    }
+  
+    private void renderGame(Graphics2D g2d) {
         if (gameState == title) {
             ui.draw(g2d);
         }
@@ -893,12 +931,23 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public boolean isFullScreen() {
-        // TODO
-        return false;
+        return fullScreen;
     }
 
     public void setFullScreen(boolean bool) {
-        // TODO
+        if (fullScreen == bool) {
+            return;
+        }
+
+        fullScreen = bool;
+        applyViewportSize(fullScreen ? getFullscreenScreenWidth() : getWindowedScreenWidth());
+        persistSettings();
+
+        if (game != null) {
+            game.applyFullScreen(fullScreen);
+        }
+
+        repaint();
     }
 
     public int getMusicVolume() {
@@ -907,6 +956,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setMusicVolume(int percent) {
         musicVolume = Math.max(0, Math.min(100, percent));
+        persistSettings();
         if (musicVolume == 0) {
             stopAllMusicTracks();
             return;
@@ -924,6 +974,55 @@ public class GameHandler extends JPanel implements Runnable {
     public void setSfxVolume(int percent) {
         sfxVolume = Math.max(0, Math.min(100, percent));
         applySfxVolume();
+        persistSettings();
+    }
+
+    private void ensureFrameBuffer() {
+        if (frameBuffer == null || frameBuffer.getWidth() != screenWidth || frameBuffer.getHeight() != screenHeight) {
+            frameBuffer = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_ARGB);
+        }
+    }
+
+    private void applyViewportSize(int width) {
+        screenWidth = width;
+        frameBuffer = null;
+        lightingFilter = null;
+        setPreferredSize(new Dimension(screenWidth, screenHeight));
+        player.updateScreenPosition();
+        revalidate();
+    }
+
+    private int getWindowedScreenWidth() {
+        return tileSize * WINDOWED_SCREEN_COLUMNS;
+    }
+
+    private int getFullscreenScreenWidth() {
+        return screenHeight * FULLSCREEN_ASPECT_WIDTH / FULLSCREEN_ASPECT_HEIGHT;
+    }
+
+    private void loadSavedSettings() {
+        SaveHandler.SettingsData settingsData = null;
+        try {
+            settingsData = sh.loadSettings();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (settingsData != null) {
+            fullScreen = settingsData.fullScreen;
+            musicVolume = Math.max(0, Math.min(100, settingsData.musicVolume));
+            sfxVolume = Math.max(0, Math.min(100, settingsData.sfxVolume));
+        }
+
+        applyViewportSize(fullScreen ? getFullscreenScreenWidth() : getWindowedScreenWidth());
+    }
+
+    private void persistSettings() {
+        try {
+            sh.saveSettings(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void applySfxVolume() {

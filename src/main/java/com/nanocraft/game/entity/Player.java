@@ -28,8 +28,8 @@ public class Player extends Entity {
     private static final int TOOL_SWING_TOTAL_TICKS = 8;
     private static final int TOOL_SWING_FRAME_SWITCH_TICK = 4;
     private static final int LAVA_MESSAGE_COOLDOWN_TICKS = 20;
-    public final int screenX = gh.screenWidth / 2 - gh.tileSize / 2;
-    public final int screenY = gh.screenHeight / 2 - gh.tileSize / 2;
+    public int screenX;
+    public int screenY;
     private int standCounter;
     private int mineCooldownTicks;
     private int toolSwingTicks;
@@ -50,6 +50,7 @@ public class Player extends Entity {
         setPos();
         setItems();
         getImage();
+        updateScreenPosition();
     }
 
     public Player(GameHandler gh, KeyHandler kh, boolean loadAssets) {
@@ -312,6 +313,11 @@ public class Player extends Entity {
 
         g2.drawImage(image, tempX, tempY, null);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+    }
+
+    public void updateScreenPosition() {
+        screenX = gh.screenWidth / 2 - gh.tileSize / 2;
+        screenY = gh.screenHeight / 2 - gh.tileSize / 2;
     }
 
     private void getImage() {

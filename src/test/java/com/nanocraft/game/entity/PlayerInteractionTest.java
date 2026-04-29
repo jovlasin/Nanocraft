@@ -543,7 +543,7 @@ public class PlayerInteractionTest {
     }
 
     @Test
-    public void stacksMatchingEmeraldsIntoSingleInventorySlot() {
+    public void stackshatchingEmeraldsIntoSingleInventorySlot() {
         GameHandler gh = new GameHandler();
 
         assertTrue(gh.player.addToInventory(new Emerald(gh)));
@@ -934,12 +934,12 @@ public class PlayerInteractionTest {
         slime.life = 1;
         gh.monsters[0] = slime;
         gh.player.exp = gh.player.nextLevelExp - slime.exp;
-        int previousMaxLife = gh.player.maxLife;
+        int previoushaxLife = gh.player.maxLife;
 
         gh.player.damage(0, gh.player.attack);
 
         assertEquals(2, gh.player.level);
-        assertEquals(previousMaxLife + 2, gh.player.maxLife);
+        assertEquals(previoushaxLife + 2, gh.player.maxLife);
         assertEquals(gh.player.maxLife, gh.player.life);
         assertEquals(1, gh.getSoundCount(GameHandler.SFX_LEVEL_UP));
         assertEquals(GameHandler.SFX_LEVEL_UP, gh.lastSoundId);
@@ -1069,7 +1069,7 @@ public class PlayerInteractionTest {
         gh.player.coin = 99;
         gh.player.inventory.clear();
 
-        gh.sm.startNewGame();
+        gh.sh.startNewGame();
 
         assertEquals(gh.play, gh.gameState);
         assertEquals(gh.player.maxLife, gh.player.life);
@@ -1084,14 +1084,14 @@ public class PlayerInteractionTest {
         RecordingGameHandler gh = new RecordingGameHandler();
         gh.gameState = gh.title;
 
-        gh.sm.startNewGame();
+        gh.sh.startNewGame();
 
         assertEquals(gh.play, gh.gameState);
         assertEquals(0, gh.getSoundCount(GameHandler.SFX_MAIN_MENU));
     }
 
     @Test
-    public void leveledPlayerStillTakesMinimumTwoDamageFromWeakMonsterMelee() {
+    public void leveledPlayerStillTakeshinimumTwoDamageFromWeakMonsterMelee() {
         GameHandler gh = new GameHandler();
         gh.player.dexterity = 4;
         gh.player.defense = gh.player.getDefense();
