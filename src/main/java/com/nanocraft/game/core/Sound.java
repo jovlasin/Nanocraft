@@ -11,10 +11,15 @@ public class Sound {
     private final Clip[][] clips = new Clip[30][];
 
     public void load(int id, String path) {
-        try {
-            clips[id] = new Clip[voices];
+        load(id, path, voices);
+    }
 
-            for (int i = 0; i < voices; i++) {
+    public void load(int id, String path, int voiceCount) {
+        try {
+            int clipCount = Math.max(1, Math.min(voices, voiceCount));
+            clips[id] = new Clip[clipCount];
+
+            for (int i = 0; i < clipCount; i++) {
                 AudioInputStream ais = AudioSystem.getAudioInputStream(getClass().getResource(path));
                 Clip c = AudioSystem.getClip();
                 c.open(ais);

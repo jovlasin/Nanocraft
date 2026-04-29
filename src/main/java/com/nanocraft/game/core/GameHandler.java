@@ -43,6 +43,8 @@ public class GameHandler extends JPanel implements Runnable {
     private static final String NETHER_MAP_PATH = "/map/nether.tmj";
     private static final String END_MAP_PATH = "/map/end.tmj";
     private static final int MUSIC_MAIN = 0;
+    private static final int MUSIC_CAVE = 1;
+    private static final int MUSIC_COUNT = MUSIC_CAVE + 1;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
     public static final int SFX_ARROW = 0;
     public static final int SFX_SWORD_ATTACK = 1;
@@ -105,6 +107,8 @@ public class GameHandler extends JPanel implements Runnable {
     private int musicVolume = 100;
     private int sfxVolume = 100;
     private boolean musicLoaded;
+    private boolean musicStarted;
+    private int activeMusicTrack = -1;
     private boolean soundEffectsLoaded;
 
     // /** For unit tests; fullscreen is a no-op without a window. */
@@ -288,6 +292,7 @@ public class GameHandler extends JPanel implements Runnable {
         ah.setNPCS();
         ah.setMonsters();
         ah.applyMapProgression();
+        updateMusicForCurrentMap();
     }
 
     public void beforeMapChange() {
@@ -720,13 +725,32 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void playMusic() {
-        if (musicVolume == 0 || GraphicsEnvironment.isHeadless()) {
+        musicStarted = true;
+        updateMusicForCurrentMap();
+    }
+
+    private void updateMusicForCurrentMap() {
+        if (!musicStarted || !isAudioPlaybackAvailable()) {
+            return;
+        }
+
+        if (musicVolume == 0) {
+            stopAllMusicTracks();
             return;
         }
 
         loadMusicIfNeeded();
-        music.setVolume(MUSIC_MAIN, musicVolume);
-        music.loop(MUSIC_MAIN);
+        int nextMusicTrack = getCurrentMapMusicTrack();
+        if (activeMusicTrack != nextMusicTrack) {
+            stopActiveMusicTrack();
+            activeMusicTrack = nextMusicTrack;
+        }
+
+        loopMusicTrack(activeMusicTrack);
+    }
+
+    private int getCurrentMapMusicTrack() {
+        return AssetHandler.CAVE_MAP_PATH.equals(th.getCurrentMapPath()) ? MUSIC_CAVE : MUSIC_MAIN;
     }
 
     private void loadMusicIfNeeded() {
@@ -734,8 +758,39 @@ public class GameHandler extends JPanel implements Runnable {
             return;
         }
 
-        music.load(MUSIC_MAIN, "/sound/MainMenu.wav");
+        loadMusicTrack(MUSIC_MAIN, "/sound/MainMenu.wav");
+        loadMusicTrack(MUSIC_CAVE, "/sound/Moody Dungeon.wav");
         musicLoaded = true;
+    }
+
+    protected boolean isAudioPlaybackAvailable() {
+        return !GraphicsEnvironment.isHeadless();
+    }
+
+    protected void loadMusicTrack(int id, String path) {
+        music.load(id, path, 1);
+    }
+
+    protected void loopMusicTrack(int id) {
+        music.setVolume(id, musicVolume);
+        music.loop(id);
+    }
+
+    protected void stopMusicTrack(int id) {
+        music.stop(id);
+    }
+
+    private void stopActiveMusicTrack() {
+        if (activeMusicTrack >= 0) {
+            stopMusicTrack(activeMusicTrack);
+        }
+    }
+
+    private void stopAllMusicTracks() {
+        for (int i = 0; i < MUSIC_COUNT; i++) {
+            stopMusicTrack(i);
+        }
+        activeMusicTrack = -1;
     }
 
     public void playSound(int i) {
@@ -785,14 +840,13 @@ public class GameHandler extends JPanel implements Runnable {
     public void setMusicVolume(int percent) {
         musicVolume = Math.max(0, Math.min(100, percent));
         if (musicVolume == 0) {
-            music.stop(MUSIC_MAIN);
+            stopAllMusicTracks();
             return;
         }
 
-        if (musicLoaded) {
-            music.setVolume(MUSIC_MAIN, musicVolume);
+        if (musicStarted) {
+            updateMusicForCurrentMap();
         }
-        playMusic();
     }
 
     public int getSfxVolume() {
