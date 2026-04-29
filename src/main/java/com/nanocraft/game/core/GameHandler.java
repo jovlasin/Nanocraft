@@ -45,7 +45,8 @@ public class GameHandler extends JPanel implements Runnable {
     private static final int MUSIC_MAIN = 0;
     private static final int MUSIC_CAVE = 1;
     private static final int MUSIC_NETHER = 2;
-    private static final int MUSIC_COUNT = MUSIC_NETHER + 1;
+    private static final int MUSIC_DESERT = 3;
+    private static final int MUSIC_COUNT = MUSIC_DESERT + 1;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
     public static final int SFX_ARROW = 0;
     public static final int SFX_SWORD_ATTACK = 1;
@@ -761,6 +762,10 @@ public class GameHandler extends JPanel implements Runnable {
             return MUSIC_NETHER;
         }
 
+        if (AssetHandler.DESERT_MAP_PATH.equals(currentMapPath)) {
+            return MUSIC_DESERT;
+        }
+
         return MUSIC_MAIN;
     }
 
@@ -772,6 +777,7 @@ public class GameHandler extends JPanel implements Runnable {
         loadMusicTrack(MUSIC_MAIN, "/sound/MainMenu.wav");
         loadMusicTrack(MUSIC_CAVE, "/sound/Moody Dungeon.wav");
         loadMusicTrack(MUSIC_NETHER, "/sound/Alone in the Chamber.wav");
+        loadMusicTrack(MUSIC_DESERT, "/sound/Tangle.wav");
         musicLoaded = true;
     }
 

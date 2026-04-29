@@ -97,6 +97,29 @@ public class GameHandlerMusicTest {
         assertTrue(gh.stoppedTracks.contains(netherMusic));
     }
 
+    @Test
+    public void desertMapLoopsTangleMusicAndLeavingDesertStopsIt() throws Exception {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        int mainMusic = gh.getTrackId("/sound/MainMenu.wav");
+        int desertMusic = gh.getTrackId("/sound/Tangle.wav");
+        assertEquals(mainMusic, gh.lastLoopedTrack());
+
+        setCurrentMapPath(gh, AssetHandler.DESERT_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertEquals(desertMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(mainMusic));
+
+        setCurrentMapPath(gh, GameHandler.STARTING_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertEquals(mainMusic, gh.lastLoopedTrack());
+        assertTrue(gh.stoppedTracks.contains(desertMusic));
+    }
+
     private void setCurrentMapPath(GameHandler gh, String mapPath) throws Exception {
         Field currentMapPath = gh.th.getClass().getDeclaredField("currentMapPath");
         currentMapPath.setAccessible(true);
