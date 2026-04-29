@@ -49,6 +49,10 @@ public class GameHandlerMusicTest {
         int lastLoopedTrack() {
             return loopedTracks.get(loopedTracks.size() - 1);
         }
+
+        int loopCount() {
+            return loopedTracks.size();
+        }
     }
 
     @Test
@@ -180,6 +184,46 @@ public class GameHandlerMusicTest {
 
         assertEquals(villageMusic, gh.lastLoopedTrack());
         assertTrue(gh.stoppedTracks.contains(endMusic));
+    }
+
+    @Test
+    public void defeatingBronzeDragonStopsEndMusicForFanfare() throws Exception {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        gh.gameState = gh.play;
+        setCurrentMapPath(gh, AssetHandler.END_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        int endMusic = gh.getTrackId("/sound/EndMusic.wav");
+        int loopCountBeforeDefeat = gh.loopCount();
+        assertEquals(endMusic, gh.lastLoopedTrack());
+
+        gh.handleBronzeDragonDefeat();
+
+        assertTrue(gh.stoppedTracks.contains(endMusic));
+        assertEquals(loopCountBeforeDefeat, gh.loopCount());
+    }
+
+    @Test
+    public void enteringEndAfterBronzeDragonDefeatStaysSilent() throws Exception {
+        RecordingMusicGameHandler gh = new RecordingMusicGameHandler();
+
+        gh.playMusic();
+
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        int villageMusic = gh.getTrackId("/sound/village.wav");
+        int loopCountBeforeEnteringEnd = gh.loopCount();
+        gh.setBronzeDragonDefeated(true);
+
+        setCurrentMapPath(gh, AssetHandler.END_MAP_PATH);
+        gh.refreshCurrentMapState();
+
+        assertTrue(gh.stoppedTracks.contains(villageMusic));
+        assertEquals(loopCountBeforeEnteringEnd, gh.loopCount());
     }
 
     @Test

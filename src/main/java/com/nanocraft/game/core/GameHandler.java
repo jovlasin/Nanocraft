@@ -50,6 +50,7 @@ public class GameHandler extends JPanel implements Runnable {
     private static final int MUSIC_END = 5;
     private static final int MUSIC_INN = 6;
     private static final int MUSIC_COUNT = MUSIC_INN + 1;
+    private static final int NO_MUSIC = -1;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
     public static final int SFX_ARROW = 0;
     public static final int SFX_SWORD_ATTACK = 1;
@@ -752,6 +753,10 @@ public class GameHandler extends JPanel implements Runnable {
             activeMusicTrack = nextMusicTrack;
         }
 
+        if (activeMusicTrack < 0) {
+            return;
+        }
+
         loopMusicTrack(activeMusicTrack);
     }
 
@@ -774,6 +779,9 @@ public class GameHandler extends JPanel implements Runnable {
         }
 
         if (AssetHandler.END_MAP_PATH.equals(currentMapPath)) {
+            if (bronzeDragonDefeated) {
+                return NO_MUSIC;
+            }
             return MUSIC_END;
         }
 
@@ -917,6 +925,7 @@ public class GameHandler extends JPanel implements Runnable {
         bronzeDragonDefeated = true;
         clearProjectiles();
         if (END_MAP_PATH.equals(th.getCurrentMapPath())) {
+            updateMusicForCurrentMap();
             playSound(SFX_FANFARE);
         }
         ui.addMessage("The bronze dragon collapses into ash.");
