@@ -58,7 +58,8 @@ public class GameHandler extends JPanel implements Runnable {
     public static final int SFX_MAIN_MENU = 9;
     public static final int SFX_CHEST_OPEN = 10;
     public static final int SFX_ENTERING_END = 11;
-    private static final int SFX_COUNT = SFX_ENTERING_END + 1;
+    public static final int SFX_FANFARE = 12;
+    private static final int SFX_COUNT = SFX_FANFARE + 1;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -820,6 +821,7 @@ public class GameHandler extends JPanel implements Runnable {
         se.load(SFX_MAIN_MENU, "/sound/MainMenu.wav");
         se.load(SFX_CHEST_OPEN, "/sound/ChestOpen.wav");
         se.load(SFX_ENTERING_END, "/sound/EnteringEnd.wav");
+        se.load(SFX_FANFARE, "/sound/fanfare.wav");
         soundEffectsLoaded = true;
         applySfxVolume();
     }
@@ -879,6 +881,9 @@ public class GameHandler extends JPanel implements Runnable {
 
         bronzeDragonDefeated = true;
         clearProjectiles();
+        if (END_MAP_PATH.equals(th.getCurrentMapPath())) {
+            playSound(SFX_FANFARE);
+        }
         ui.addMessage("The bronze dragon collapses into ash.");
 
         if (ah.applyMapProgression()) {
