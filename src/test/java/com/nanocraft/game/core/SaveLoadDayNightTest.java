@@ -47,4 +47,34 @@ public class SaveLoadDayNightTest {
         assertTrue(cycle.isNight());
         assertTrue("Night".equals(cycle.getPhaseName()));
     }
+
+    @Test
+    public void nightMusicDoesNotChangeNightSpawnBoundaries() {
+        GameHandler gh = new GameHandler();
+        gh.gameState = gh.play;
+        gh.refreshCurrentMapState();
+
+        assertFalse(gh.dayNightCycle.isNight());
+        assertFalse(gh.isNightForMonsterSpawns());
+
+        gh.cycleTimeOfDay();
+
+        assertFalse(gh.dayNightCycle.isNight());
+        assertFalse(gh.isNightForMonsterSpawns());
+
+        gh.cycleTimeOfDay();
+
+        assertTrue(gh.dayNightCycle.isNight());
+        assertTrue(gh.isNightForMonsterSpawns());
+
+        gh.cycleTimeOfDay();
+
+        assertFalse(gh.dayNightCycle.isNight());
+        assertFalse(gh.isNightForMonsterSpawns());
+
+        gh.cycleTimeOfDay();
+
+        assertFalse(gh.dayNightCycle.isNight());
+        assertFalse(gh.isNightForMonsterSpawns());
+    }
 }

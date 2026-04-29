@@ -233,20 +233,28 @@ public class Ui {
         chestPanelActive = !chestPanelActive;
     }
 
-    public void moveChestCursor(int deltaCol, int deltaRow) {
+    public boolean moveChestCursor(int deltaCol, int deltaRow) {
         if (chestPanelActive) {
+            int previousCol = chestSlotCol;
+            int previousRow = chestSlotRow;
             chestSlotCol = clamp(chestSlotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
             chestSlotRow = clamp(chestSlotRow + deltaRow, 0, INVENTORY_ROWS - 1);
-            return;
+            return chestSlotCol != previousCol || chestSlotRow != previousRow;
         }
 
+        int previousCol = playerChestSlotCol;
+        int previousRow = playerChestSlotRow;
         playerChestSlotCol = clamp(playerChestSlotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
         playerChestSlotRow = clamp(playerChestSlotRow + deltaRow, 0, INVENTORY_ROWS - 1);
+        return playerChestSlotCol != previousCol || playerChestSlotRow != previousRow;
     }
 
-    public void moveInventoryCursor(int deltaCol, int deltaRow) {
+    public boolean moveInventoryCursor(int deltaCol, int deltaRow) {
+        int previousCol = slotCol;
+        int previousRow = slotRow;
         slotCol = clamp(slotCol + deltaCol, 0, INVENTORY_COLUMNS - 1);
         slotRow = clamp(slotRow + deltaRow, 0, INVENTORY_ROWS - 1);
+        return slotCol != previousCol || slotRow != previousRow;
     }
 
     public boolean isChestPanelActive() {

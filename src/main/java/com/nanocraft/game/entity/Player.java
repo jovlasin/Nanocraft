@@ -16,6 +16,7 @@ import com.nanocraft.game.core.SaveHandler;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.object.Torch;
 import com.nanocraft.game.tile.Tile;
@@ -118,6 +119,9 @@ public class Player extends Entity {
                     clearToolSwingAnimation();
                     attacking = true;
                     spriteCounter = 0;
+                    if (playsAttackSwingSound(currentWeapon)) {
+                        gh.playSound(GameHandler.SFX_SWORD_ATTACK);
+                    }
                 }
 
                 cancelAttack = false;
@@ -171,6 +175,10 @@ public class Player extends Entity {
         if (shotCounter < getArrowCooldownTicks()) {
             shotCounter++;
         }
+    }
+
+    private boolean playsAttackSwingSound(Entity weapon) {
+        return weapon instanceof Sword || weapon instanceof Pickaxe;
     }
 
     public void requestInteract() {
@@ -476,6 +484,7 @@ public class Player extends Entity {
                 }
 
                 monster.life -= damage;
+                gh.playSound(GameHandler.SFX_MONSTER_HIT);
                 gh.ui.addMessage(damage + " damage!");
                 monster.invincible = true;
                 monster.knockBack = true;
@@ -518,7 +527,11 @@ public class Player extends Entity {
             damage = 0;
         }
 
+        int previousLife = life;
         life = Math.max(0, life - damage);
+        if (life < previousLife) {
+            gh.playSound(GameHandler.SFX_PLAYER_DAMAGE);
+        }
         invincible = true;
 
         if (life == 0) {
@@ -545,6 +558,11 @@ public class Player extends Entity {
 
         int previousLife = life;
         life = Math.max(0, life - damage);
+
+        if (life < previousLife) {
+            gh.playSound(GameHandler.SFX_PLAYER_DAMAGE);
+        }
+        
         invincible = true;
         if (life == 0) {
             gh.openGameOverMenu();
@@ -562,6 +580,7 @@ public class Player extends Entity {
             dexterity++;
             attack = getAttack();
             defense = getDefense();
+            gh.playSound(GameHandler.SFX_LEVEL_UP);
             gh.gameState = gh.dialogue;
             gh.ui.currentDialogue = "You are level " + level + " now!\nYou feel stronger!";
         }
@@ -787,11 +806,16 @@ public class Player extends Entity {
         }
 
         startToolSwingAnimation(currentWeapon);
+        if (playsAttackSwingSound(currentWeapon)) {
+            gh.playSound(GameHandler.SFX_SWORD_ATTACK);
+        }
         String dropItemType = gh.th.damageBreakableTile(targetTileCoordinates[0], targetTileCoordinates[1], 1);
         if (dropItemType == null || dropItemType.isBlank()) {
+            gh.playSound(GameHandler.SFX_BLOCK_HIT);
             return true;
         }
 
+        gh.playSound(GameHandler.SFX_BLOCK_BREAK);
         Entity minedItem = gh.createItemEntity(dropItemType);
         if (minedItem != null && addToInventory(minedItem)) {
             gh.ui.addMessage("Got a " + minedItem.name + "!");
@@ -849,7 +873,7 @@ public class Player extends Entity {
         projectile.set(worldX, worldY, direction, true, this);
         gh.projectileList.add(projectile);
         shotCounter = 0;
-        // gh.playSound(10);
+        gh.playSound(GameHandler.SFX_ARROW);
     }
 
     private boolean consumeInventoryItem(String itemId) {

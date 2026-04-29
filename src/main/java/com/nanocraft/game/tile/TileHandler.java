@@ -513,6 +513,7 @@ public class TileHandler {
     }
 
     public void swapMap(String mapPath, int playerCol, int playerRow, String direction) {
+        boolean enteringEndMap = END_MAP_PATH.equals(mapPath) && !END_MAP_PATH.equals(currentMapPath);
         gh.beforeMapChange();
         loadMap(mapPath);
         gh.player.worldX = playerCol * gh.tileSize;
@@ -520,6 +521,9 @@ public class TileHandler {
         gh.player.direction = direction;
         gh.clearProjectiles();
         gh.refreshCurrentMapState();
+        if (enteringEndMap) {
+            gh.playSound(GameHandler.SFX_ENTERING_END);
+        }
     }
 
     private boolean isBlockedEndTransition(MapTransition transition) {

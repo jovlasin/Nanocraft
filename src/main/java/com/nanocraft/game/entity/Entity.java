@@ -329,8 +329,7 @@ public class Entity {
 
     public void damage(int attack) {
         if (gh.player.invincible == false) {
-                gh.playSound(6);
-                gh.player.receiveDamage(attack, this instanceof Projectile ? 1 : 2);
+            gh.player.receiveDamage(attack, this instanceof Projectile ? 1 : 2);
         }
     }
 
@@ -404,6 +403,9 @@ public class Entity {
 
         int restoredLife = Math.min(amount, missingLife);
         player.life += restoredLife;
+        if (restoredLife > 0) {
+            gh.playSound(GameHandler.SFX_POWERUP);
+        }
         return restoredLife;
     }
 

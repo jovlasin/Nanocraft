@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RadialGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
@@ -42,7 +43,31 @@ import com.nanocraft.game.tile.TileHandler;
 public class GameHandler extends JPanel implements Runnable {
     private static final String NETHER_MAP_PATH = "/map/nether.tmj";
     private static final String END_MAP_PATH = "/map/end.tmj";
+    private static final int MUSIC_TITLE = 0;
+    private static final int MUSIC_VILLAGE = 1;
+    private static final int MUSIC_NIGHT = 2;
+    private static final int MUSIC_CAVE = 3;
+    private static final int MUSIC_NETHER = 4;
+    private static final int MUSIC_DESERT = 5;
+    private static final int MUSIC_END = 6;
+    private static final int MUSIC_INN = 7;
+    private static final int MUSIC_COUNT = MUSIC_INN + 1;
+    private static final int NO_MUSIC = -1;
     public static final String STARTING_MAP_PATH = "/map/village.tmj";
+    public static final int SFX_ARROW = 0;
+    public static final int SFX_SWORD_ATTACK = 1;
+    public static final int SFX_PLAYER_DAMAGE = 2;
+    public static final int SFX_MONSTER_HIT = 3;
+    public static final int SFX_CURSOR = 4;
+    public static final int SFX_POWERUP = 5;
+    public static final int SFX_BLOCK_HIT = 6;
+    public static final int SFX_BLOCK_BREAK = 7;
+    public static final int SFX_LEVEL_UP = 8;
+    public static final int SFX_MAIN_MENU = 9;
+    public static final int SFX_CHEST_OPEN = 10;
+    public static final int SFX_ENTERING_END = 11;
+    public static final int SFX_FANFARE = 12;
+    private static final int SFX_COUNT = SFX_FANFARE + 1;
     private final int defaultTileSize = 16; // tiles are 16x16 pngs
     private final int scale = 3;
     private final int maxScreenCol = 16; // 16 tiles wide
@@ -55,6 +80,9 @@ public class GameHandler extends JPanel implements Runnable {
     public KeyHandler kh = new KeyHandler(this);
     public Player player = new Player(this, kh);
     public TileHandler th = new TileHandler(this);
+
+    private Sound music = new Sound();
+    private Sound se = new Sound();
     public CollisionHandler ch = new CollisionHandler(this);
     public Entity objs[] = new Entity[10];
     public Entity npcs[] = new Entity[10];
@@ -74,6 +102,7 @@ public class GameHandler extends JPanel implements Runnable {
     public Innkeeper ik = new Innkeeper(this);
     private boolean monsterSpawnWindowOpen;
     private boolean wasNightPhase;
+    private boolean wasNightMusicPhase;
 
     public final int title = 0;
     public final int pause = 1;
@@ -87,6 +116,10 @@ public class GameHandler extends JPanel implements Runnable {
     private BufferedImage lightingFilter;
     private int musicVolume = 100;
     private int sfxVolume = 100;
+    private boolean musicLoaded;
+    private boolean musicStarted;
+    private int activeMusicTrack = -1;
+    private boolean soundEffectsLoaded;
 
     // /** For unit tests; fullscreen is a no-op without a window. */
     // public GameHandler() {
@@ -101,6 +134,7 @@ public class GameHandler extends JPanel implements Runnable {
         this.setFocusTraversalKeysEnabled(false);
         this.addKeyListener(kh);
         wasNightPhase = dayNightCycle.isNight();
+        wasNightMusicPhase = shouldUseNightMusic();
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         refreshCurrentMapState();
 
@@ -109,6 +143,7 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void startGame() {
+        playMusic();
         gameThread = new Thread(this);
         gameThread.start();
     }
@@ -192,12 +227,14 @@ public class GameHandler extends JPanel implements Runnable {
         activeChest.opened = true;
         ui.resetChestUi();
         ui.addMessage("Opened chest.");
+        playSound(SFX_CHEST_OPEN);
         gameState = chest;
     }
 
     public void closeChest() {
         activeChest = null;
         ui.resetChestUi();
+        playSound(SFX_CHEST_OPEN);
         gameState = play;
     }
 
@@ -266,6 +303,8 @@ public class GameHandler extends JPanel implements Runnable {
         ah.setNPCS();
         ah.setMonsters();
         ah.applyMapProgression();
+        wasNightMusicPhase = shouldUseNightMusic();
+        updateMusicForCurrentMap();
     }
 
     public void beforeMapChange() {
@@ -360,9 +399,9 @@ public class GameHandler extends JPanel implements Runnable {
         th.restoreMapStateSaveData(saveData.mapStates);
         th.loadMap(saveData.currentMapPath);
         syncDayNightState();
+        gameState = play;
         refreshCurrentMapState();
         player.applySaveData(saveData.player);
-        gameState = play;
         ui.titleScreen = 1;
     }
 
@@ -704,19 +743,152 @@ public class GameHandler extends JPanel implements Runnable {
     }
 
     public void playMusic() {
-        if (musicVolume == 0) {
+        musicStarted = true;
+        updateMusicForCurrentMap();
+    }
+
+    private void updateMusicForCurrentMap() {
+        if (!musicStarted || !isAudioPlaybackAvailable()) {
             return;
         }
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'playMusic'");
+
+        if (musicVolume == 0) {
+            stopAllMusicTracks();
+            return;
+        }
+
+        loadMusicIfNeeded();
+        int nextMusicTrack = getCurrentMapMusicTrack();
+        if (activeMusicTrack != nextMusicTrack) {
+            stopActiveMusicTrack();
+            activeMusicTrack = nextMusicTrack;
+        }
+
+        if (activeMusicTrack < 0) {
+            return;
+        }
+
+        loopMusicTrack(activeMusicTrack);
+    }
+
+    private int getCurrentMapMusicTrack() {
+        if (gameState == title) {
+            return MUSIC_TITLE;
+        }
+
+        String currentMapPath = th.getCurrentMapPath();
+        if (AssetHandler.CAVE_MAP_PATH.equals(currentMapPath)) {
+            return MUSIC_CAVE;
+        }
+
+        if (AssetHandler.NETHER_MAP_PATH.equals(currentMapPath)) {
+            return MUSIC_NETHER;
+        }
+
+        if (AssetHandler.DESERT_MAP_PATH.equals(currentMapPath)) {
+            if (dayNightCycle.isNight()) {
+                return MUSIC_NIGHT;
+            }
+            return MUSIC_DESERT;
+        }
+
+        if (STARTING_MAP_PATH.equals(currentMapPath)) {
+            if (dayNightCycle.isNight()) {
+                return MUSIC_NIGHT;
+            }
+            return MUSIC_VILLAGE;
+        }
+
+        if (AssetHandler.END_MAP_PATH.equals(currentMapPath)) {
+            if (bronzeDragonDefeated) {
+                return NO_MUSIC;
+            }
+            return MUSIC_END;
+        }
+
+        if (AssetHandler.INN_MAP_PATH.equals(currentMapPath)) {
+            return MUSIC_INN;
+        }
+
+        return MUSIC_VILLAGE;
+    }
+
+    private void loadMusicIfNeeded() {
+        if (musicLoaded) {
+            return;
+        }
+
+        loadMusicTrack(MUSIC_TITLE, "/sound/MainMenu.wav");
+        loadMusicTrack(MUSIC_VILLAGE, "/sound/village.wav");
+        loadMusicTrack(MUSIC_NIGHT, "/sound/night.wav");
+        loadMusicTrack(MUSIC_CAVE, "/sound/Moody Dungeon.wav");
+        loadMusicTrack(MUSIC_NETHER, "/sound/Alone in the Chamber.wav");
+        loadMusicTrack(MUSIC_DESERT, "/sound/Desert.wav");
+        loadMusicTrack(MUSIC_END, "/sound/EndMusic.wav");
+        loadMusicTrack(MUSIC_INN, "/sound/inn.wav");
+        musicLoaded = true;
+    }
+
+    protected boolean isAudioPlaybackAvailable() {
+        return !GraphicsEnvironment.isHeadless();
+    }
+
+    protected void loadMusicTrack(int id, String path) {
+        music.load(id, path, 1);
+    }
+
+    protected void loopMusicTrack(int id) {
+        music.setVolume(id, musicVolume);
+        music.loop(id);
+    }
+
+    protected void stopMusicTrack(int id) {
+        music.stop(id);
+    }
+
+    private void stopActiveMusicTrack() {
+        if (activeMusicTrack >= 0) {
+            stopMusicTrack(activeMusicTrack);
+        }
+    }
+
+    private void stopAllMusicTracks() {
+        for (int i = 0; i < MUSIC_COUNT; i++) {
+            stopMusicTrack(i);
+        }
+        activeMusicTrack = -1;
     }
 
     public void playSound(int i) {
-        if (sfxVolume == 0) {
+        if (sfxVolume == 0 || GraphicsEnvironment.isHeadless()) {
             return;
         }
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'playSound'");
+
+        loadSoundEffectsIfNeeded();
+        se.setVolume(i, sfxVolume);
+        se.play(i);
+    }
+
+    private void loadSoundEffectsIfNeeded() {
+        if (soundEffectsLoaded) {
+            return;
+        }
+
+        se.load(SFX_ARROW, "/sound/arrow.wav");
+        se.load(SFX_SWORD_ATTACK, "/sound/attack.wav");
+        se.load(SFX_PLAYER_DAMAGE, "/sound/damage.wav");
+        se.load(SFX_MONSTER_HIT, "/sound/hit.wav");
+        se.load(SFX_CURSOR, "/sound/cursor.wav");
+        se.load(SFX_POWERUP, "/sound/powerup.wav");
+        se.load(SFX_BLOCK_HIT, "/sound/blockhit.wav");
+        se.load(SFX_BLOCK_BREAK, "/sound/blockbreak.wav");
+        se.load(SFX_LEVEL_UP, "/sound/levelup.wav");
+        se.load(SFX_MAIN_MENU, "/sound/MainMenu.wav");
+        se.load(SFX_CHEST_OPEN, "/sound/ChestOpen.wav");
+        se.load(SFX_ENTERING_END, "/sound/EnteringEnd.wav");
+        se.load(SFX_FANFARE, "/sound/fanfare.wav");
+        soundEffectsLoaded = true;
+        applySfxVolume();
     }
 
     public boolean isFullScreen() {
@@ -734,6 +906,14 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setMusicVolume(int percent) {
         musicVolume = Math.max(0, Math.min(100, percent));
+        if (musicVolume == 0) {
+            stopAllMusicTracks();
+            return;
+        }
+
+        if (musicStarted) {
+            updateMusicForCurrentMap();
+        }
     }
 
     public int getSfxVolume() {
@@ -742,6 +922,17 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void setSfxVolume(int percent) {
         sfxVolume = Math.max(0, Math.min(100, percent));
+        applySfxVolume();
+    }
+
+    private void applySfxVolume() {
+        if (!soundEffectsLoaded) {
+            return;
+        }
+
+        for (int i = 0; i < SFX_COUNT; i++) {
+            se.setVolume(i, sfxVolume);
+        }
     }
   
     public void clearProjectiles() {
@@ -755,6 +946,10 @@ public class GameHandler extends JPanel implements Runnable {
 
         bronzeDragonDefeated = true;
         clearProjectiles();
+        if (END_MAP_PATH.equals(th.getCurrentMapPath())) {
+            updateMusicForCurrentMap();
+            playSound(SFX_FANFARE);
+        }
         ui.addMessage("The bronze dragon collapses into ash.");
 
         if (ah.applyMapProgression()) {
@@ -796,6 +991,20 @@ public class GameHandler extends JPanel implements Runnable {
     public boolean isInDayMap() {
         String currentMapPath = th.getCurrentMapPath();
         return NETHER_MAP_PATH.equals(currentMapPath) || END_MAP_PATH.equals(currentMapPath);
+    }
+
+    private boolean shouldUseNightMusic() {
+        String currentMapPath = th.getCurrentMapPath();
+        if (currentMapPath == null) {
+            return false;
+        }
+
+        String phaseName = dayNightCycle.getPhaseName();
+        if (!"Night".equals(phaseName) && !"Dawn".equals(phaseName)) {
+            return false;
+        }
+
+        return STARTING_MAP_PATH.equals(currentMapPath) || AssetHandler.DESERT_MAP_PATH.equals(currentMapPath);
     }
 
     public boolean isNightForMonsterSpawns() {
@@ -1050,6 +1259,12 @@ public class GameHandler extends JPanel implements Runnable {
         }
         wasNightPhase = nightPhaseNow;
 
+        boolean nightMusicPhaseNow = shouldUseNightMusic();
+        if (nightMusicPhaseNow != wasNightMusicPhase) {
+            wasNightMusicPhase = nightMusicPhaseNow;
+            updateMusicForCurrentMap();
+        }
+
         boolean spawnWindowOpenNow = isNightForMonsterSpawns();
         if (spawnWindowOpenNow == monsterSpawnWindowOpen) {
             return;
@@ -1061,6 +1276,7 @@ public class GameHandler extends JPanel implements Runnable {
 
     public void syncDayNightState() {
         wasNightPhase = dayNightCycle.isNight();
+        wasNightMusicPhase = shouldUseNightMusic();
         monsterSpawnWindowOpen = isNightForMonsterSpawns();
         lightingFilter = null;
     }
