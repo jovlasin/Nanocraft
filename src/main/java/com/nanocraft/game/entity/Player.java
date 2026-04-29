@@ -16,6 +16,7 @@ import com.nanocraft.game.core.SaveHandler;
 import com.nanocraft.game.input.KeyHandler;
 import com.nanocraft.game.object.Arrow;
 import com.nanocraft.game.object.Key;
+import com.nanocraft.game.object.Pickaxe;
 import com.nanocraft.game.object.Sword;
 import com.nanocraft.game.tile.Tile;
 
@@ -117,7 +118,7 @@ public class Player extends Entity {
                     clearToolSwingAnimation();
                     attacking = true;
                     spriteCounter = 0;
-                    if (currentWeapon instanceof Sword) {
+                    if (playsAttackSwingSound(currentWeapon)) {
                         gh.playSound(GameHandler.SFX_SWORD_ATTACK);
                     }
                 }
@@ -173,6 +174,10 @@ public class Player extends Entity {
         if (shotCounter < getArrowCooldownTicks()) {
             shotCounter++;
         }
+    }
+
+    private boolean playsAttackSwingSound(Entity weapon) {
+        return weapon instanceof Sword || weapon instanceof Pickaxe;
     }
 
     public void requestInteract() {
@@ -775,6 +780,9 @@ public class Player extends Entity {
         }
 
         startToolSwingAnimation(currentWeapon);
+        if (playsAttackSwingSound(currentWeapon)) {
+            gh.playSound(GameHandler.SFX_SWORD_ATTACK);
+        }
         String dropItemType = gh.th.damageBreakableTile(targetTileCoordinates[0], targetTileCoordinates[1], 1);
         if (dropItemType == null || dropItemType.isBlank()) {
             gh.playSound(GameHandler.SFX_BLOCK_HIT);

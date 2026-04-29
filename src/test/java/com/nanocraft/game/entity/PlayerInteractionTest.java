@@ -260,6 +260,7 @@ public class PlayerInteractionTest {
         performMineInteraction(gh, placement);
         assertEquals(0, gh.getSoundCount(GameHandler.SFX_BLOCK_HIT));
         assertEquals(0, gh.getSoundCount(GameHandler.SFX_BLOCK_BREAK));
+        assertEquals(0, gh.getSoundCount(GameHandler.SFX_SWORD_ATTACK));
 
         Pickaxe pickaxe = new Pickaxe(gh);
         assertTrue(gh.player.addToInventory(pickaxe));
@@ -274,11 +275,13 @@ public class PlayerInteractionTest {
 
         assertEquals(Math.max(0, oreTile.maxHealth - 1), gh.getSoundCount(GameHandler.SFX_BLOCK_HIT));
         assertEquals(0, gh.getSoundCount(GameHandler.SFX_BLOCK_BREAK));
+        assertEquals(Math.max(0, oreTile.maxHealth - 1), gh.getSoundCount(GameHandler.SFX_SWORD_ATTACK));
 
         performMineInteraction(gh, placement);
 
         assertEquals(Math.max(0, oreTile.maxHealth - 1), gh.getSoundCount(GameHandler.SFX_BLOCK_HIT));
         assertEquals(1, gh.getSoundCount(GameHandler.SFX_BLOCK_BREAK));
+        assertEquals(oreTile.maxHealth, gh.getSoundCount(GameHandler.SFX_SWORD_ATTACK));
         assertEquals(GameHandler.SFX_BLOCK_BREAK, gh.lastSoundId);
     }
 
@@ -1135,7 +1138,7 @@ public class PlayerInteractionTest {
     }
 
     @Test
-    public void nonSwordSpaceActionsDoNotPlayAttackSound() {
+    public void nonAttackSpaceActionsDoNotPlayAttackSound() {
         RecordingGameHandler gh = new RecordingGameHandler();
         gh.th.loadMap("/map/cave.tmj");
         gh.gameState = gh.play;
@@ -1165,7 +1168,8 @@ public class PlayerInteractionTest {
         toolGh.player.update();
 
         assertTrue(toolGh.player.attacking);
-        assertEquals(0, toolGh.soundPlayCount);
+        assertEquals(1, toolGh.getSoundCount(GameHandler.SFX_SWORD_ATTACK));
+        assertEquals(GameHandler.SFX_SWORD_ATTACK, toolGh.lastSoundId);
 
         RecordingGameHandler unarmedGh = new RecordingGameHandler();
         Entity removedItem = unarmedGh.player.removeFromInventory(0);
